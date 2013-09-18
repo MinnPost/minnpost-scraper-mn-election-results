@@ -1,77 +1,79 @@
 {
-  "parties": {
-    "url": "ftp://media:results@ftp.sos.state.mn.us/20121106_SG/PartyTbl.txt",
-    "table": "parties",
-    "type": "parties"
-  },
-  "presidential_results": {
-    "url": "ftp://media:results@ftp.sos.state.mn.us/20121106_SG/USPres.txt",
-    "table": "results",
-    "type": "results"
-  },
-  "us_senate_results": {
-    "url": "ftp://media:results@ftp.sos.state.mn.us/20121106_SG/ussenate.txt",
-    "table": "results",
-    "type": "results"
-  },
-  "us_house_results": {
-    "url": "ftp://media:results@ftp.sos.state.mn.us/20121106_SG/ushouse.txt",
-    "table": "results",
-    "type": "results"
-  },
-  "state_senate_results": {
-    "url": "ftp://media:results@ftp.sos.state.mn.us/20121106_SG/stsenate.txt",
-    "table": "results",
-    "type": "results"
-  },
-  "state_house_results": {
-    "url": "ftp://media:results@ftp.sos.state.mn.us/20121106_SG/LegislativeByDistrict.txt",
-    "table": "results",
-    "type": "results"
-  },
-  "amendments_results": {
-    "url": "ftp://media:results@ftp.sos.state.mn.us/20121106_SG/ConstAmend.txt",
-    "table": "results",
-    "type": "results"
-  },
-  "supreme_appeal_courts_results": {
-    "url": "ftp://media:results@ftp.sos.state.mn.us/20121106_SG/judicial.txt",
-    "table": "results",
-    "type": "results"
-  },
-  "district_courts_results": {
-    "url": "ftp://media:results@ftp.sos.state.mn.us/20121106_SG/judicialdst.txt",
-    "table": "results",
-    "type": "results"
-  },
-  "county_results": {
-    "url": "ftp://media:results@ftp.sos.state.mn.us/20121106_SG/cntyRaceQuestios.txt",
-    "table": "results",
-    "type": "results"
-  },
-  "municipal_results": {
-    "url": "ftp://media:results@ftp.sos.state.mn.us/20121106_SG/cntyRaceQuestios.txt",
-    "table": "results",
-    "type": "results"
-  },
-  "school_board_results": {
-    "url": "ftp://media:results@ftp.sos.state.mn.us/20121106_SG/School.txt",
-    "table": "results",
-    "type": "results"
-  },
-  "hospital_results": {
-    "url": "ftp://media:results@ftp.sos.state.mn.us/20121106_SG/hospital.txt",
-    "table": "results",
-    "type": "results"
-  },
-  "candidates": {
-    "url": "ftp://media:results@ftp.sos.state.mn.us/20121106_SG/CandTbl.txt",
-    "table": "candidates",
-    "type": "candidates"
-  },
-  "local_candidates": {
-    "url": "ftp://media:results@ftp.sos.state.mn.us/20121106_SG/LocalCandDetails.txt",
-    "table": "candidates",
-    "type": "candidates"
+  "20121106": {
+    "parties": {
+      "url": "ftp://media:results@ftp.sos.state.mn.us/20121106_SG/PartyTbl.txt",
+      "table": "parties",
+      "type": "parties"
+    },
+    "presidential_results": {
+      "url": "ftp://media:results@ftp.sos.state.mn.us/20121106_SG/USPres.txt",
+      "table": "results",
+      "type": "results"
+    },
+    "us_senate_results": {
+      "url": "ftp://media:results@ftp.sos.state.mn.us/20121106_SG/ussenate.txt",
+      "table": "results",
+      "type": "results"
+    },
+    "us_house_results": {
+      "url": "ftp://media:results@ftp.sos.state.mn.us/20121106_SG/ushouse.txt",
+      "table": "results",
+      "type": "results"
+    },
+    "state_senate_results": {
+      "url": "ftp://media:results@ftp.sos.state.mn.us/20121106_SG/stsenate.txt",
+      "table": "results",
+      "type": "results"
+    },
+    "state_house_results": {
+      "url": "ftp://media:results@ftp.sos.state.mn.us/20121106_SG/LegislativeByDistrict.txt",
+      "table": "results",
+      "type": "results"
+    },
+    "amendments_results": {
+      "url": "ftp://media:results@ftp.sos.state.mn.us/20121106_SG/ConstAmend.txt",
+      "table": "results",
+      "type": "results"
+    },
+    "supreme_appeal_courts_results": {
+      "url": "ftp://media:results@ftp.sos.state.mn.us/20121106_SG/judicial.txt",
+      "table": "results",
+      "type": "results"
+    },
+    "district_courts_results": {
+      "url": "ftp://media:results@ftp.sos.state.mn.us/20121106_SG/judicialdst.txt",
+      "table": "results",
+      "type": "results"
+    },
+    "county_results": {
+      "url": "ftp://media:results@ftp.sos.state.mn.us/20121106_SG/cntyRaceQuestios.txt",
+      "table": "results",
+      "type": "results"
+    },
+    "municipal_results": {
+      "url": "ftp://media:results@ftp.sos.state.mn.us/20121106_SG/cntyRaceQuestios.txt",
+      "table": "results",
+      "type": "results"
+    },
+    "school_board_results": {
+      "url": "ftp://media:results@ftp.sos.state.mn.us/20121106_SG/School.txt",
+      "table": "results",
+      "type": "results"
+    },
+    "hospital_results": {
+      "url": "ftp://media:results@ftp.sos.state.mn.us/20121106_SG/hospital.txt",
+      "table": "results",
+      "type": "results"
+    },
+    "candidates": {
+      "url": "ftp://media:results@ftp.sos.state.mn.us/20121106_SG/CandTbl.txt",
+      "table": "candidates",
+      "type": "candidates"
+    },
+    "local_candidates": {
+      "url": "ftp://media:results@ftp.sos.state.mn.us/20121106_SG/LocalCandDetails.txt",
+      "table": "candidates",
+      "type": "candidates"
+    }
   }
 }
