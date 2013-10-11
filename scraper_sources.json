@@ -34,22 +34,22 @@
     "counties": {
       "url": "ftp://media:results@ftp.sos.state.mn.us/20131105_MG/Cntytbl.txt",
       "table": "areas",
-      "type": "counties"
+      "type": "areas"
     },
     "municipalities": {
       "url": "ftp://media:results@ftp.sos.state.mn.us/20131105_MG/MunTbl.txt",
       "table": "areas",
-      "type": "municipalities"
+      "type": "areas"
     },
     "precincts": {
       "url": "ftp://media:results@ftp.sos.state.mn.us/20131105_MG/PrctTbl.txt",
       "table": "areas",
-      "type": "precincts"
+      "type": "areas"
     },
     "school_districts": {
-      "url": "ftp://media:results@ftp.sos.state.mn.us/20131105_MG/SchoolQuestions.txt",
+      "url": "ftp://media:results@ftp.sos.state.mn.us/20131105_MG/SchoolDistTbl.txt",
       "table": "areas",
-      "type": "school_districts"
+      "type": "areas"
     },
     "local_precinct_results": {
       "url": "ftp://media:results@ftp.sos.state.mn.us/20131105_MG/localPrct.txt",
