@@ -60,6 +60,15 @@
       "url": "ftp://media:results@ftp.sos.state.mn.us/20131105_MG/allracesbyprecinct.txt",
       "table": "precinct_results",
       "type": "precinct_results"
+    },
+    "supplemental_results": {
+      "spreadsheet_id": "0AjYft7IGrHzNdGltZUg1clM3cnNXT3pwVjg0a3Jqa3c",
+      "worksheet_id": 0,
+      "notes": "Workesheet ID is the zero-based ID from the order of workssheets and is used to find the actual ID."
+    },
+    "supplemental_contests": {
+      "spreadsheet_id": "0AjYft7IGrHzNdGltZUg1clM3cnNXT3pwVjg0a3Jqa3c",
+      "worksheet_id": 1
     }
   }
 }
