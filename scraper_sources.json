@@ -80,67 +80,67 @@
       "url": "ushouse.txt",
       "table": "results",
       "type": "results",
-      "results_scope": "us_house"
+      "contest_scope": "us_house"
     },
     "us_senate_results": {
       "url": "ussenate.txt",
       "table": "results",
       "type": "results",
-      "results_scope": "state"
+      "contest_scope": "state"
     },
     "attorney_general_results": {
       "url": "attorneygen.txt",
       "table": "results",
       "type": "results",
-      "results_scope": "state"
+      "contest_scope": "state"
     },
     "auditor_results": {
       "url": "auditor.txt",
       "table": "results",
       "type": "results",
-      "results_scope": "state"
+      "contest_scope": "state"
     },
     "governor_results": {
       "url": "Governor.txt",
       "table": "results",
       "type": "results",
-      "results_scope": "state"
+      "contest_scope": "state"
     },
     "secretary_results": {
       "url": "secofstate.txt",
       "table": "results",
       "type": "results",
-      "results_scope": "state"
+      "contest_scope": "state"
     },
     "state_house_results": {
       "url": "LegislativeByDistrict.txt",
       "table": "results",
       "type": "results",
-      "results_scope": "state_house"
+      "contest_scope": "state_house"
     },
     "judicial_results": {
       "url": "judicialdst.txt",
       "table": "results",
       "type": "results",
-      "results_scope": "district_court"
+      "contest_scope": "district_court"
     },
     "county_results": {
       "url": "cntyRaceQuestions.txt",
       "table": "results",
       "type": "results",
-      "results_scope": "county"
+      "contest_scope": "county"
     },
     "municipal_results": {
       "url": "local.txt",
       "table": "results",
       "type": "results",
-      "results_scope": "municipal"
+      "contest_scope": "municipal"
     },
     "school_district_results": {
       "url": "sdraceQuesions.txt",
       "table": "results",
       "type": "results",
-      "results_scope": "school",
+      "contest_scope": "school",
       "notes": "Questions and candidate races."
     },
     "parties": {
