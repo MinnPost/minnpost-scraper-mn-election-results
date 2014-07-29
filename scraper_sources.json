@@ -70,5 +70,113 @@
       "spreadsheet_id": "0AjYft7IGrHzNdGltZUg1clM3cnNXT3pwVjg0a3Jqa3c",
       "worksheet_id": 1
     }
+  },
+  "20140812": {
+    "meta": {
+      "base_url": "ftp://media:results@ftp.sos.state.mn.us/20140812/",
+      "primary": true
+    },
+    "us_house_results": {
+      "url": "ushouse.txt",
+      "table": "results",
+      "type": "results",
+      "results_scope": "us_house"
+    },
+    "us_senate_results": {
+      "url": "ussenate.txt",
+      "table": "results",
+      "type": "results",
+      "results_scope": "state"
+    },
+    "attorney_general_results": {
+      "url": "attorneygen.txt",
+      "table": "results",
+      "type": "results",
+      "results_scope": "state"
+    },
+    "auditor_results": {
+      "url": "auditor.txt",
+      "table": "results",
+      "type": "results",
+      "results_scope": "state"
+    },
+    "governor_results": {
+      "url": "Governor.txt",
+      "table": "results",
+      "type": "results",
+      "results_scope": "state"
+    },
+    "secretary_results": {
+      "url": "secofstate.txt",
+      "table": "results",
+      "type": "results",
+      "results_scope": "state"
+    },
+    "state_house_results": {
+      "url": "LegislativeByDistrict.txt",
+      "table": "results",
+      "type": "results",
+      "results_scope": "state_house"
+    },
+    "judicial_results": {
+      "url": "judicialdst.txt",
+      "table": "results",
+      "type": "results",
+      "results_scope": "district_court"
+    },
+    "county_results": {
+      "url": "cntyRaceQuestions.txt",
+      "table": "results",
+      "type": "results",
+      "results_scope": "county"
+    },
+    "municipal_results": {
+      "url": "local.txt",
+      "table": "results",
+      "type": "results",
+      "results_scope": "municipal"
+    },
+    "school_district_results": {
+      "url": "sdraceQuesions.txt",
+      "table": "results",
+      "type": "results",
+      "results_scope": "school",
+      "notes": "Questions and candidate races."
+    },
+    "parties": {
+      "url": "PartyTbl.txt",
+      "table": "parties",
+      "type": "parties"
+    },
+    "candidates": {
+      "url": "cand.txt",
+      "table": "candidates",
+      "type": "candidates"
+    },
+    "local_candidates": {
+      "url": "LocalCandTbl.txt",
+      "table": "candidates",
+      "type": "local_candidates"
+    },
+    "counties": {
+      "url": "Cntytbl.txt",
+      "table": "areas",
+      "type": "areas"
+    },
+    "municipalities": {
+      "url": "MunTbl.txt",
+      "table": "areas",
+      "type": "areas"
+    },
+    "precincts": {
+      "url": "PrctTbl.txt",
+      "table": "areas",
+      "type": "areas"
+    },
+    "school_districts": {
+      "url": "SchoolDistTbl.txt",
+      "table": "areas",
+      "type": "areas"
+    }
   }
 }
