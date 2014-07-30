@@ -74,6 +74,7 @@
   "20140812": {
     "meta": {
       "base_url": "ftp://media:results@ftp.sos.state.mn.us/20140812/",
+      "date": "2014-08-12",
       "primary": true
     },
     "us_house_results": {
