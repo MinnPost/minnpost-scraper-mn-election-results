@@ -187,7 +187,8 @@
       "primary": false,
       "layout": "http://electionresults.sos.state.mn.us/Select/DownloadFileFormats/20",
       "ballot_question_id_start": 333,
-      "ballot_question_id_end": 503
+      "ballot_question_id_end": 503,
+      "ballot_question_base": "http://myballotmn.sos.state.mn.us/QuestionDisplay.aspx?QuestionId=%s"
     },
     "us_house_results": {
       "url": "ushouse.txt",
