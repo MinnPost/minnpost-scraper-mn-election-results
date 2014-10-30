@@ -307,6 +307,18 @@
       "url": "SchoolDistTbl.txt",
       "table": "areas",
       "type": "areas"
+    },
+
+    "ballot_questions": {
+      "url": "BallotQuestions.txt",
+      "table": "questions",
+      "type": "questions"
+    },
+
+    "supplemental_contests": {
+      "spreadsheet_id": "1f3uc7P-WEeqJPkIlN14lhtGghRyIVsV08k6QISi2JNs",
+      "worksheet_id": 0,
+      "notes": "Workesheet ID is the zero-based ID from the order of workssheets and is used to find the actual ID."
     }
   }
 }
