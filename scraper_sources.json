@@ -320,5 +320,101 @@
       "worksheet_id": 0,
       "notes": "Workesheet ID is the zero-based ID from the order of workssheets and is used to find the actual ID."
     }
+  },
+  "20160809": {
+    "meta": {
+      "base_url": "ftp://media:results@ftp.sos.state.mn.us/20160809/",
+      "date": "2014-08-09",
+      "primary": true
+    },
+    "us_house_results": {
+      "url": "ushouse.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "us_house"
+    },
+    "state_senate_results": {
+      "url": "stsenate.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "state_senate"
+    },
+    "state_house_results": {
+      "url": "LegislativeByDistrict.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "state_house"
+    },
+    "supreme_court_results": {
+      "url": "judicial.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "supreme_court"
+    },
+    "judicial_results": {
+      "url": "judicialdst.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "district_court"
+    },
+    "county_results": {
+      "url": "cntyRaces.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "county"
+    },
+    "municipal_results": {
+      "url": "local.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "municipal"
+    },
+    "school_district_results": {
+      "url": "SDRaceQuestions.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "school",
+      "notes": "Questions and candidate races."
+    },
+    "parties": {
+      "url": "PartyTbl.txt",
+      "table": "parties",
+      "type": "parties"
+    },
+    "candidates": {
+      "url": "cand.txt",
+      "table": "candidates",
+      "type": "candidates"
+    },
+    "local_candidates": {
+      "url": "LocalCandTbl.txt",
+      "table": "candidates",
+      "type": "local_candidates"
+    },
+    "counties": {
+      "url": "Cntytbl.txt",
+      "table": "areas",
+      "type": "areas"
+    },
+    "municipalities": {
+      "url": "MunTbl.txt",
+      "table": "areas",
+      "type": "areas"
+    },
+    "precincts": {
+      "url": "PrctTbl.txt",
+      "table": "areas",
+      "type": "areas"
+    },
+    "school_districts": {
+      "url": "SchoolDistTbl.txt",
+      "table": "areas",
+      "type": "areas"
+    },
+    "ballot_questions": {
+      "url": "BallotQuestions.txt",
+      "table": "questions",
+      "type": "questions"
+    }
   }
 }
