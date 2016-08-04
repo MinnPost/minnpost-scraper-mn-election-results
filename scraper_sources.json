@@ -349,7 +349,7 @@
       "url": "judicial.txt",
       "table": "results",
       "type": "results",
-      "contest_scope": "supreme_court"
+      "contest_scope": "state"
     },
     "judicial_results": {
       "url": "judicialdst.txt",
