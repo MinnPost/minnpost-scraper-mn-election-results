@@ -397,7 +397,7 @@
       "type": "areas"
     },
     "municipalities": {
-      "url": "MunTbl.txt",
+      "url": "mcdtbl.txt",
       "table": "areas",
       "type": "areas"
     },
