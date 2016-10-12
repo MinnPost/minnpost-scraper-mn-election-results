@@ -423,6 +423,18 @@
       "date": "2016-11-08",
       "primary": false
     },
+    "us_president_results": {
+      "url": "USPres.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "state"
+    },
+    "constitutional_amendment_results": {
+      "url": "ConstAmend.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "state"
+    },
     "us_house_results": {
       "url": "ushouse.txt",
       "table": "results",
@@ -441,23 +453,24 @@
       "type": "results",
       "contest_scope": "state_house"
     },
-    "supreme_court_results": {
+    "judicial_results": {
       "url": "judicial.txt",
       "table": "results",
       "type": "results",
       "contest_scope": "state"
     },
-    "judicial_results": {
+    "judicial_district_results": {
       "url": "judicialdst.txt",
       "table": "results",
       "type": "results",
       "contest_scope": "district_court"
     },
     "county_results": {
-      "url": "cntyRaces.txt",
+      "url": "cntyRaceQuestions.txt",
       "table": "results",
       "type": "results",
-      "contest_scope": "county"
+      "contest_scope": "county",
+      "notes": "Questions and candidate races."
     },
     "municipal_results": {
       "url": "local.txt",
@@ -471,6 +484,12 @@
       "type": "results",
       "contest_scope": "school",
       "notes": "Questions and candidate races."
+    },
+    "hospital_results": {
+      "url": "hospital.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "hospital"
     },
     "parties": {
       "url": "PartyTbl.txt",
