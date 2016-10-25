@@ -530,6 +530,11 @@
       "url": "BallotQuestions.txt",
       "table": "questions",
       "type": "questions"
+    },
+    "supplemental_contests": {
+      "spreadsheet_id": "13exfuojIcZjR-tezPfD6Ue-F7o5q5Z2dK-LGlgLn178",
+      "worksheet_id": 0,
+      "notes": "Workesheet ID is the zero-based ID from the order of workssheets and is used to find the actual ID."
     }
   }
 }
