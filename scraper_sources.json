@@ -540,5 +540,68 @@
       "spreadsheet_id": "13exfuojIcZjR-tezPfD6Ue-F7o5q5Z2dK-LGlgLn178",
       "worksheet_id": 1
     }
+  },
+  "20171107": {
+    "meta": {
+      "base_url": "ftp://media:results@ftp.sos.state.mn.us/20171107/",
+      "date": "2017-11-07",
+      "primary": false
+    },
+    "municipal_results": {
+      "url": "local.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "municipal"
+    },
+    "school_district_results": {
+      "url": "SDRaceQuestions.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "school"
+    },
+    "ballot_questions": {
+      "url": "BallotQuestions.txt",
+      "table": "questions",
+      "type": "questions"
+    },
+    "parties": {
+      "url": "PartyTbl.txt",
+      "table": "parties",
+      "type": "parties"
+    },
+    "local_candidates": {
+      "url": "LocalCandTbl.txt",
+      "table": "candidates",
+      "type": "local_candidates"
+    },
+    "counties": {
+      "url": "Cntytbl.txt",
+      "table": "areas",
+      "type": "areas"
+    },
+    "municipalities": {
+      "url": "MunTbl.txt",
+      "table": "areas",
+      "type": "areas"
+    },
+    "precincts": {
+      "url": "PrctTbl.txt",
+      "table": "areas",
+      "type": "areas"
+    },
+    "school_districts": {
+      "url": "SchoolDistTbl.txt",
+      "table": "areas",
+      "type": "areas"
+    },
+    "supplemental_results": {
+      "spreadsheet_id": "1uGkgLA0A1ZqfBlYSAN1iTgWQtVLULTG-f2mXqWpCEjI",
+      "worksheet_id": 1,
+      "notes": "Workesheet ID is the zero-based ID from the order of workssheets and is used to find the actual ID."
+    },
+    "supplemental_contests": {
+      "spreadsheet_id": "1uGkgLA0A1ZqfBlYSAN1iTgWQtVLULTG-f2mXqWpCEjI",
+      "worksheet_id": 0
+    }
   }
 }
