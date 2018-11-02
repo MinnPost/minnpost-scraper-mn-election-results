@@ -786,7 +786,7 @@
       "notes": "Includes both municpal questions (cityquestions.txt) and candidate results."
     },
     "school_district_results": {
-      "url": "sdraceQuestions.txt",
+      "url": "SDRaceQuestions.txt",
       "table": "results",
       "type": "results",
       "contest_scope": "school",
