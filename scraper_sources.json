@@ -901,6 +901,14 @@
       "url": "11",
       "table": "questions",
       "type": "questions"
+    },
+    "supplemental_results": {
+      "spreadsheet_id": "1GhcYmTvB6fKoWK-shLG160siaIt3x3NZMXPtigE7haw",
+      "worksheet_id": 1
+    },
+    "supplemental_contests": {
+      "spreadsheet_id": "1GhcYmTvB6fKoWK-shLG160siaIt3x3NZMXPtigE7haw",
+      "worksheet_id": 0
     }
   }
 }
