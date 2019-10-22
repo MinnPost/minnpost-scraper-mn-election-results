@@ -845,5 +845,62 @@
       "worksheet_id": 0,
       "notes": "Workesheet ID is the zero-based ID from the order of workssheets and is used to find the actual ID."
     }
+  },
+  "20191105": {
+    "meta": {
+      "base_url": "http://electionresults.sos.state.mn.us/Results/MediaResult/125?mediafileid=",
+      "date": "2019-11-05",
+      "primary": false
+    },
+    "county_results": {
+      "url": "10",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "county_commissioner"
+    },
+    "municipal_results": {
+      "url": "1",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "municipal",
+      "notes": "Includes candidate and question results."
+    },
+    "school_district_results": {
+      "url": "7",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "school_district",
+      "notes": "Includes school board candidates and referendum results."
+    },
+    "county_candidates": {
+      "url": "82",
+      "table": "candidates",
+      "type": "county_candidates"
+    },
+    "local_and_school_candidates": {
+      "url": "3",
+      "table": "candidates",
+      "type": "local_candidates"
+    },
+    "counties": {
+      "url": "6",
+      "table": "areas",
+      "type": "areas"
+    },
+    "municipalities": {
+      "url": "8",
+      "table": "areas",
+      "type": "areas"
+    },
+    "school_districts": {
+      "url": "18",
+      "table": "areas",
+      "type": "areas"
+    },
+    "ballot_questions": {
+      "url": "11",
+      "table": "questions",
+      "type": "questions"
+    }
   }
 }
