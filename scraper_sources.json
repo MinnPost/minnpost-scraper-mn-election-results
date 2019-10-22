@@ -856,7 +856,7 @@
       "url": "10",
       "table": "results",
       "type": "results",
-      "contest_scope": "county_commissioner"
+      "contest_scope": "county"
     },
     "municipal_results": {
       "url": "1",
@@ -869,7 +869,7 @@
       "url": "7",
       "table": "results",
       "type": "results",
-      "contest_scope": "school_district",
+      "contest_scope": "school",
       "notes": "Includes school board candidates and referendum results."
     },
     "county_candidates": {
