@@ -865,12 +865,19 @@
       "contest_scope": "municipal",
       "notes": "Includes candidate and question results."
     },
-    "school_district_results": {
-      "url": "7",
+    "school_board_results": {
+      "url": "57",
       "table": "results",
       "type": "results",
       "contest_scope": "school",
-      "notes": "Includes school board candidates and referendum results."
+      "notes": "Includes school board  results."
+    },
+    "school_question_results": {
+      "url": "17",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "school",
+      "notes": "Includes school bond question results."
     },
     "county_candidates": {
       "url": "82",
