@@ -917,5 +917,25 @@
       "spreadsheet_id": "1GhcYmTvB6fKoWK-shLG160siaIt3x3NZMXPtigE7haw",
       "worksheet_id": 0
     }
+  },
+  "20200303": {
+    "meta": {
+      "base_url": "https://electionresultsfiles.sos.state.mn.us/20200303/",
+      "date": "2020-03-03",
+      "primary": true
+    },
+    "statewide_results": {
+      "url": "PNPStatewide.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "state"
+    },
+    "CD_results": {
+      "url": "PNPCGDistrict.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "us_house"
+    }
+
   }
 }
