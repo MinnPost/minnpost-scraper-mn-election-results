@@ -937,5 +937,102 @@
       "contest_scope": "us_house"
     }
 
+  },
+  "20200811": {
+    "meta": {
+      "base_url": "https://electionresultsfiles.sos.state.mn.us/20200811/",
+      "date": "2020-08-11",
+      "primary": true
+    },
+    "us_senate_results": {
+      "url": "ussenate.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "state"
+    },
+    "us_house_results": {
+      "url": "ushouse.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "us_house"
+    },
+    "state_senate_results": {
+      "url": "stsenate.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "state_senate"
+    },
+    "state_house_results": {
+      "url": "LegislativeByDistrict.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "state_house"
+    },
+    "county_results": {
+      "url": "cntyRaceQuestions.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "county"
+    },
+    "municipal_results": {
+      "url": "local.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "municipal"
+    },
+    "school_district_results": {
+      "url": "SDRaceQuestions.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "school"
+    },
+    "parties": {
+      "url": "PartyTbl.txt",
+      "table": "parties",
+      "type": "parties"
+    },
+    "candidates": {
+      "url": "cand.txt",
+      "table": "candidates",
+      "type": "candidates"
+    },
+    "local_candidates": {
+      "url": "LocalCandTbl.txt",
+      "table": "candidates",
+      "type": "local_candidates"
+    },
+    "counties": {
+      "url": "Cntytbl.txt",
+      "table": "areas",
+      "type": "areas"
+    },
+    "municipalities": {
+      "url": "mcdtbl.txt",
+      "table": "areas",
+      "type": "areas"
+    },
+    "precincts": {
+      "url": "PrctTbl.txt",
+      "table": "areas",
+      "type": "areas"
+    },
+    "school_districts": {
+      "url": "SchoolDistTbl.txt",
+      "table": "areas",
+      "type": "areas"
+    },
+    "ballot_questions": {
+      "url": "BallotQuestions.txt",
+      "table": "questions",
+      "type": "questions"
+    },
+    "supplemental_results": {
+      "spreadsheet_id": "10U1a0J1RvIohfA7-Nv9uawlgSKslGaMcX0o37F_Qsyw",
+      "worksheet_id": 1
+    },
+    "supplemental_contests": {
+      "spreadsheet_id": "10U1a0J1RvIohfA7-Nv9uawlgSKslGaMcX0o37F_Qsyw",
+      "worksheet_id": 0
+    }
   }
 }
