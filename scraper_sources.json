@@ -1034,5 +1034,129 @@
       "spreadsheet_id": "10U1a0J1RvIohfA7-Nv9uawlgSKslGaMcX0o37F_Qsyw",
       "worksheet_id": 0
     }
+  },
+  "20201103": {
+    "meta": {
+      "base_url": "https://electionresultsfiles.sos.state.mn.us/20201103/",
+      "date": "2020-11-03",
+      "primary": false
+    },
+    "us_president_results": {
+      "url": "USPres.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "state"
+    },
+    "us_senate_results": {
+      "url": "ussenate.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "state"
+    },
+    "us_house_results": {
+      "url": "ushouse.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "us_house"
+    },
+    "state_senate_results": {
+      "url": "stsenate.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "state_senate"
+    },
+    "state_house_results": {
+      "url": "LegislativeByDistrict.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "state_house"
+    },
+    "judicial_results": {
+      "url": "judicial.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "state"
+    },
+    "judicial_district_results": {
+      "url": "judicialdst.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "district_court"
+    },
+    "county_results": {
+      "url": "cntyRaceQuestions.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "county",
+      "notes": "Questions and candidate races."
+    },
+    "municipal_results": {
+      "url": "local.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "municipal"
+    },
+    "school_district_results": {
+      "url": "SDRaceQuestions.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "school",
+      "notes": "Questions and candidate races."
+    },
+    "hospital_results": {
+      "url": "hospital.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "hospital"
+    },
+    "parties": {
+      "url": "PartyTbl.txt",
+      "table": "parties",
+      "type": "parties"
+    },
+    "candidates": {
+      "url": "cand.txt",
+      "table": "candidates",
+      "type": "candidates"
+    },
+    "local_candidates": {
+      "url": "LocalCandTbl.txt",
+      "table": "candidates",
+      "type": "local_candidates"
+    },
+    "counties": {
+      "url": "Cntytbl.txt",
+      "table": "areas",
+      "type": "areas"
+    },
+    "municipalities": {
+      "url": "mcdtbl.txt",
+      "table": "areas",
+      "type": "areas"
+    },
+    "precincts": {
+      "url": "PrctTbl.txt",
+      "table": "areas",
+      "type": "areas"
+    },
+    "school_districts": {
+      "url": "SchoolDistTbl.txt",
+      "table": "areas",
+      "type": "areas"
+    },
+    "ballot_questions": {
+      "url": "BallotQuestions.txt",
+      "table": "questions",
+      "type": "questions"
+    },
+    "supplemental_contests": {
+      "spreadsheet_id": "1zGoZ9WDqjnzDmK187YOmuOt_3oyKaHpy9LunZ2SpbPc",
+      "worksheet_id": 0,
+      "notes": "Workesheet ID is the zero-based ID from the order of workssheets and is used to find the actual ID."
+    },
+    "supplemental_results": {
+      "spreadsheet_id": "1zGoZ9WDqjnzDmK187YOmuOt_3oyKaHpy9LunZ2SpbPc",
+      "worksheet_id": 1
+    }
   }
 }
