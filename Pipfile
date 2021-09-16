@@ -1,0 +1,15 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+lxml = "==4.6.3"
+unicodecsv = "==0.14.1"
+DateTime = "==4.3"
+Flask = "==2.0.1"
+
+[dev-packages]
+
+[requires]
+python_version = "3.9"
