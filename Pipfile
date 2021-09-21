@@ -12,6 +12,7 @@ requests = "==2.26.0"
 scraperwiki = "==0.5.1"
 
 [dev-packages]
+python-dotenv = "*"
 
 [requires]
 python_version = "3.9"
