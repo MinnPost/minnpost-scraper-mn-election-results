@@ -9,10 +9,9 @@ unicodecsv = "==0.14.1"
 DateTime = "==4.3"
 Flask = "==2.0.1"
 requests = "==2.26.0"
-scraperwiki = "==0.5.1"
+psycopg2-binary = "==2.9.1"
 
 [dev-packages]
-python-dotenv = "*"
 
 [requires]
 python_version = "3.9"
