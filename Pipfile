@@ -10,7 +10,6 @@ DateTime = "==4.3"
 Flask = "==2.0.1"
 requests = "==2.26.0"
 sqlalchemy = "==1.4.24"
-regex = "*"
 
 [dev-packages]
 
