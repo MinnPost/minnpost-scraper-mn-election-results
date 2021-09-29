@@ -10,9 +10,7 @@ DateTime = "==4.3"
 Flask = "==2.0.1"
 requests = "==2.26.0"
 sqlalchemy = "==1.4.24"
-google-api-python-client = "==2.22.0"
-google-auth-httplib2 = "==0.1.0"
-google-auth-oauthlib = "==0.4.6"
+sheetfu = "==1.5.4"
 
 [dev-packages]
 
