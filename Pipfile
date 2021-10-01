@@ -4,17 +4,18 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-lxml = "==4.6.3"
-unicodecsv = "==0.14.1"
-DateTime = "==4.3"
+celery = "==5.1.2"
 Flask = "==2.0.1"
+Flask-CeleryExt = "==0.3.4"
+Flask-Migrate = "==3.1.0"
+Flask-SQLAlchemy = "==2.5.1"
+psycopg2-binary = "==2.9.1"
+redis = "==3.5.3"
 requests = "==2.26.0"
-sqlalchemy = "==1.4.24"
 sheetfu = "==1.5.4"
-alembic = "==1.7.3"
-psycopg2 = "==2.9.1"
 
 [dev-packages]
+flower == "==1.0.0"
 
 [requires]
 python_version = "3.9"
