@@ -13,9 +13,10 @@ psycopg2-binary = "==2.9.1"
 redis = "==3.5.3"
 requests = "==2.26.0"
 sheetfu = "==1.5.4"
+werkzeug = "==2.0.1"
 
 [dev-packages]
-flower == "==1.0.0"
+"flower =" = "==1.0.0"
 
 [requires]
 python_version = "3.9"
