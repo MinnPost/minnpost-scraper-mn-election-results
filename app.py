@@ -1,8 +1,10 @@
-from project import create_app, ext_celery
+from app import create_app, db, cli
+from app.models import Area, Contest, Meta, Question, Result
 
 app = create_app()
-celery = ext_celery.celery
+cli.register(app)
 
-@app.route("/")
-def hello_world():
-    return "Hello, World!"
+
+@app.shell_context_processor
+def make_shell_context():
+    return {'db': db, 'Area': Area, 'Contest': Contest, 'Meta': Meta, 'Question': Question, 'Result': Result}
