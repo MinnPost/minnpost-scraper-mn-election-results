@@ -1,11 +1,11 @@
 import os
 import logging
 from flask import jsonify, request, current_app
-from app import db
-from app.models import Area
-from app.scraper import bp
-#from app.api.auth import token_auth
-#from app.api.errors import bad_request
+from src import db
+from src.models import Area
+from src.scraper import bp
+#from src.api.auth import token_auth
+#from src.api.errors import bad_request
 
 LOG = logging.getLogger(__name__)
 

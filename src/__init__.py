@@ -5,7 +5,7 @@ from flask_celeryext import FlaskCeleryExt
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 
-from app.cache import cache
+from src.cache import cache
 
 from config import Config
 
@@ -23,19 +23,19 @@ def create_app(config_class=Config):
 
     #app.task_queue = rq.Queue('microblog-tasks', connection=app.redis)
 
-    #from app.errors import bp as errors_bp
+    #from src.errors import bp as errors_bp
     #app.register_blueprint(errors_bp)
 
-    from app.scraper import bp as scraper_bp
+    from src.scraper import bp as scraper_bp
     app.register_blueprint(scraper_bp, url_prefix='/scraper')
 
-    #from app.main import bp as main_bp
+    #from src.main import bp as main_bp
     #app.register_blueprint(main_bp)
 
-    #from app.api import bp as api_bp
+    #from src.api import bp as api_bp
     #app.register_blueprint(api_bp, url_prefix='/api')
 
     return app
 
 
-from app import models
+from src import models

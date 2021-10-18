@@ -10,7 +10,7 @@ import calendar
 import datetime
 import lxml.html
 from flask import current_app
-from app import cache, db
+from src import cache, db
 
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.expression import Insert

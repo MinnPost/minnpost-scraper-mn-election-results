@@ -1,5 +1,5 @@
-from app import create_app, db, cli
-from app.models import Area, Contest, Meta, Question, Result
+from src import create_app, db, cli
+from src.models import Area, Contest, Meta, Question, Result
 
 app = create_app()
 cli.register(app)

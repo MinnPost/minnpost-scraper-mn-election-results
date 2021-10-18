@@ -1,28 +1,28 @@
 import os
 import logging
 from flask import jsonify, request, current_app
-from app import db
-from app.models import Question
-from app.scraper import bp
-#from app.api.auth import token_auth
-#from app.api.errors import bad_request
+from src import db
+from src.models import Meta
+from src.scraper import bp
+#from src.api.auth import token_auth
+#from src.api.errors import bad_request
 
 LOG = logging.getLogger(__name__)
 
 newest_election = None
 election = None
 
-@bp.route('/questions')
-def scrape_questions():
-    question = Question()
-    sources = question.read_sources()
-    election = question.set_election()
+@bp.route('/meta')
+def scrape_meta():
+    meta = Meta()
+    sources = meta.read_sources()
+    election = meta.set_election()
 
     if election not in sources:
         return
 
     # Get metadata about election
-    election_meta = question.set_election_metadata()
+    election_meta = meta.set_election_metadata()
     inserted_count = 0
     parsed_count = 0
     group_count = 0
@@ -30,18 +30,17 @@ def scrape_questions():
     for group in sources[election]:
         source = sources[election][group]
         group_count = group_count + 1
+        
+        if 'meta' in sources[election]:
+            rows = sources[election]['meta']
 
-        if 'type' in source and source['type'] == 'questions':
+            for m in rows:
+                row = rows[m]
+                parsed = meta.parser(m, row)
+                meta = Meta()
+                meta.from_dict(parsed, new=True)
 
-            rows = question.parse_election(source, election_meta)
-
-            for row in rows:
-                parsed = question.parser(row, group)
-
-                question = Question()
-                question.from_dict(parsed, new=True)
-
-                db.session.merge(question)
+                db.session.merge(meta)
                 inserted_count = inserted_count + 1
                 parsed_count = parsed_count + 1
             # commit parsed rows
