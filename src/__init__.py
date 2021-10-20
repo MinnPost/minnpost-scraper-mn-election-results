@@ -29,11 +29,11 @@ def create_app(config_class=Config):
     from src.scraper import bp as scraper_bp
     app.register_blueprint(scraper_bp, url_prefix='/scraper')
 
+    from src.api import bp as api_bp
+    app.register_blueprint(api_bp, url_prefix='/api')
+
     #from src.main import bp as main_bp
     #app.register_blueprint(main_bp)
-
-    #from src.api import bp as api_bp
-    #app.register_blueprint(api_bp, url_prefix='/api')
 
     return app
 
