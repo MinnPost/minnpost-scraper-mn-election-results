@@ -760,7 +760,7 @@ class ElectionScraper:
                 boundary = 'wards-2012/' + self.slugify(wards_matched.group(3)) + '-w-' + '{0:02d}'.format(int(wards_matched.group(2))) + '-1'
                 boundary_type = 'wards-2012'
             elif mpls_parks_matched is not None:
-                boundary = 'minneapolis-parks-and-recreation-districts-2014/' + mpls_parks_matched.group(1)
+                boundary = 'minneapolis-parks-and-recreation-districts-2014/' + mpls_parks_matched.group(1) + '-1'
                 boundary_type = 'minneapolis-parks-and-recreation-districts-2014'
             else:
                 if parsed_row['county_id']:
