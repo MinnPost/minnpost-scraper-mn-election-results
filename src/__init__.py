@@ -6,6 +6,7 @@ from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 
 from src.cache import cache
+from src.logger import ScraperLogger
 
 from config import Config
 
