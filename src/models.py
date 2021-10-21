@@ -10,7 +10,7 @@ import calendar
 import datetime
 import lxml.html
 from flask import current_app
-from src import cache, db
+from src import cache, db, ScraperLogger
 
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.expression import Insert
@@ -23,6 +23,7 @@ scraper_sources_inline = None
 class ScraperModel(object):
 
     nonpartisan_parties = ['NP', 'WI', 'N P']
+    log = ScraperLogger('scraper_results').logger
 
     def __init__(self, group_type = None):
         """
