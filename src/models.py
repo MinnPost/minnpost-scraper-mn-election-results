@@ -208,7 +208,25 @@ class Area(ScraperModel, db.Model):
     updated = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
 
     def __init__(self, **kwargs):
-        super(Area, self).__init__(**kwargs)
+        self.result_id = kwargs.get('area_id')
+        self.areas_group = kwargs.get('areas_group')
+        self.county_id = kwargs.get('county_id')
+        self.county_name = kwargs.get('county_name')
+        self.ward_id = kwargs.get('ward_id')
+        self.precinct_id = kwargs.get('precinct_id')
+        self.precinct_name = kwargs.get('precinct_name')
+        self.state_senate_id = kwargs.get('state_senate_id')
+        self.state_house_id = kwargs.get('state_house_id')
+        self.county_commissioner_id = kwargs.get('county_commissioner_id')
+        self.district_court_id = kwargs.get('district_court_id')
+        self.soil_water_id = kwargs.get('soil_water_id')
+        self.school_district_id = kwargs.get('school_district_id')
+        self.school_district_name = kwargs.get('school_district_name')
+        self.mcd_id = kwargs.get('mcd_id')
+        self.name = kwargs.get('name')
+    
+    def __repr__(self):
+        return '<Area {}>'.format(self.area_id)
     
     def __repr__(self):
         return '<Area {}>'.format(self.area_id)
@@ -297,6 +315,8 @@ class Contest(ScraperModel, db.Model):
     incumbent_party = db.Column(db.String(255))
     called = db.Column(db.Boolean())
     updated = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+
+    results = db.relationship('Result', backref=__tablename__, lazy=True)
 
     def __init__(self, **kwargs):
         self.result_id = kwargs.get('result_id')
@@ -547,7 +567,8 @@ class Result(ScraperModel, db.Model):
     __tablename__ = "results"
 
     result_id = db.Column(db.String(255), primary_key=True, autoincrement=False, nullable=False)
-    contest_id = db.Column(db.String(255))
+    #contest_id = db.Column(db.String(255))
+    contest_id = db.Column(db.String(255), db.ForeignKey('contests.contest_id'), nullable=False)
     results_group = db.Column(db.String(255))
     office_name = db.Column(db.String(255))
     candidate_id = db.Column(db.String(255))
