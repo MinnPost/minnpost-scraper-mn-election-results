@@ -604,7 +604,7 @@ class Contest(ScraperModel, db.Model):
             wards_matched = re.compile(r'.*(Council Member Ward|Council Member District) ([0-9]+).*\((((?!elect).)*)\).*', re.IGNORECASE).match(parsed_row['office_name'])
             mpls_parks_matched = re.compile(r'.*Park and Recreation Commissioner District ([0-9]+).*', re.IGNORECASE).match(parsed_row['office_name'])
 
-            # Check for sub municpal parts first
+            # Check for sub municipal parts first
             if wards_matched is not None:
                 boundary = 'wards-2012/' + self.slugify(wards_matched.group(3)) + '-w-' + '{0:02d}'.format(int(wards_matched.group(2))) + '-1'
                 boundary_type = 'wards-2012'
@@ -624,7 +624,7 @@ class Contest(ScraperModel, db.Model):
                             boundaries.append(self.boundary_make_mcd(r.county_id, parsed_row['district_code']))
                         boundary = ','.join(boundaries)
                     else:
-                        self.log.info('[%s] Could not find corresponding county for municpality: %s' % ('results', parsed_row['office_name']))
+                        self.log.info('[%s] Could not find corresponding county for municipality: %s' % ('results', parsed_row['office_name']))
 
         # Hospital districts.
         #
@@ -647,12 +647,14 @@ class Contest(ScraperModel, db.Model):
                     for r in mcd:
                         # Find intersection
                         mcd_boundary_id = self.boundary_make_mcd(r.county_id, parsed_row['district_code'])
-                        boundary_url = 'https://represent-minnesota.herokuapp.com/boundary-sets/?intersects=%s&sets=%s';
-                        request = requests.get(boundary_url % (mcd_boundary_id, 'hospital-districts-2012'), verify = False)
+                        boundary_url  = 'https://represent-minnesota.herokuapp.com/boundaries/?sets=%s,%s'
+                        request = requests.get(boundary_url % ('hospital-districts-2012', mcd_boundary_id), verify = False)
 
                         if request.status_code == 200:
                             r = request.json()
                             boundary = r['objects'][0]['url']
+                            boundary = boundary.lstrip('/boundaries/') # remove if this is present
+                            boundary = boundary.rstrip('/')
                             break
 
                     if boundary == '':
