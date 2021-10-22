@@ -430,9 +430,11 @@ class Contest(ScraperModel, db.Model):
             'title': title
         }
 
+        # set fields that aren't directly in the data
         parsed['boundary'] = self.find_boundary(parsed, row)
-
         parsed = self.set_question_fields(parsed)
+        parsed['partisan'] = self.set_partisanship(parsed)
+        parsed['seats'] = self.set_seats(parsed)
 
         # Return contest record
         return parsed
@@ -712,6 +714,37 @@ class Contest(ScraperModel, db.Model):
                 parsed_row['sub_title'] = q.sub_title
 
         return parsed_row
+    
+    
+    def set_partisanship(self, parsed_row):
+        # Determine partisanship for contests for other processing. We need to look
+        # at all the candidates to know if the contest is nonpartisan or not.
+        #results = db.engine.execute("select result_id from results where contest_id = '%s' and party_id not in ('%s')" % (parsed_row['contest_id'], "', '".join(self.nonpartisan_parties)))
+        #results = Result.query.filter_by(contest_id=parsed_row['contest_id'], user_location=where)
+        results = Result.query.filter(
+            Result.contest_id == parsed_row['contest_id'],
+            Result.party_id.notin_(self.nonpartisan_parties)
+        ).first()
+        #users = session.query(Post).filter(not_(Post.tags.name.in_(['dont', 'want', these'])))
+        if results is not None:
+            partisan = True
+        else:
+            partisan = False
+        return partisan
+    
+    
+    def set_seats(self, parsed_row):
+        # For non-partisan primaries, the general rule is that there are twice
+        # as many winners as there are seats available for the general election.
+        # Unfortunately we can't determine this from the existing value
+        # otherwise, it will just grow.
+        seats = parsed_row['seats']
+        if parsed_row['primary'] and parsed_row['partisan'] is False:
+            re_seats = re.compile(r'.*\(elect ([0-9]+)\).*', re.IGNORECASE)
+            matched_seats = re_seats.match(parsed_row['office_name'])
+            seats = matched_seats.group(1) if matched_seats is not None else 1
+            seats = int(seats) * 2
+        return seats
     
     
     def supplement_row(self, spreadsheet_row):
