@@ -3,10 +3,12 @@ from datetime import datetime
 from flask import jsonify, request, Response, url_for, abort
 from sqlalchemy import text
 from sqlalchemy import exc
-from src import db
+from src import cache, db, ScraperLogger
 from src.models import Area, Contest, Meta, Question, Result
 from src.api import bp
 from src.api.errors import bad_request
+
+log = ScraperLogger('scraper_results').logger
 
 @bp.route('/query/', methods=['GET', 'POST'])
 def query():
