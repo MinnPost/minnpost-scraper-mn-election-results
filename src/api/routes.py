@@ -17,7 +17,7 @@ def query():
     example_query = 'SELECT * FROM contests WHERE title LIKE \'%governor%\'';
 
     if sql in ['', None]:
-        return 'Hi, welcome to the election scraper local server. Use a URL like: <a href="/?q=%s">/?q=%s</a>' % (example_query, example_query);
+        return 'Hi, welcome to the election scraper local server. Use a URL like: <a href="/query/?q=%s">/query/?q=%s</a>' % (example_query, example_query);
     #output = json.dumps(sql)
     data = []
     try:
