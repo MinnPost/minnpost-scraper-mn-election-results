@@ -196,7 +196,7 @@ class Area(ScraperModel, db.Model):
 
     __tablename__ = "areas"
 
-    area_id = db.Column(db.String(255), primary_key=True, autoincrement=False, nullable=False)
+    id = db.Column(db.String(255), primary_key=True, autoincrement=False, nullable=False)
     areas_group = db.Column(db.String(255))
     county_id = db.Column(db.String(255))
     county_name = db.Column(db.String(255))
@@ -216,7 +216,7 @@ class Area(ScraperModel, db.Model):
     updated = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
 
     def __init__(self, **kwargs):
-        self.result_id = kwargs.get('area_id')
+        self.id = kwargs.get('id')
         self.areas_group = kwargs.get('areas_group')
         self.county_id = kwargs.get('county_id')
         self.county_name = kwargs.get('county_name')
@@ -234,10 +234,10 @@ class Area(ScraperModel, db.Model):
         self.name = kwargs.get('name')
     
     def __repr__(self):
-        return '<Area {}>'.format(self.area_id)
+        return '<Area {}>'.format(self.id)
     
     def __repr__(self):
-        return '<Area {}>'.format(self.area_id)
+        return '<Area {}>'.format(self.id)
 
     def parser(self, row, group):
 
@@ -294,6 +294,8 @@ class Area(ScraperModel, db.Model):
             parsed['county_id'] = row[2]
             parsed['county_name'] = row[3]
 
+        parsed['id'] = parsed['area_id']
+
         return parsed
 
 class Contest(ScraperModel, db.Model):
@@ -306,7 +308,7 @@ class Contest(ScraperModel, db.Model):
     # Track which boundary sets we use
     found_boundary_types = []
 
-    contest_id = db.Column(db.String(255), primary_key=True, autoincrement=False, nullable=False)
+    id = db.Column(db.String(255), primary_key=True, autoincrement=False, nullable=False)
     office_id = db.Column(db.String(255))
     results_group = db.Column(db.String(255))
     office_name = db.Column(db.String(255))
@@ -334,7 +336,7 @@ class Contest(ScraperModel, db.Model):
 
     def __init__(self, **kwargs):
         self.result_id = kwargs.get('result_id')
-        self.contest_id = kwargs.get('contest_id')
+        self.id = kwargs.get('id')
         self.office_id = kwargs.get('office_id')
         self.results_group = kwargs.get('results_group')
         self.office_name = kwargs.get('office_name')
@@ -358,7 +360,7 @@ class Contest(ScraperModel, db.Model):
         self.called = kwargs.get('called')
     
     def __repr__(self):
-        return '<Contest {}>'.format(self.contest_id)
+        return '<Contest {}>'.format(self.id)
 
     def parser(self, row, group, source):
         """
@@ -412,6 +414,7 @@ class Contest(ScraperModel, db.Model):
         title = self.generate_title(office_name, county_id, row)
 
         parsed = {
+            'id': contest_id,
             'contest_id': contest_id,
             'office_id': office_id,
             'results_group': group,
@@ -752,7 +755,7 @@ class Contest(ScraperModel, db.Model):
 
         # Check for existing result rows
         row_id = str(spreadsheet_row['id'])
-        results = Contest.query.filter_by(contest_id=row_id).all()
+        results = Contest.query.filter_by(id=row_id).all()
 
         # If valid data
         if row_id is not None:
@@ -778,7 +781,8 @@ class Contest(ScraperModel, db.Model):
                 new_contest = {}
                 for field in spreadsheet_row:
                     if field == 'id':
-                        new_contest['contest_id'] = spreadsheet_row[field]
+                        # if the id gets renamed, use contest_id here.
+                        new_contest['id'] = spreadsheet_row[field]
                     elif spreadsheet_row[field] is not None and spreadsheet_row[field] != '':
                         new_contest[field] = spreadsheet_row[field]
                 new_contest['results_group'] = 'supplemental_results'
@@ -824,7 +828,7 @@ class Question(ScraperModel, db.Model):
 
     __tablename__ = "questions"
 
-    question_id = db.Column(db.String(255), primary_key=True, autoincrement=False, nullable=False)
+    id = db.Column(db.String(255), primary_key=True, autoincrement=False, nullable=False)
     contest_id = db.Column(db.String(255))
     title = db.Column(db.String(255))
     sub_title = db.Column(db.String(255))
@@ -835,7 +839,7 @@ class Question(ScraperModel, db.Model):
         super(Question, self).__init__(**kwargs)
     
     def __repr__(self):
-        return '<Question {}>'.format(self.question_id)
+        return '<Question {}>'.format(self.id)
 
     def parser(self, row, group):
 
@@ -885,6 +889,7 @@ class Question(ScraperModel, db.Model):
 
         # Make row
         parsed = {
+            'id': combined_id,
             'question_id': combined_id,
             'contest_id': contest_id,
             'title': row[4],
@@ -899,9 +904,9 @@ class Result(ScraperModel, db.Model):
 
     __tablename__ = "results"
 
-    result_id = db.Column(db.String(255), primary_key=True, autoincrement=False, nullable=False)
+    id = db.Column(db.String(255), primary_key=True, autoincrement=False, nullable=False)
     #contest_id = db.Column(db.String(255))
-    contest_id = db.Column(db.String(255), db.ForeignKey('contests.contest_id'), nullable=False)
+    contest_id = db.Column(db.String(255), db.ForeignKey('contests.id'), nullable=False)
     results_group = db.Column(db.String(255))
     office_name = db.Column(db.String(255))
     candidate_id = db.Column(db.String(255))
@@ -915,7 +920,7 @@ class Result(ScraperModel, db.Model):
     updated = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
 
     def __init__(self, **kwargs):
-        self.result_id = kwargs.get('result_id')
+        self.id = kwargs.get('id')
         self.contest_id = kwargs.get('contest_id')
         self.results_group = kwargs.get('results_group')
         self.office_name = kwargs.get('office_name')
@@ -929,7 +934,7 @@ class Result(ScraperModel, db.Model):
         self.ranked_choice_place = kwargs.get('ranked_choice_place')
     
     def __repr__(self):
-        return '<Result {}>'.format(self.result_id)
+        return '<Result {}>'.format(self.id)
 
     def parser(self, row, group):
         """
@@ -973,6 +978,7 @@ class Result(ScraperModel, db.Model):
                     ranked_choice_place = ranked_choice_translations[c]
 
         parsed = {
+            'id': row_id,
             'result_id': row_id,
             'results_group': group,
             'office_name': row[4],
@@ -1000,7 +1006,7 @@ class Result(ScraperModel, db.Model):
         row_id = str(spreadsheet_row['id'])
 
         # Check for existing result rows
-        results = Result.query.filter_by(result_id=row_id).all()
+        results = Result.query.filter_by(id=row_id).all()
 
         # If valid data
         if row_id is not None and spreadsheet_row['contest_id'] is not None and spreadsheet_row['candidate_id'] is not None:
@@ -1032,8 +1038,9 @@ class Result(ScraperModel, db.Model):
                 # make rows to insert
                 insert_rows = []
                 # Add new row, make sure to mark the row as supplemental
+                # if the id gets renamed, use result_id here instead.
                 insert_result = {
-                    'result_id': row_id,
+                    'id': row_id,
                     'percentage': percentage,
                     'votes_candidate': votes_candidate,
                     'ranked_choice_place': ranked_choice_place,
