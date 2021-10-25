@@ -236,6 +236,54 @@ class ElectionScraper:
         if callable(post_method):
             post_method()
 
+    def raw_csv_supplement_connect(self, source):
+        """
+        Connect to csv hosted somewhere (e.g. S3) with supplemental results
+        """
+        if self.election not in self.sources:
+            return []
+
+        if source not in self.sources[self.election]:
+            return []
+
+        s = self.sources[self.election][source]
+
+        # Get data from URL
+        try:
+            scraped = scraperwiki.scrape(s["url"])
+            reader = unicodecsv.reader(scraped.splitlines(), encoding='utf-8')
+        except Exception, err:
+            self.log.exception('[%s] Error when trying to read URL and parse CSV: %s' % (s['type'], s['url']))
+            raise
+
+        supplemental_rows = []
+
+        csv_data = []
+        for row in reader:
+            csv_data.append(row)
+        
+        headings = []
+        for cell in csv_data[0]:
+            headings.append(cell)
+
+        s_types = {
+            'percentage': float,
+            'votes_candidate': int,
+            'ranked_choice_place': int,
+            'percent_needed': float
+        }
+
+        for row in csv_data[1:]:
+            this_row = {}
+            for i in range(0, len(row)):
+                if headings[i] in s_types and row[i] != "":
+                    this_row[headings[i]] = s_types[headings[i]](row[i])
+                else:
+                    if row[i] == "":
+                        row[i] = None
+                    this_row[headings[i]] = row[i]
+            supplemental_rows.append(this_row)
+        return supplemental_rows
 
     def supplement_connect(self, source):
         """
@@ -567,7 +615,7 @@ class ElectionScraper:
         supplement_update = 0
         supplement_insert = 0
         supplement_delete = 0
-        s_rows = self.supplement_connect('supplemental_results')
+        s_rows = self.raw_csv_supplement_connect('raw_csv_supplemental_results')
         for s in s_rows:
             # Parse some values we know we will look at
             percentage = float(s['percentage']) if s['percentage'] is not None else None
@@ -863,7 +911,7 @@ class ElectionScraper:
                 self.save_meta(m, self.sources[self.election]['meta'][m])
 
         # Get data from Google spreadsheet
-        s_rows = self.supplement_connect('supplemental_contests')
+        s_rows = self.raw_csv_supplement_connect('raw_csv_supplemental_contests')
 
         # Get question data
         try:
