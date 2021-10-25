@@ -650,7 +650,7 @@ class Contest(ScraperModel, db.Model):
                         # Find intersection
                         mcd_boundary_id = self.boundary_make_mcd(r.county_id, parsed_row['district_code'])
                         boundary_url  = 'https://represent-minnesota.herokuapp.com/boundaries/?sets=%s,%s'
-                        request = requests.get(boundary_url % ('hospital-districts-2012', mcd_boundary_id), verify = False)
+                        request = requests.get(boundary_url % ('hospital-districts-2012', mcd_boundary_id), verify = True)
 
                         if request.status_code == 200:
                             r = request.json()
