@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "dc1a4d06296fdb56ed6b97a2c608984678bda5b2e9c4d53c77601edf587c5367"
+            "sha256": "21e279225223ff35efd54502250556b1a7831cb3be9d95d581fe87829f6bcf7c"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -83,7 +83,7 @@
                 "sha256:a0713dc7a1de3f06bc0df5a9567ad19ead2d3d5689b434768a6145bff77c0667",
                 "sha256:f184f0d851d96b6d29297354ed981b7dd71df7ff500d82fa6d11f0856bee8035"
             ],
-            "markers": "python_version < '4' and python_full_version >= '3.6.2'",
+            "markers": "python_full_version >= '3.6.2' and python_full_version < '4.0.0'",
             "version": "==0.3.0"
         },
         "click-plugins": {
@@ -142,19 +142,19 @@
         },
         "google-api-core": {
             "hashes": [
-                "sha256:39ae7ca2208090c2942ebe1b38ca2928441a14b795c725717d38d7e30adb5fbf",
-                "sha256:646d9399c3c478fe475cfe523e84572ab31a340814ea977fb2774eca5a6549a2"
+                "sha256:8d20c8919fa32bfc9e2f67f98def477218102aae6b70e4912818aeb53fd4c256",
+                "sha256:dca67b5e369a5127ec00c8ea02de48517e39c1aad882e2e6d85da8050520cab6"
             ],
             "markers": "python_version >= '3.6'",
-            "version": "==2.1.1"
+            "version": "==2.2.0"
         },
         "google-api-python-client": {
             "hashes": [
-                "sha256:0b1bd4fe6cbe3c22e4ed264cadf257bc981ebc745e959bdf8fd9ae7c3fffb984",
-                "sha256:659e9955f0f1e02fcce5dec85622eb5af1807572ef0f09c49d68d8426da670e7"
+                "sha256:07e6fdfc489a452d79c5efdc4cc2d5cfd7f7aa207dec82786bfcc436b208e027",
+                "sha256:953cbdf88051d1eb5343e11697d2211b25350aa0bbaf239685cc906214a5c452"
             ],
             "markers": "python_version >= '3.6'",
-            "version": "==2.27.0"
+            "version": "==2.28.0"
         },
         "google-auth": {
             "hashes": [
@@ -357,6 +357,37 @@
             ],
             "markers": "python_version >= '3.6'",
             "version": "==2.0.1"
+        },
+        "mo-dots": {
+            "hashes": [
+                "sha256:95b71239e216ecc6fb2e925e22193f9efc367610963cf014719ed0b1a8f18599"
+            ],
+            "version": "==5.57.21262"
+        },
+        "mo-future": {
+            "hashes": [
+                "sha256:ba8eb6e77c71547c3ecd78c472def721058439d5b5766c8ddaa90b0da14f3306"
+            ],
+            "version": "==5.17.21182"
+        },
+        "mo-imports": {
+            "hashes": [
+                "sha256:c2003a03c3bd9c7cebf05620b42b95b063964665ef72b922f5e105c574114142"
+            ],
+            "version": "==5.17.21182"
+        },
+        "mo-parsing": {
+            "hashes": [
+                "sha256:65502ff1dd4400ab190687abc107fc293dbb125eaa894716381aef820786b30e"
+            ],
+            "version": "==6.1.21289"
+        },
+        "mo-sql-parsing": {
+            "hashes": [
+                "sha256:d83ce30b217715aeb73bc4ced4a9ccb7bd5da3b73fa73c6d6f651596908bee4e"
+            ],
+            "index": "pypi",
+            "version": "==6.1.21289"
         },
         "oauth2client": {
             "hashes": [
@@ -597,7 +628,7 @@
                 "sha256:4987c65554f7a2dbf30c18fd48778ef124af6fab771a377103da0585e2336ece",
                 "sha256:c4fdf4019605b6e5423637e01bc9fe4daef873709a7973e195ceba0a62bbc844"
             ],
-            "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4' and python_version < '4'",
+            "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4' and python_full_version < '4.0.0'",
             "version": "==1.26.7"
         },
         "vine": {
@@ -661,7 +692,7 @@
                 "sha256:a0713dc7a1de3f06bc0df5a9567ad19ead2d3d5689b434768a6145bff77c0667",
                 "sha256:f184f0d851d96b6d29297354ed981b7dd71df7ff500d82fa6d11f0856bee8035"
             ],
-            "markers": "python_version < '4' and python_full_version >= '3.6.2'",
+            "markers": "python_full_version >= '3.6.2' and python_full_version < '4.0.0'",
             "version": "==0.3.0"
         },
         "click-plugins": {
