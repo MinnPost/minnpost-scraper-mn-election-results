@@ -15,10 +15,12 @@ log = ScraperLogger('scraper_results').logger
 @bp.route('/query/', methods=['GET', 'POST'])
 def query():
     sql = request.args.get('q', None)
+    parsed = sqlparse.parse(sql)[0]
     cb = request.args.get('callback')
     example_query = 'SELECT * FROM contests WHERE title LIKE \'%governor%\'';
+    sqltype = parsed.get_type()
 
-    if sql in ['', None]:
+    if sqltype != 'SELECT' or parsed in ['', None]:
         return 'Hi, welcome to the election scraper local server. Use a URL like: <a href="/query/?q=%s">/query/?q=%s</a>' % (example_query, example_query);
     #output = json.dumps(sql)
     data = []
