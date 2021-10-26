@@ -1,4 +1,3 @@
-import logging
 import os
 import json
 import re
@@ -17,7 +16,6 @@ from sqlalchemy.sql.expression import Insert
 
 from sheetfu import SpreadsheetApp
 
-LOG = logging.getLogger(__name__)
 scraper_sources_inline = None
 
 class ScraperModel(object):
@@ -144,7 +142,7 @@ class ScraperModel(object):
         return supplemented_rows
 
 
-    @cache.cached(timeout=30, query_string=True)
+    @cache.memoize(50)
     def supplement_connect(self, source):
         """
         Connect to supplemental source (Google spreadsheets) given set.

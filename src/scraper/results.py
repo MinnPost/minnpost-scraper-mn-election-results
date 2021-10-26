@@ -2,6 +2,7 @@ import os
 import logging
 from flask import jsonify, request, current_app
 from src import db
+from src.cache import clear_multiple_keys
 from src.models import Result
 from src.scraper import bp
 #from src.api.auth import token_auth
@@ -70,4 +71,10 @@ def scrape_results():
     # commit supplemental rows
     db.session.commit()
 
-    return "Elections scanned: %s. Rows inserted: %s; Rows updated: %s; Rows deleted: %s. Parsed rows: %s Supplemental rows: %s" % (str(group_count), str(inserted_count), str(updated_count), str(deleted_count), str(parsed_count), str(supplemented_count))
+    result = "Elections scanned: %s. Rows inserted: %s; Rows updated: %s; Rows deleted: %s. Parsed rows: %s Supplemental rows: %s" % (str(group_count), str(inserted_count), str(updated_count), str(deleted_count), str(parsed_count), str(supplemented_count))
+    cache_result = clear_multiple_keys(current_app.config['QUERY_LIST_CACHE_KEY'])
+
+    result = result + cache_result
+
+    return result
+
