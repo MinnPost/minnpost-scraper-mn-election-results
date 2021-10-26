@@ -1,5 +1,4 @@
 import os
-import logging
 from flask import jsonify, request, current_app
 from src import db
 from src.cache import clear_multiple_keys
@@ -7,8 +6,6 @@ from src.models import Result
 from src.scraper import bp
 #from src.api.auth import token_auth
 #from src.api.errors import bad_request
-
-LOG = logging.getLogger(__name__)
 
 newest_election = None
 election = None
@@ -75,6 +72,6 @@ def scrape_results():
     cache_result = clear_multiple_keys(current_app.config['QUERY_LIST_CACHE_KEY'])
 
     result = result + cache_result
-
+    current_app.log.info(result)
     return result
 
