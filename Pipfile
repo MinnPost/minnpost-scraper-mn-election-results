@@ -15,6 +15,7 @@ requests = "==2.26.0"
 sheetfu = "==1.5.4"
 werkzeug = "==2.0.1"
 flask-caching = "==1.10.1"
+sqlparse = "==0.4.2"
 
 [dev-packages]
 "flower =" = "==1.0.0"

@@ -8,6 +8,8 @@ from src.models import Area, Contest, Meta, Question, Result
 from src.api import bp
 from src.api.errors import bad_request
 
+import sqlparse
+
 log = ScraperLogger('scraper_results').logger
 
 @bp.route('/query/', methods=['GET', 'POST'])
