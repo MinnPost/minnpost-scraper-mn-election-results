@@ -668,7 +668,7 @@ class Contest(ScraperModel, db.Model):
 
         # Add to types
         if boundary_type != False and boundary_type not in self.found_boundary_types:
-            current_app.found_boundary_types.append(boundary_type)
+            self.found_boundary_types.append(boundary_type)
 
         # General notice if not found
         if boundary == '':
