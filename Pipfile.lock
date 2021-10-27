@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "211bec7fb880088cf21d626c6b785e6b7a3e18ca7d863007db15f77ef18d0aab"
+            "sha256": "dc1a4d06296fdb56ed6b97a2c608984678bda5b2e9c4d53c77601edf587c5367"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -358,37 +358,6 @@
             "markers": "python_version >= '3.6'",
             "version": "==2.0.1"
         },
-        "mo-dots": {
-            "hashes": [
-                "sha256:95b71239e216ecc6fb2e925e22193f9efc367610963cf014719ed0b1a8f18599"
-            ],
-            "version": "==5.57.21262"
-        },
-        "mo-future": {
-            "hashes": [
-                "sha256:ba8eb6e77c71547c3ecd78c472def721058439d5b5766c8ddaa90b0da14f3306"
-            ],
-            "version": "==5.17.21182"
-        },
-        "mo-imports": {
-            "hashes": [
-                "sha256:c2003a03c3bd9c7cebf05620b42b95b063964665ef72b922f5e105c574114142"
-            ],
-            "version": "==5.17.21182"
-        },
-        "mo-parsing": {
-            "hashes": [
-                "sha256:65502ff1dd4400ab190687abc107fc293dbb125eaa894716381aef820786b30e"
-            ],
-            "version": "==6.1.21289"
-        },
-        "mo-sql-parsing": {
-            "hashes": [
-                "sha256:d83ce30b217715aeb73bc4ced4a9ccb7bd5da3b73fa73c6d6f651596908bee4e"
-            ],
-            "index": "pypi",
-            "version": "==6.1.21289"
-        },
         "oauth2client": {
             "hashes": [
                 "sha256:b8a81cc5d60e2d364f0b1b98f958dbd472887acaf1a5b05e21c28c31a2d6d3ac",
@@ -606,6 +575,14 @@
             ],
             "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4, 3.5'",
             "version": "==1.4.26"
+        },
+        "sqlparse": {
+            "hashes": [
+                "sha256:0c00730c74263a94e5a9919ade150dfc3b19c574389985446148402998287dae",
+                "sha256:48719e356bb8b42991bdbb1e8b83223757b93789c00910a616a071910ca4a64d"
+            ],
+            "index": "pypi",
+            "version": "==0.4.2"
         },
         "uritemplate": {
             "hashes": [

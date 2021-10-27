@@ -9,24 +9,22 @@ from src.models import Area, Contest, Meta, Question, Result
 from src.api import bp
 from src.api.errors import bad_request
 
-#import sqlparse
-from mo_sql_parsing import parse
+import sqlparse
 
 @bp.route('/query/', methods=['GET', 'POST'])
 def query():
     sql = request.args.get('q', None)
+    parsed = sqlparse.parse(sql)[0]
     cb = request.args.get('callback')
     example_query = 'SELECT * FROM contests WHERE title LIKE \'%governor%\'';
-    #current_app.log.info(f"the query is {example_query}")
+    sqltype = parsed.get_type()
+    if sqltype != 'SELECT' or parsed in ['', None]:
+        return 'Hi, welcome to the election scraper local server. Use a URL like: <a href="/query/?q=%s">/query/?q=%s</a>' % (example_query, example_query);
+
     cache_list_key = current_app.config['QUERY_LIST_CACHE_KEY']
     all_cache_keys = cache.get(cache_list_key)
     if all_cache_keys is None:
         all_cache_keys = []
-
-    try:
-        parsed = parse(sql)
-    except Exception:
-        return 'Hi, welcome to the election scraper local server. Use a URL like: <a href="/query/?q=%s">/query/?q=%s</a>' % (example_query, example_query);
 
     cache_key = hashlib.md5(sql.encode('utf-8')).hexdigest()
 
