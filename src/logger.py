@@ -30,5 +30,6 @@ class ScraperLogger:
         fh.setFormatter(self.formatter)
         ch.setFormatter(self.formatter)
 
-        self.logger.addHandler(fh)
-        self.logger.addHandler(ch)
+        if not self.logger.handlers:
+            self.logger.addHandler(fh)
+            self.logger.addHandler(ch)

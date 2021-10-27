@@ -1,4 +1,3 @@
-import logging
 import os
 import json
 import re
@@ -10,20 +9,18 @@ import calendar
 import datetime
 import lxml.html
 from flask import current_app
-from src import cache, db, ScraperLogger
+from src import cache, db
 
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.expression import Insert
 
 from sheetfu import SpreadsheetApp
 
-LOG = logging.getLogger(__name__)
 scraper_sources_inline = None
 
 class ScraperModel(object):
 
     nonpartisan_parties = ['NP', 'WI', 'N P']
-    log = ScraperLogger('scraper_results').logger
 
     def __init__(self, group_type = None):
         """
@@ -93,7 +90,7 @@ class ScraperModel(object):
                 rows = csv.reader(lines, delimiter=';')
                 return rows
             except Exception as err:
-                LOG.exception('[%s] Error when trying to read URL and parse CSV: %s' % (source['type'], source['url']))
+                current_app.log.error('[%s] Error when trying to read URL and parse CSV: %s' % (source['type'], source['url']))
                 raise
 
 
@@ -144,7 +141,7 @@ class ScraperModel(object):
         return supplemented_rows
 
 
-    @cache.cached(timeout=30, query_string=True)
+    @cache.memoize(50)
     def supplement_connect(self, source):
         """
         Connect to supplemental source (Google spreadsheets) given set.
@@ -165,7 +162,7 @@ class ScraperModel(object):
             rows = data_range.get_values()
         except Exception as err:
             rows = None
-            LOG.exception('[%s] Unable to connect to supplemental source: %s' % ('supplement', s))
+            current_app.log.error('[%s] Unable to connect to supplemental source: %s' % ('supplement', s))
 
         # Process the rows into a more usable format.  And handle typing
         s_types = {
@@ -494,7 +491,7 @@ class Contest(ScraperModel, db.Model):
                 boundary = 'congressional-districts-2012/' + parsed_row['district_code']
                 boundary_type = 'congressional-districts-2012'
             else:
-                self.log.info('[%s] Could not find US House boundary for: %s' % ('results', parsed_row['office_name']))
+                current_app.log.info('[%s] Could not find US House boundary for: %s' % ('results', parsed_row['office_name']))
 
         # State Senate districts
         if parsed_row['scope'] == 'state_senate':
@@ -503,7 +500,7 @@ class Contest(ScraperModel, db.Model):
                 boundary = 'state-senate-districts-2012/' + "%02d" % (int(state_senate_match.group(1)),)
                 boundary_type = 'state-senate-districts-2012'
             else:
-                self.log.info('[%s] Could not find State Senate boundary for: %s' % ('results', parsed_row['office_name']))
+                current_app.log.info('[%s] Could not find State Senate boundary for: %s' % ('results', parsed_row['office_name']))
 
         # State House districts
         if parsed_row['scope'] == 'state_house':
@@ -514,7 +511,7 @@ class Contest(ScraperModel, db.Model):
                 boundary = 'state-house-districts-2012/' + district_number + district_letter
                 boundary_type = 'state-house-districts-2012'
             else:
-                self.log.info('[%s] Could not find State House boundary for: %s' % ('results', parsed_row['office_name']))
+                current_app.log.info('[%s] Could not find State House boundary for: %s' % ('results', parsed_row['office_name']))
 
         # State court districts.    Judge - 7th District Court 27
         if parsed_row['scope'] == 'district_court':
@@ -523,7 +520,7 @@ class Contest(ScraperModel, db.Model):
                 boundary = 'district-courts-2012/' + court_match.group(1).lower() + '-1'
                 boundary_type = 'district-courts-2012'
             else:
-                self.log.info('[%s] Could not find State District Court boundary for: %s' % ('results', parsed_row['office_name']))
+                current_app.log.info('[%s] Could not find State District Court boundary for: %s' % ('results', parsed_row['office_name']))
 
         # School district is in the office name. Special school district for
         # Minneapolis is "1-1". Unfortunately SSD1 and ISD1 are essentially the
@@ -565,7 +562,7 @@ class Contest(ScraperModel, db.Model):
                     boundary = 'school-districts-2018/' + "%04d" % (int(ssd_match_value)) + "-1"
                     boundary_type = 'school-districts-2018'
             else:
-                self.log.info('[%s] Could not find (I|S)SD boundary for: %s' % ('results', parsed_row['office_name']))
+                current_app.log.info('[%s] Could not find (I|S)SD boundary for: %s' % ('results', parsed_row['office_name']))
 
         # County should be provided, but the results also have results for county
         # comissioner which are sub-county boundaries
@@ -629,7 +626,7 @@ class Contest(ScraperModel, db.Model):
                             boundaries.append(self.boundary_make_mcd(r.county_id, parsed_row['district_code']))
                         boundary = ','.join(boundaries)
                     else:
-                        self.log.info('[%s] Could not find corresponding county for municipality: %s' % ('results', parsed_row['office_name']))
+                        current_app.log.info('[%s] Could not find corresponding county for municipality: %s' % ('results', parsed_row['office_name']))
 
         # Hospital districts.
         #
@@ -663,19 +660,19 @@ class Contest(ScraperModel, db.Model):
                             break
 
                     if boundary == '':
-                        self.log.info('[%s] Hospital boundary intersection not found: %s' % ('results', parsed_row['title']))
+                        current_app.log.info('[%s] Hospital boundary intersection not found: %s' % ('results', parsed_row['title']))
 
                 else:
-                    self.log.info('[%s] Could not find corresponding county for municpality: %s' % ('results', parsed_row['office_name']))
+                    current_app.log.info('[%s] Could not find corresponding county for municpality: %s' % ('results', parsed_row['office_name']))
 
 
         # Add to types
         if boundary_type != False and boundary_type not in self.found_boundary_types:
-            self.found_boundary_types.append(boundary_type)
+            current_app.found_boundary_types.append(boundary_type)
 
         # General notice if not found
         if boundary == '':
-            self.log.info('[%s] Could not find boundary for: %s' % ('results', parsed_row['office_name']))
+            current_app.log.info('[%s] Could not find boundary for: %s' % ('results', parsed_row['office_name']))
 
         return boundary
 

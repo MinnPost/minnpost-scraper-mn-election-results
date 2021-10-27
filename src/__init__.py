@@ -1,4 +1,3 @@
-import logging
 import os
 from flask import Flask, jsonify, request, current_app
 from flask_celeryext import FlaskCeleryExt
@@ -9,7 +8,6 @@ from src.cache import cache
 from src.logger import ScraperLogger
 
 from config import Config
-
 
 db = SQLAlchemy()
 migrate = Migrate(compare_type=True)
@@ -35,6 +33,8 @@ def create_app(config_class=Config):
 
     #from src.main import bp as main_bp
     #app.register_blueprint(main_bp)
+
+    app.log = ScraperLogger('scraper_results').logger
 
     return app
 
