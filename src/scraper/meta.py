@@ -29,12 +29,13 @@ def scrape_meta():
         source = sources[election][group]
         group_count = group_count + 1
         
-        if 'meta' in sources[election]:
-            rows = sources[election]['meta']
+        if 'type' in source and source['type'] == 'meta':
 
-            for m in rows:
-                row = rows[m]
-                parsed = meta.parser(m, row)
+            rows = meta.parse_election(source, election_meta)
+
+            for row in rows:
+                parsed = meta.parser(row, group)
+
                 meta = Meta()
                 meta.from_dict(parsed, new=True)
 
