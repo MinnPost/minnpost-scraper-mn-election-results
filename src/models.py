@@ -11,6 +11,7 @@ import lxml.html
 from flask import current_app
 from src import cache, db
 
+from sqlalchemy import text
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.expression import Insert
 
@@ -114,6 +115,28 @@ class ScraperModel(object):
         insert_rows = {'action': 'insert', 'rows': []}
         update_rows = {'action': 'update', 'rows': []}
         delete_rows = {'action': 'delete', 'rows': []}
+        meta_rows = {'action': 'meta', 'rows': []}
+
+        if type == 'contests' or type == 'results':
+            updated = {"key" : "updated", "value" : db.func.current_timestamp(), "type" : "int"}
+            meta_rows['rows'].append(updated)
+
+            if type == 'results':
+                sql = text("select count(distinct contest_id) as contest_count from results")
+                result_contests = db.session.execute(sql)
+                result_contest_count = [row[0] for row in result_contests]
+                contest_count = {"key" : "contests", "value" : int(result_contest_count[0]), "type" : "int"}
+                meta_rows['rows'].append(contest_count)
+
+                # Use the first state level race to get general number of precincts reporting
+                state_contest_results = Contest.query.filter_by(county_id='88').first()
+                if state_contest_results is not None:
+                    precincts_reporting = {"key" : "precincts_reporting", "value" : state_contest_results.precincts_reporting, "type" : "int"}
+                    total_effected_precincts = {"key" : "total_effected_precincts", "value" : state_contest_results.total_effected_precincts, "type" : "int"}
+                    meta_rows['rows'].append(precincts_reporting)
+                    meta_rows['rows'].append(total_effected_precincts)
+
+            supplemented_rows.append(meta_rows)
 
         if spreadsheet_rows is None:
             return supplemented_rows

@@ -2,7 +2,7 @@ import os
 from flask import jsonify, request, current_app
 from src import db
 from src.cache import clear_multiple_keys
-from src.models import Result
+from src.models import Result, Meta
 from src.scraper import bp
 #from src.api.auth import token_auth
 #from src.api.errors import bad_request
@@ -49,6 +49,7 @@ def scrape_results():
 
     # Handle post processing actions. this only needs to happen once, not for every group.
     supplemental = result.post_processing('results')
+    meta = Meta()
     for supplemental_result in supplemental:
         rows = supplemental_result['rows']
         action = supplemental_result['action']
@@ -65,6 +66,11 @@ def scrape_results():
                     elif action == 'delete':
                         db.session.delete(row)
                         deleted_count = deleted_count + 1
+                    elif action == 'meta':
+                        parsed = row # it's already in the format we need to save it
+                        meta = Meta()
+                        meta.from_dict(parsed, new=True)
+                        db.session.merge(meta)
     # commit supplemental rows
     db.session.commit()
 

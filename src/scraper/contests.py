@@ -2,7 +2,7 @@ import os
 from flask import jsonify, request, current_app
 from src import db
 from src.cache import clear_multiple_keys
-from src.models import Contest
+from src.models import Contest, Meta
 from src.scraper import bp
 #from src.api.auth import token_auth
 #from src.api.errors import bad_request
@@ -49,6 +49,7 @@ def scrape_contests():
             
     # Handle post processing actions. this only needs to happen once, not for every group.
     supplemental = contest.post_processing('contests')
+    meta = Meta()
     for supplemental_contest in supplemental:
         rows = supplemental_contest['rows']
         action = supplemental_contest['action']
@@ -65,6 +66,11 @@ def scrape_contests():
                     elif action == 'delete':
                         db.session.delete(row)
                         deleted_count = deleted_count + 1
+                    elif action == 'meta':
+                        parsed = row # it's already in the format we need to save it
+                        meta = Meta()
+                        meta.from_dict(parsed, new=True)
+                        db.session.merge(meta)
     # commit supplemental rows
     db.session.commit()
 
