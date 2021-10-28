@@ -1,5 +1,6 @@
 import json
 import hashlib
+import ciso8601
 from datetime import datetime
 from flask import jsonify, request, Response, current_app
 from sqlalchemy import text
@@ -44,6 +45,10 @@ def query():
                 if 'updated' in d:
                     if not isinstance(d['updated'], int):
                         d['updated'] = datetime.timestamp(d['updated'])
+                if 'key' in d and d['key'] == 'updated' and d['type'] == 'int':
+                    if not isinstance(d['value'], int):
+                        date_object = ciso8601.parse_datetime(d['value'])
+                        d['value'] = datetime.timestamp(date_object)
                 data.append(d)
         except exc.SQLAlchemyError:
             pass
