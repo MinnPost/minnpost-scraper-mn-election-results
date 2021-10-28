@@ -19,23 +19,20 @@ def scrape_meta():
     if election not in sources:
         return
 
-    # Get metadata about election
-    election_meta = meta.set_election_metadata()
+    # set row counts
     inserted_count = 0
     parsed_count = 0
     group_count = 0
 
     for group in sources[election]:
-        source = sources[election][group]
         group_count = group_count + 1
         
-        if 'type' in source and source['type'] == 'meta':
+        if 'meta' in sources[election]:
+            rows = sources[election]['meta']
 
-            rows = meta.parse_election(source, election_meta)
-
-            for row in rows:
-                parsed = meta.parser(row, group)
-
+            for m in rows:
+                row = rows[m]
+                parsed = meta.parser(m, row)
                 meta = Meta()
                 meta.from_dict(parsed, new=True)
 
