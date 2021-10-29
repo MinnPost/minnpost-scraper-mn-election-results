@@ -5,12 +5,14 @@ from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 
 from src.cache import cache
+from src.celery_utils import make_celery
 from src.logger import ScraperLogger
 
 from config import Config
 
 db = SQLAlchemy()
 migrate = Migrate(compare_type=True)
+ext_celery = FlaskCeleryExt(create_celery_app=make_celery)
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -19,6 +21,7 @@ def create_app(config_class=Config):
     db.init_app(app)
     migrate.init_app(app, db)
     cache.init_app(app)
+    ext_celery.init_app(app)
 
     #app.task_queue = rq.Queue('microblog-tasks', connection=app.redis)
 

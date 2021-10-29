@@ -1,2 +1,2 @@
 web: gunicorn app:app --log-file=-
-worker: celery worker --app=tasks.app
+worker: celery -A app.celery worker --without-heartbeat --without-gossip --without-mingle --beat --loglevel=INFO
