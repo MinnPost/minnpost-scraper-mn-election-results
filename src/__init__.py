@@ -2,7 +2,6 @@ import os
 from flask import Flask, jsonify, request, current_app
 
 from src.extensions import register_extensions
-from src.controllers import register_blueprints
 
 from config import Config
 
