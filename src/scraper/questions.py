@@ -1,6 +1,6 @@
 import os
 from flask import jsonify, request, current_app
-from src import db
+from src.extensions import db
 from src.cache import clear_multiple_keys
 from src.models import Question
 from src.scraper import bp
