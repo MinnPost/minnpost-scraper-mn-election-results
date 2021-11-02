@@ -1,17 +1,18 @@
-import os
-from flask import jsonify, request, current_app
+import json
+from datetime import datetime
+from datetime import timedelta
+from flask import jsonify, current_app
 from src.extensions import db
+from src.extensions import celery
 from src.cache import clear_multiple_keys
 from src.models import Meta
 from src.scraper import bp
-#from src.api.auth import token_auth
-#from src.api.errors import bad_request
 
 newest_election = None
 election = None
 
-@bp.route('/meta')
-def scrape_meta():
+@celery.task(bind=True)
+def scrape_meta(self):
     meta = Meta()
     sources = meta.read_sources()
     election = meta.set_election()
@@ -42,9 +43,25 @@ def scrape_meta():
             # commit parsed rows
             db.session.commit()
 
-    result = "Elections scanned: %s. Rows inserted: %s. Parsed rows: %s" % (str(group_count), str(inserted_count), str(parsed_count))
-    cache_result = clear_multiple_keys(current_app.config['QUERY_LIST_CACHE_KEY'])
-
-    result = result + cache_result
+    result = {
+        "sources": group_count,
+        "inserted": inserted_count,
+        "parsed": parsed_count,
+        "cache": clear_multiple_keys(current_app.config['QUERY_LIST_CACHE_KEY']),
+        "status": "completed"
+    }
     current_app.log.info(result)
-    return result
+    return json.dumps(result)
+
+
+@bp.route("/meta")
+def meta_index():
+    """Add a new meta scrape task and start running it after 10 seconds."""
+    eta = datetime.utcnow() + timedelta(seconds=10)
+    task = scrape_meta.apply_async(eta=eta)
+    return (
+        jsonify(
+            json.loads(task.get(propagate=False))
+        ),
+        202,
+    )
