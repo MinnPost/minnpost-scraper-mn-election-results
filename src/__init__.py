@@ -1,29 +1,16 @@
 import os
 from flask import Flask, jsonify, request, current_app
-from flask_celeryext import FlaskCeleryExt
-from flask_migrate import Migrate
-from flask_sqlalchemy import SQLAlchemy
 
-from src.cache import cache
-from src.celery_utils import make_celery
-from src.logger import ScraperLogger
+from src.extensions import register_extensions
+from src.controllers import register_blueprints
 
 from config import Config
-
-db = SQLAlchemy()
-migrate = Migrate(compare_type=True)
-ext_celery = FlaskCeleryExt(create_celery_app=make_celery)
 
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
-    db.init_app(app)
-    migrate.init_app(app, db)
-    cache.init_app(app)
-    ext_celery.init_app(app)
-
-    #app.task_queue = rq.Queue('microblog-tasks', connection=app.redis)
+    register_extensions(app)
 
     #from src.errors import bp as errors_bp
     #app.register_blueprint(errors_bp)
@@ -34,10 +21,14 @@ def create_app(config_class=Config):
     from src.api import bp as api_bp
     app.register_blueprint(api_bp, url_prefix='/api')
 
-    #from src.main import bp as main_bp
-    #app.register_blueprint(main_bp)
+    return app
 
-    app.log = ScraperLogger('scraper_results').logger
+def create_worker_app(config_class=Config):
+    """Minimal App without routes for celery worker."""
+    app = Flask(__name__)
+    app.config.from_object(config_class)
+
+    register_extensions(app, worker=True)
 
     return app
 

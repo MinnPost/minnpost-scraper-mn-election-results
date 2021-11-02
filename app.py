@@ -1,8 +1,9 @@
-from src import create_app, db, cli, ext_celery
+from src import create_app, cli
+from src.extensions import db, celery
 from src.models import Area, Contest, Meta, Question, Result
 
 app = create_app()
-celery = ext_celery.celery
+#celery = ext_celery.celery
 cli.register(app)
 
 @app.shell_context_processor

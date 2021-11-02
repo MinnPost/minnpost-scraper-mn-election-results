@@ -5,7 +5,7 @@ from datetime import datetime
 from flask import jsonify, request, Response, current_app
 from sqlalchemy import text
 from sqlalchemy import exc
-from src import cache, db
+from src.extensions import cache, db
 from src.models import Area, Contest, Meta, Question, Result
 from src.api import bp
 from src.api.errors import bad_request
