@@ -66,12 +66,12 @@ def scrape_areas(self):
     return json.dumps(result)
 
 
-def on_raw_message(body):
-    print(body)
+#def on_raw_message(body):
+#    print(body)
 
 
 @bp.route("/areas")
-def index():
+def areas_index():
     """Add a new area scrape task and start running it after 10 seconds."""
     eta = datetime.utcnow() + timedelta(seconds=10)
     task = scrape_areas.apply_async(eta=eta)
@@ -79,7 +79,8 @@ def index():
     return (
         jsonify(
             #{"message": task.get(on_message=on_raw_message, propagate=False)}
-            json.loads(task.get(on_message=on_raw_message, propagate=False))
+            #json.loads(task.get(on_message=on_raw_message, propagate=False))
+            json.loads(task.get(propagate=False))
         ),
         202,
     )
