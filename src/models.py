@@ -9,7 +9,7 @@ import calendar
 import datetime
 import lxml.html
 from flask import current_app
-from src import cache, db
+from src.extensions import cache, db
 
 from sqlalchemy import text
 from sqlalchemy.ext.compiler import compiles
@@ -18,6 +18,12 @@ from sqlalchemy.sql.expression import Insert
 from sheetfu import SpreadsheetApp
 
 scraper_sources_inline = None
+
+
+class Message(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    text = db.Column(db.Unicode(200), nullable=False)
+
 
 class ScraperModel(object):
 

@@ -1,4 +1,5 @@
-from src import create_app, db, cli
+from src import create_app, cli
+from src.extensions import db, celery
 from src.models import Area, Contest, Meta, Question, Result
 
 app = create_app()

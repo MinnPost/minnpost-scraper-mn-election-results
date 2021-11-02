@@ -14,6 +14,7 @@ class Config(object):
     SQLALCHEMY_POOL_TIMEOUT=int(os.environ.get("SQLALCHEMY_POOL_TIMEOUT"))
     CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", "redis://127.0.0.1:6379/0")
     RESULT_BACKEND = os.environ.get("RESULT_BACKEND", "redis://127.0.0.1:6379/0")
+    CELERY_RESULT_BACKEND = RESULT_BACKEND
     CACHE_TYPE = os.environ.get("CACHE_TYPE", "redis")
     CACHE_REDIS_HOST = os.environ.get("CACHE_REDIS_HOST", "redis")
     CACHE_REDIS_PORT = os.environ.get("CACHE_REDIS_PORT", 6379)
