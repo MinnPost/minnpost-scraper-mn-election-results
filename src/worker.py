@@ -1,6 +1,3 @@
-from datetime import datetime
-from datetime import timedelta
-
 from celery import Celery
 from celery.schedules import crontab
 
