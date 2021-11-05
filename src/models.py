@@ -179,11 +179,11 @@ class ScraperModel(object):
         election = self.set_election()
 
         if election not in sources:
-            current_app.log.error('Election missing in sources: %s' % election)
+            current_app.log.info('Election missing in sources: %s' % election)
             return
 
         if source not in sources[election]:
-            current_app.log.error('Source missing in the %s election: %s' % (election, source))
+            current_app.log.info('Source missing in the %s election: %s' % (election, source))
             return
 
         try:
