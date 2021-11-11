@@ -1,6 +1,8 @@
 import json
 from datetime import datetime
 from datetime import timedelta
+import pytz
+from datetimerange import DateTimeRange
 from flask import jsonify, current_app
 from src.extensions import db
 from src.extensions import celery
@@ -86,6 +88,18 @@ def scrape_results(self):
         "status": "completed"
     }
     current_app.log.info(result)
+
+    now = datetime.now(pytz.timezone('America/Chicago'))
+    offset = now.strftime('%z')
+
+    if current_app.config["ELECTION_DAY_RESULT_HOURS_START"] != "" and current_app.config["ELECTION_DAY_RESULT_HOURS_END"] != "":
+        time_range = DateTimeRange(current_app.config["ELECTION_DAY_RESULT_HOURS_START"], current_app.config["ELECTION_DAY_RESULT_HOURS_END"])
+        now_formatted = now.isoformat()
+        if now_formatted in time_range:
+            current_app.log.info("this is during election result hours")
+        else:
+            current_app.log.info("this is not during election result hours")
+
     return json.dumps(result)
 
 

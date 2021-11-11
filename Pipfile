@@ -16,6 +16,7 @@ werkzeug = "==2.0.1"
 flask-caching = "==1.10.1"
 sqlparse = "==0.4.2"
 ciso8601 = "==2.2.0"
+datetimerange = "==1.2.0"
 
 [dev-packages]
 "flower =" = "==1.0.0"
