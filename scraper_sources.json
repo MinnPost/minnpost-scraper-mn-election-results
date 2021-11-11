@@ -1219,6 +1219,15 @@
     "raw_csv_supplemental_contests": {
       "url": "https://s3.amazonaws.com/data.minnpost/projects/minnpost-mn-election-supplements/2021/Election+Results+Supplement+2021-11-02+-+Contests.csv",
       "type": "raw_csv"
+    },
+    "supplemental_contests": {
+      "spreadsheet_id": "1Jkt6UzHh-3h_sT_9VQ2GWu4It9Q96bQyL00j5_R0bqg",
+      "worksheet_id": 0,
+      "notes": "Workesheet ID is the zero-based ID from the order of workssheets and is used to find the actual ID."
+    },
+    "supplemental_results": {
+      "spreadsheet_id": "1Jkt6UzHh-3h_sT_9VQ2GWu4It9Q96bQyL00j5_R0bqg",
+      "worksheet_id": 1
     }
   }
 }
