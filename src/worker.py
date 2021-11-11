@@ -15,6 +15,7 @@ def create_celery(app):
         app.import_name,
         backend=app.config["RESULT_BACKEND"],
         broker=app.config["CELERY_BROKER_URL"],
+        redbeat_redis_url = app.config["REDBEAT_REDIS_URL"],
     )
     celery.conf.update(app.config)
     TaskBase = celery.Task
