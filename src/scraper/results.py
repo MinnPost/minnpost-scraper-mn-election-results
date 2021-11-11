@@ -96,11 +96,9 @@ def scrape_results(self):
         time_range = DateTimeRange(current_app.config["ELECTION_DAY_RESULT_HOURS_START"], current_app.config["ELECTION_DAY_RESULT_HOURS_END"])
         now_formatted = now.isoformat()
         if now_formatted in time_range:
-            print("this is during election result hours")
-            return "this is during election result hours"
+            current_app.log.info("this is during election result hours")
         else:
-            print("this is not during election result hours")
-            return "this is not during election result hours"
+            current_app.log.info("this is not during election result hours")
 
     return json.dumps(result)
 
