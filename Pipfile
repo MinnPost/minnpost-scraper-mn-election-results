@@ -4,15 +4,15 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-celery = "==5.1.2"
-Flask = "==2.0.1"
+celery = "==5.2.0"
+Flask = "==2.0.2"
 Flask-Migrate = "==3.1.0"
 Flask-SQLAlchemy = "==2.5.1"
-psycopg2-binary = "==2.9.1"
+psycopg2-binary = "==2.9.2"
 redis = "==3.5.3"
 requests = "==2.26.0"
 sheetfu = "==1.5.4"
-werkzeug = "==2.0.1"
+werkzeug = "==2.0.2"
 flask-caching = "==1.10.1"
 sqlparse = "==0.4.2"
 ciso8601 = "==2.2.0"
@@ -23,4 +23,4 @@ celery-redbeat = "==2.0.0"
 "flower =" = "==1.0.0"
 
 [requires]
-python_version = "3.9"
+python_version = "3.10"
