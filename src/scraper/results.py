@@ -103,6 +103,7 @@ def scrape_results(self):
             current_app.log.info("check for task")
             try:
                 e = Entry.from_key(prefixed_entry_key)
+                current_app.log.info(e)
                 current_app.log.info("there is a task already. just let it run.")
             except Exception as err:
                 current_app.log.info("create the election result hours task")
@@ -113,8 +114,11 @@ def scrape_results(self):
             current_app.log.info("this is not during election result hours")
             try:
                 e = Entry.from_key(prefixed_entry_key)
-                current_app.log.info("delete the task")
-                e.delete()
+                current_app.log.info(e)
+                current_app.log.info("reset the task to daily")
+                interval = 86400.0
+                e = Entry(entry_key, 'src.scraper.results.scrape_results', interval, app=celery)
+                e.save()
             except Exception as err:
                 current_app.log.info("this task does not exist")
     return json.dumps(result)
