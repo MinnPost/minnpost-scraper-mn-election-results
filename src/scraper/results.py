@@ -4,6 +4,7 @@ from datetime import timedelta
 import pytz
 from datetimerange import DateTimeRange
 from redbeat import RedBeatSchedulerEntry as Entry
+from celery.schedules import schedule
 from flask import jsonify, current_app
 from src.extensions import db
 from src.extensions import celery
@@ -93,34 +94,42 @@ def scrape_results(self):
     now = datetime.now(pytz.timezone('America/Chicago'))
     #offset = now.strftime('%z')
 
-    entry_key = 'scrape_results-election-result-window'
+    entry_key = 'scrape_results_task'
     prefixed_entry_key = 'redbeat:' + entry_key
+    interval = schedule(run_every=current_app.config["DEFAULT_SCRAPE_FREQUENCY"])
 
     if current_app.config["ELECTION_DAY_RESULT_HOURS_START"] != "" and current_app.config["ELECTION_DAY_RESULT_HOURS_END"] != "":
         time_range = DateTimeRange(current_app.config["ELECTION_DAY_RESULT_HOURS_START"], current_app.config["ELECTION_DAY_RESULT_HOURS_END"])
         now_formatted = now.isoformat()
         if now_formatted in time_range:
-            current_app.log.info("check for task")
+            current_app.log.info("this is during election result hours")
+            interval = schedule(run_every=current_app.config["ELECTION_DAY_RESULT_SCRAPE_FREQUENCY"])
             try:
                 e = Entry.from_key(prefixed_entry_key)
-                current_app.log.info(e)
-                current_app.log.info("there is a task already. just let it run.")
+                if e.schedule != interval:
+                    current_app.log.info(f"the current schedule is {e.schedule}. change to {interval}.")
+                    e = Entry(entry_key, 'src.scraper.results.scrape_results', interval, app=celery)
+                    e.save()
+                else:
+                    current_app.log.info(f"the current schedule is already {interval}")
             except Exception as err:
                 current_app.log.info("create the election result hours task")
-                interval = current_app.config["ELECTION_DAY_RESULT_SCRAPE_FREQUENCY"]
                 e = Entry(entry_key, 'src.scraper.results.scrape_results', interval, app=celery)
                 e.save()
         else:
             current_app.log.info("this is not during election result hours")
             try:
                 e = Entry.from_key(prefixed_entry_key)
-                current_app.log.info(e)
-                current_app.log.info("reset the task to daily")
-                interval = 86400.0
+                if e.schedule != interval:
+                    current_app.log.info(f"the current schedule is {e.schedule}. reset to {interval}.")
+                    e = Entry(entry_key, 'src.scraper.results.scrape_results', interval, app=celery)
+                    e.save()
+                else:
+                    current_app.log.info(f"the current schedule is already {interval}")
+            except Exception as err:
+                current_app.log.info("this task does not exist. create it.")
                 e = Entry(entry_key, 'src.scraper.results.scrape_results', interval, app=celery)
                 e.save()
-            except Exception as err:
-                current_app.log.info("this task does not exist")
     return json.dumps(result)
 
 
