@@ -4,6 +4,11 @@ from celery.schedules import schedule
 from redbeat import RedBeatSchedulerEntry as Entry
 
 from . import create_worker_app
+from src.scraper.areas import scrape_areas
+from src.scraper.contests import scrape_contests
+from src.scraper.meta import scrape_meta
+from src.scraper.questions import scrape_questions
+from src.scraper.results import scrape_results
 
 def create_celery(app):
     celery = Celery(
