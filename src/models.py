@@ -7,7 +7,6 @@ import requests
 #import unicodecsv
 import calendar
 import datetime
-import lxml.html
 from flask import current_app
 from src.extensions import cache, db
 
