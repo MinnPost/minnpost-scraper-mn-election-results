@@ -856,12 +856,11 @@ class Contest(ScraperModel, db.Model):
 
     # this handles the key names and value formats for the databse in the event that they are different in the spreadsheet
     def set_db_fields_from_spreadsheet(self, spreadsheet_row):
-        # Parse the values we know we will look at
         spreadsheet_row['id'] = str(spreadsheet_row['id'])
-        spreadsheet_row['incumbent_party'] = spreadsheet_row['incumbent.party']
-        spreadsheet_row['question_help'] = spreadsheet_row['question.help']
-        spreadsheet_row['question_body'] = spreadsheet_row['question.body']
-        spreadsheet_row['precincts_reporting'] = spreadsheet_row['precincts.reporting']
+        spreadsheet_row['incumbent_party'] = spreadsheet_row.get('incumbent.party', "")
+        spreadsheet_row['question_help'] = spreadsheet_row.get('question.help', "")
+        spreadsheet_row['question_body'] = spreadsheet_row.get('question.body', "")
+        spreadsheet_row['precincts_reporting'] = spreadsheet_row.get('precincts.reporting', 0)
         return spreadsheet_row
 
 class Meta(ScraperModel, db.Model):
@@ -1121,13 +1120,12 @@ class Result(ScraperModel, db.Model):
 
     # this handles the key names and value formats for the databse in the event that they are different in the spreadsheet
     def set_db_fields_from_spreadsheet(self, spreadsheet_row):
-        # Parse the values we know we will look at
-        spreadsheet_row['percentage'] = float(spreadsheet_row['percentage']) if spreadsheet_row['percentage'] is not None else None
-        spreadsheet_row['votes_candidate'] = int(spreadsheet_row['votes.candidate']) if spreadsheet_row['votes.candidate'] is not None else 0
-        spreadsheet_row['ranked_choice_place'] = int(spreadsheet_row['ranked.choice.place']) if spreadsheet_row['ranked.choice.place'] is not None else None
-        spreadsheet_row['enabled'] = bool(spreadsheet_row['enabled']) if spreadsheet_row['enabled'] is not None else False
         spreadsheet_row['id'] = str(spreadsheet_row['id'])
-        spreadsheet_row['contest_id'] = spreadsheet_row['contest.id']
-        spreadsheet_row['office_name'] = spreadsheet_row['office.name']
-        spreadsheet_row['candidate_id'] = spreadsheet_row['candidate.id']
+        spreadsheet_row['contest_id'] = spreadsheet_row.get('contest.id', None)
+        spreadsheet_row['candidate_id'] = spreadsheet_row.get('candidate.id', None)
+        spreadsheet_row['office_name'] = spreadsheet_row.get('office.name', None)
+        spreadsheet_row['percentage'] = spreadsheet_row.get('percentage', None)
+        spreadsheet_row['votes_candidate'] = spreadsheet_row.get('votes.candidate', 0)
+        spreadsheet_row['ranked_choice_place'] = spreadsheet_row.get('ranked.choice.place', None)
+        spreadsheet_row['enabled'] = bool(spreadsheet_row.get('enabled', False))
         return spreadsheet_row
