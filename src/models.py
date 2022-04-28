@@ -7,14 +7,13 @@ import requests
 #import unicodecsv
 import calendar
 import datetime
-from flask import current_app
+from datetime import timedelta
+from flask import current_app, request
 from src.extensions import cache, db
 
 from sqlalchemy import text
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.expression import Insert
-
-from sheetfu import SpreadsheetApp
 
 scraper_sources_inline = None
 
@@ -169,7 +168,7 @@ class ScraperModel(object):
         return supplemented_rows
 
 
-    @cache.memoize(50)
+    #@cache.memoize(50)
     def supplement_connect(self, source):
         """
         Connect to supplemental source (Google spreadsheets) given set.
@@ -185,41 +184,68 @@ class ScraperModel(object):
             current_app.log.info('Source missing in the %s election: %s' % (election, source))
             return
 
-        try:
-            s = sources[election][source]
-            client = SpreadsheetApp(from_env=True)
-            spreadsheet = client.open_by_id(s['spreadsheet_id'])
-            sheets = spreadsheet.get_sheets()
-            sheet = sheets[s['worksheet_id']]
-            data_range = sheet.get_data_range()
-            rows = data_range.get_values()
-        except Exception as err:
-            rows = None
-            current_app.log.error('[%s] Unable to connect to supplemental source: %s' % ('supplement', s))
+        data = {}
+        result_json = None
+        result = {}
 
-        # Process the rows into a more usable format.  And handle typing
-        s_types = {
-            'percentage': float,
-            'votes_candidate': int,
-            'ranked_choice_place': int,
-            'percent_needed': float
-        }
-        if rows:
-            if len(rows) > 0:
-                headers = rows[0]
-                data_rows = []
-                for row_key, row in enumerate(rows):
-                    if row_key > 0:
-                        data_row = {}
-                        for field_key, field in enumerate(row):
-                            column = headers[field_key].replace('.', '_')
-                            if field is not None and column in s_types:
-                                data_row[column] = s_types[column](field)
-                            else:
-                                data_row[column] = field
-                        data_rows.append(data_row)
-                return data_rows
-        return rows
+        s = sources[election][source]
+        spreadsheet_id = s["spreadsheet_id"]
+        worksheet_id = str(s["worksheet_id"])
+        cache_timeout = int(current_app.config["API_CACHE_TIMEOUT"])
+        store_in_s3 = current_app.config["STORE_IN_S3"]
+        bypass_cache = current_app.config["BYPASS_API_CACHE"]
+        if spreadsheet_id is not None:
+            api_key = current_app.config["API_KEY"]
+            authorize_url = current_app.config["AUTHORIZE_API_URL"]
+            url = current_app.config["PARSER_API_URL"]
+            if authorize_url != "" and api_key != "" and url != "":
+                token_params = {
+                    "api_key": api_key
+                }
+                token_headers = {'Content-Type': 'application/json'}
+                token_result = requests.post(authorize_url, data=json.dumps(token_params), headers=token_headers)
+                token_json = token_result.json()
+                if token_json["token"]:
+                    token = token_json["token"]
+                    authorized_headers = {"Authorization": f"Bearer {token}"}
+                    result = requests.get(f"{url}?spreadsheet_id={spreadsheet_id}&worksheet_keys={worksheet_id}&external_use_s3={store_in_s3}&bypass_cache={bypass_cache}", headers=authorized_headers)
+                    result_json = result.json()
+                    print(result_json)
+        if result_json is not None and worksheet_id in result_json:
+            data["rows"] = result_json[worksheet_id]
+
+            # set metadata and send the customized json output to the api
+            if "generated" in result_json:
+                data["generated"] = result_json["generated"]
+            data["customized"] = datetime.datetime.now()
+            if cache_timeout != 0:
+                data["cache_timeout"] = data["customized"] + timedelta(seconds=int(cache_timeout))
+            else:
+                data["cache_timeout"] = 0
+            output = json.dumps(data, default=str)
+            
+        if "customized" not in result_json or store_in_s3 == "true":
+            overwrite_url = current_app.config["OVERWRITE_API_URL"]
+            params = {
+                "spreadsheet_id": spreadsheet_id,
+                "worksheet_keys": [worksheet_id],
+                "output": output,
+                "cache_timeout": cache_timeout,
+                "bypass_cache": "true",
+                "external_use_s3": store_in_s3
+            }
+
+            headers = {'Content-Type': 'application/json'}
+            if authorized_headers:
+                headers = headers | authorized_headers
+            result = requests.post(overwrite_url, data=json.dumps(params), headers=headers)
+            result_json = result.json()
+
+            if result_json is not None:
+                #output = json.dumps(result_json, default=str)
+                result = result_json["rows"]
+
+        return result
 
 
 class Area(ScraperModel, db.Model):
@@ -1027,29 +1053,29 @@ class Result(ScraperModel, db.Model):
         return parsed
 
     def supplement_row(self, spreadsheet_row):
+
+        if isinstance(spreadsheet_row, (bytes, bytearray)):
+            spreadsheet_row = json.loads(spreadsheet_row)
+
+        # parse/format the row
+        spreadsheet_row = self.set_db_fields_from_spreadsheet(spreadsheet_row)
         supplemented_row = {}
-        # Parse some values we know we will look at
-        percentage = float(spreadsheet_row['percentage']) if spreadsheet_row['percentage'] is not None else None
-        votes_candidate = int(spreadsheet_row['votes_candidate']) if spreadsheet_row['votes_candidate'] is not None else None
-        ranked_choice_place = int(spreadsheet_row['ranked_choice_place']) if spreadsheet_row['ranked_choice_place'] is not None else None
-        enabled = bool(spreadsheet_row['enabled']) if spreadsheet_row['enabled'] is not None else False
-        row_id = str(spreadsheet_row['id'])
 
         # Check for existing result rows
-        results = Result.query.filter_by(id=row_id).all()
+        results = Result.query.filter_by(id=spreadsheet_row['id']).all()
 
         # If valid data
-        if row_id is not None and spreadsheet_row['contest_id'] is not None and spreadsheet_row['candidate_id'] is not None:
+        if spreadsheet_row['id'] is not None and spreadsheet_row['contest_id'] is not None and spreadsheet_row['candidate_id'] is not None:
             # there are rows in the database to update or delete
             if results != None and results != []:
                 # these rows can be updated
-                if (votes_candidate >= 0) and enabled is True:
+                if (spreadsheet_row['votes_candidate'] >= 0) and spreadsheet_row['enabled'] is True:
                     update_results = []
                     # for each matching row in the database to that spreadsheet row
                     for matching_result in results:
-                        matching_result.percentage = percentage
-                        matching_result.votes_candidate = votes_candidate
-                        matching_result.ranked_choice_place = ranked_choice_place
+                        matching_result.percentage = spreadsheet_row['percentage']
+                        matching_result.votes_candidate = spreadsheet_row['votes_candidate']
+                        matching_result.ranked_choice_place = spreadsheet_row['ranked_choice_place'],
                         if matching_result not in update_results:
                             update_results.append(matching_result)
                     row_result = {
@@ -1057,29 +1083,19 @@ class Result(ScraperModel, db.Model):
                         'rows': update_results
                     }
                     supplemented_row = row_result
-                elif enabled is False and results[0].results_group:
+                elif spreadsheet_row['enabled'] is False and results[0].results_group:
                     # these rows can be deleted
                     delete_result = {
                         'action': 'delete',
                         'rows': results
                     }
                     supplemented_row = delete_result
-            elif (votes_candidate >= 0) and enabled is True:
+            elif (spreadsheet_row['votes_candidate'] >= 0) and spreadsheet_row['enabled'] is True:
                 # make rows to insert
                 insert_rows = []
                 # Add new row, make sure to mark the row as supplemental
-                # if the id gets renamed, use result_id here instead.
-                insert_result = {
-                    'id': row_id,
-                    'percentage': percentage,
-                    'votes_candidate': votes_candidate,
-                    'ranked_choice_place': ranked_choice_place,
-                    'candidate': spreadsheet_row['candidate'],
-                    'office_name': spreadsheet_row['office_name'],
-                    'contest_id': spreadsheet_row['contest_id'],
-                    'candidate_id': spreadsheet_row['candidate_id'],
-                    'results_group': 'supplemental_results'
-                }
+                spreadsheet_row['results_group'] = 'supplemental_results'
+                insert_result = spreadsheet_row
                 result_model = Result(**insert_result)
                 if result_model not in insert_rows:
                     insert_rows.append(result_model)
@@ -1088,5 +1104,18 @@ class Result(ScraperModel, db.Model):
                     'rows': insert_rows
                 }
                 supplemented_row = row_result
-        
+
         return supplemented_row
+
+    # this handles the key names and value formats for the databse in the event that they are different in the spreadsheet
+    def set_db_fields_from_spreadsheet(self, spreadsheet_row):
+        # Parse the values we know we will look at
+        spreadsheet_row['percentage'] = float(spreadsheet_row['percentage']) if spreadsheet_row['percentage'] is not None else None
+        spreadsheet_row['votes_candidate'] = int(spreadsheet_row['votes.candidate']) if spreadsheet_row['votes.candidate'] is not None else 0
+        spreadsheet_row['ranked_choice_place'] = int(spreadsheet_row['ranked.choice.place']) if spreadsheet_row['ranked.choice.place'] is not None else None
+        spreadsheet_row['enabled'] = bool(spreadsheet_row['enabled']) if spreadsheet_row['enabled'] is not None else False
+        spreadsheet_row['id'] = str(spreadsheet_row['id'])
+        spreadsheet_row['contest_id'] = spreadsheet_row['contest.id']
+        spreadsheet_row['office_name'] = spreadsheet_row['office.name']
+        spreadsheet_row['candidate_id'] = spreadsheet_row['candidate.id']
+        return spreadsheet_row
