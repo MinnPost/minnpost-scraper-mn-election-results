@@ -210,7 +210,6 @@ class ScraperModel(object):
                     authorized_headers = {"Authorization": f"Bearer {token}"}
                     result = requests.get(f"{url}?spreadsheet_id={spreadsheet_id}&worksheet_keys={worksheet_id}&external_use_s3={store_in_s3}&bypass_cache={bypass_cache}", headers=authorized_headers)
                     result_json = result.json()
-                    print(result_json)
         if result_json is not None and worksheet_id in result_json:
             data["rows"] = result_json[worksheet_id]
 
@@ -807,14 +806,17 @@ class Contest(ScraperModel, db.Model):
     
     
     def supplement_row(self, spreadsheet_row):
+
+        # parse/format the row
+        spreadsheet_row = self.set_db_fields_from_spreadsheet(spreadsheet_row)
+
         supplemented_row = {}
 
-        # Check for existing result rows
-        row_id = str(spreadsheet_row['id'])
-        results = Contest.query.filter_by(id=row_id).all()
+        # Check for existing contest rows
+        results = Contest.query.filter_by(id=spreadsheet_row['id']).all()
 
         # If valid data
-        if row_id is not None:
+        if spreadsheet_row['id'] is not None:
             # there are rows in the database to update or delete
             if results != None and results != []:
                 update_results = []
@@ -851,6 +853,16 @@ class Contest(ScraperModel, db.Model):
                 }
                 supplemented_row = row_result
         return supplemented_row
+
+    # this handles the key names and value formats for the databse in the event that they are different in the spreadsheet
+    def set_db_fields_from_spreadsheet(self, spreadsheet_row):
+        # Parse the values we know we will look at
+        spreadsheet_row['id'] = str(spreadsheet_row['id'])
+        spreadsheet_row['incumbent_party'] = spreadsheet_row['incumbent.party']
+        spreadsheet_row['question_help'] = spreadsheet_row['question.help']
+        spreadsheet_row['question_body'] = spreadsheet_row['question.body']
+        spreadsheet_row['precincts_reporting'] = spreadsheet_row['precincts.reporting']
+        return spreadsheet_row
 
 class Meta(ScraperModel, db.Model):
 
