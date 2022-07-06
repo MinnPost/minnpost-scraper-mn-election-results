@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-lxml = "==4.6.3"
+lxml = "==4.9.1"
 unicodecsv = "==0.14.1"
 DateTime = "==4.3"
 Flask = "==2.0.1"
