@@ -1158,5 +1158,76 @@
       "spreadsheet_id": "1zGoZ9WDqjnzDmK187YOmuOt_3oyKaHpy9LunZ2SpbPc",
       "worksheet_id": 1
     }
+  },
+  "20211102": {
+    "meta": {
+      "base_url": "https://electionresultsfiles.sos.state.mn.us/20211102/",
+      "date": "2021-11-02",
+      "primary": false
+    },
+    "municipal_results": {
+      "url": "local.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "municipal"
+    },
+    "school_district_results": {
+      "url": "SDRaceQuestions.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "school"
+    },
+    "ballot_questions": {
+      "url": "BallotQuestions.txt",
+      "table": "questions",
+      "type": "questions"
+    },
+    "parties": {
+      "url": "PartyTbl.txt",
+      "table": "parties",
+      "type": "parties"
+    },
+    "local_candidates": {
+      "url": "LocalCandTbl.txt",
+      "table": "candidates",
+      "type": "local_candidates"
+    },
+    "counties": {
+      "url": "Cntytbl.txt",
+      "table": "areas",
+      "type": "areas"
+    },
+    "municipalities": {
+      "url": "MunTbl.txt",
+      "table": "areas",
+      "type": "areas"
+    },
+    "precincts": {
+      "url": "PrctTbl.txt",
+      "table": "areas",
+      "type": "areas"
+    },
+    "school_districts": {
+      "url": "SchoolDistTbl.txt",
+      "table": "areas",
+      "type": "areas"
+    },
+    "raw_csv_supplemental_results": {
+      "url": "https://s3.amazonaws.com/data.minnpost/projects/minnpost-mn-election-supplements/2021/Election+Results+Supplement+2021-11-02+-+Results.csv",
+      "type": "raw_csv"
+    },
+    "raw_csv_supplemental_contests": {
+      "url": "https://s3.amazonaws.com/data.minnpost/projects/minnpost-mn-election-supplements/2021/Election+Results+Supplement+2021-11-02+-+Contests.csv",
+      "type": "raw_csv"
+    },
+    "supplemental_contests": {
+      "spreadsheet_id": "1Jkt6UzHh-3h_sT_9VQ2GWu4It9Q96bQyL00j5_R0bqg",
+      "worksheet_id": 0,
+      "notes": "Workesheet ID is the zero-based ID from the order of workssheets and is used to find the actual ID."
+    },
+    "supplemental_results": {
+      "spreadsheet_id": "1Jkt6UzHh-3h_sT_9VQ2GWu4It9Q96bQyL00j5_R0bqg",
+      "worksheet_id": 1
+    }
   }
 }
