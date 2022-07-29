@@ -1242,8 +1242,14 @@
       "type": "results",
       "contest_scope": "us_house"
     },
-    "us_senate_results": {
-      "url": "ussenate.txt",
+    "governor_results": {
+      "url": "Governor.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "state"
+    },
+    "secretary_results": {
+      "url": "secofstate.txt",
       "table": "results",
       "type": "results",
       "contest_scope": "state"
@@ -1254,23 +1260,17 @@
       "type": "results",
       "contest_scope": "state"
     },
-    "governor_results": {
-      "url": "Governor.txt",
+    "state_senate_results": {
+      "url": "stsenate.txt",
       "table": "results",
       "type": "results",
-      "contest_scope": "state"
+      "contest_scope": "state_senate"
     },
     "state_house_results": {
       "url": "LegislativeByDistrict.txt",
       "table": "results",
       "type": "results",
       "contest_scope": "state_house"
-    },
-    "judicial_results": {
-      "url": "judicialdst.txt",
-      "table": "results",
-      "type": "results",
-      "contest_scope": "district_court"
     },
     "county_results": {
       "url": "cntyRaceQuestions.txt",
@@ -1296,6 +1296,16 @@
       "table": "parties",
       "type": "parties"
     },
+    "counties": {
+      "url": "Cntytbl.txt",
+      "table": "areas",
+      "type": "areas"
+    },
+    "precincts": {
+      "url": "PrctTbl.txt",
+      "table": "areas",
+      "type": "areas"
+    },
     "candidates": {
       "url": "cand.txt",
       "table": "candidates",
@@ -1306,8 +1316,13 @@
       "table": "candidates",
       "type": "local_candidates"
     },
-    "counties": {
-      "url": "Cntytbl.txt",
+    "ballot_questions": {
+      "url": "BallotQuestions.txt",
+      "table": "questions",
+      "type": "questions"
+    },
+    "school_districts": {
+      "url": "SchoolDistTbl.txt",
       "table": "areas",
       "type": "areas"
     },
@@ -1315,21 +1330,6 @@
       "url": "mcdtbl.txt",
       "table": "areas",
       "type": "areas"
-    },
-    "precincts": {
-      "url": "PrctTbl.txt",
-      "table": "areas",
-      "type": "areas"
-    },
-    "school_districts": {
-      "url": "SchoolDistTbl.txt",
-      "table": "areas",
-      "type": "areas"
-    },
-    "ballot_questions": {
-      "url": "BallotQuestions.txt",
-      "table": "questions",
-      "type": "questions"
     }
   }
 }
