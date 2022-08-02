@@ -38,6 +38,13 @@ class ScraperModel(object):
         self.read_sources()
 
 
+    def row2dict(row):
+        return {
+            c.name: str(getattr(row, c.name))
+            for c in row.__table__.columns
+        }
+
+
     def read_sources(self):
         """
         Read the scraper_sources.json file.

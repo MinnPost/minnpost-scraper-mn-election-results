@@ -74,40 +74,204 @@ def query():
     res.headers['Connection'] = 'keep-alive'
     return res
 
+
+@bp.route('/areas/', methods=['GET'])
+@cache.cached(timeout=30, query_string=True)
+def areas():
+    area_id = request.values.get('area_id', None)
+    areas_group = request.values.get('areas_group', None)    
+    data = []
+    if area_id is not None:
+        try:
+            areas = Area.query.filter_by(id=area_id).all()
+            if areas is None:
+                return data
+        except exc.SQLAlchemyError:
+            pass
+    elif areas_group is not None:
+        try:
+            areas = Area.query.filter_by(areas_group=areas_group).all()
+            if areas is None:
+                return data
+        except exc.SQLAlchemyError:
+            pass
+    else:
+        try:
+            areas = Area.query.all()
+            if areas is None:
+                return data
+        except exc.SQLAlchemyError:
+            pass
+
+    data = [Area.row2dict(area) for area in areas]
+    output = json.dumps(data)
+    mime = 'application/json'
+    ctype = 'application/json; charset=UTF-8'
+
+    res = Response(response = output, status = 200, mimetype = mime)
+    res.headers['Content-Type'] = ctype
+    res.headers['Connection'] = 'keep-alive'
+    return res
+
+        
+
 @bp.route('/contests/', methods=['GET', 'POST'])
 @cache.cached(timeout=30, query_string=True)
 def contests():
     if request.method == 'POST':
+        # these are legacy
         title = request.values.get('title', None)
         contest_id = request.values.get('contest_id', None)
     else:
-        # You probably don't have args at this route with GET
-        # method, but if you do, you can access them like so:
-        title = request.args.get('title', None)
-        contest_id = request.args.get('contest_id', None)
-    if 'title' == None and 'contest_id' == None:
-        return bad_request('POST request must include title or contest id')        
+        title = request.values.get('title', None)
+        contest_id = request.values.get('contest_id', None)
     
+    data = []
     if contest_id is not None:
-        data = []
         try:
-            contests = Contest.query.filter_by(id=contest_id).all()
+            contests = Contest.query.join(Result.contests).filter_by(id=contest_id).all()
             if contests is None:
                 return data
-            for row in contests:
-                #d = dict(row)
-                d = row
-                if 'updated' in d:
-                    if not isinstance(d['updated'], int):
-                        d['updated'] = datetime.timestamp(d['updated'])
-                data.append(d)
         except exc.SQLAlchemyError:
             pass
-        output = json.dumps(data)
-        mime = 'application/json'
-        ctype = 'application/json; charset=UTF-8'
+    elif title is not None:
+        try:
+            contests = Contest.query.filter_by(title=title).all()
+            if contests is None:
+                return data
+        except exc.SQLAlchemyError:
+            pass
+    else:
+        try:
+            contests = Contest.query.all()
+            if contests is None:
+                return data
+        except exc.SQLAlchemyError:
+            pass
 
-        res = Response(response = output, status = 200, mimetype = mime)
-        res.headers['Content-Type'] = ctype
-        res.headers['Connection'] = 'keep-alive'
-        return res
+    data = [Contest.row2dict(contest) for contest in contests]
+    output = json.dumps(data)
+    mime = 'application/json'
+    ctype = 'application/json; charset=UTF-8'
+
+    res = Response(response = output, status = 200, mimetype = mime)
+    res.headers['Content-Type'] = ctype
+    res.headers['Connection'] = 'keep-alive'
+    return res
+
+
+@bp.route('/meta/', methods=['GET'])
+@cache.cached(timeout=30, query_string=True)
+def meta():
+    key = request.values.get('key', None)
+    data = []
+    if key is not None:
+        try:
+            meta = Meta.query.filter_by(key=key).all()
+            if meta is None:
+                return data
+        except exc.SQLAlchemyError:
+            pass
+    else:
+        try:
+            meta = Meta.query.all()
+            if meta is None:
+                return data
+        except exc.SQLAlchemyError:
+            pass
+    
+    data = [Meta.row2dict(metaItem) for metaItem in meta]
+    output = json.dumps(data)
+    mime = 'application/json'
+    ctype = 'application/json; charset=UTF-8'
+
+    res = Response(response = output, status = 200, mimetype = mime)
+    res.headers['Content-Type'] = ctype
+    res.headers['Connection'] = 'keep-alive'
+    return res
+
+
+@bp.route('/questions/', methods=['GET'])
+@cache.cached(timeout=30, query_string=True)
+def questions():
+    question_id = request.values.get('question_id', None)
+    contest_id = request.values.get('contest_id', None)
+    
+    data = []
+    if question_id is not None:
+        try:
+            questions = Question.query.filter_by(id=question_id).all()
+            if questions is None:
+                return data
+        except exc.SQLAlchemyError:
+            pass
+    elif contest_id is not None:
+        try:
+            questions = Question.query.filter_by(contest_id=contest_id).all()
+            if questions is None:
+                return data
+        except exc.SQLAlchemyError:
+            pass
+    else:
+        try:
+            questions = Question.query.all()
+            if questions is None:
+                return data
+        except exc.SQLAlchemyError:
+            pass
+
+    data = [Question.row2dict(question) for question in questions]
+    output = json.dumps(data)
+    mime = 'application/json'
+    ctype = 'application/json; charset=UTF-8'
+
+    res = Response(response = output, status = 200, mimetype = mime)
+    res.headers['Content-Type'] = ctype
+    res.headers['Connection'] = 'keep-alive'
+    return res
+
+
+@bp.route('/results/', methods=['GET', 'POST'])
+@cache.cached(timeout=30, query_string=True)
+def results():
+    if request.method == 'POST':
+        # these are legacy
+        result_id = request.values.get('result_id', None)
+        contest_id = request.values.get('contest_id', None)
+    else:
+        result_id = request.values.get('result_id', None)
+        contest_id = request.values.get('contest_id', None)
+    
+    data = []
+    if result_id is not None:
+        try:
+            results = Result.query.filter_by(id=result_id).all()
+            if results is None:
+                return data
+        except exc.SQLAlchemyError:
+            pass
+    elif contest_id is not None:
+        try:
+            results = Result.query.filter_by(contest_id=contest_id).all()
+            if results is None:
+                return data
+        except exc.SQLAlchemyError:
+            pass
+    else:
+        try:
+            results = Result.query.all()
+            if results is None:
+                return data
+        except exc.SQLAlchemyError:
+            pass
+
+    data = [Result.row2dict(result) for result in results]
+    output = json.dumps(data)
+    mime = 'application/json'
+    ctype = 'application/json; charset=UTF-8'
+
+    res = Response(response = output, status = 200, mimetype = mime)
+    res.headers['Content-Type'] = ctype
+    res.headers['Connection'] = 'keep-alive'
+    return res
+
