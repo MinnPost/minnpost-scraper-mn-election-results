@@ -143,9 +143,21 @@ def contests():
         contest_id = request.values.get('contest_id', None)
     
     data = []
+    cache_key_name   = ""
+    cache_key_value  = ""
     if contest_id is not None:
         try:
-            contests = Contest.query.join(Result.contests).filter_by(id=contest_id).all()
+            cache_key_name  = "contest_id"
+            cache_key_value = contest_id
+            cache_key = hashlib.md5((cache_key_name + cache_key_value).encode('utf-8')).hexdigest()
+            cached_output = cache.get(cache_key)
+            if cached_output is not None:
+                current_app.log.info('found cached result for key: %s' % cache_key)
+                contests = cached_output
+            else:
+                current_app.log.info('did not find cached result for key: %s' % cache_key)
+                contests = Contest.query.join(Result.contests).filter_by(id=contest_id).all()
+                cached_output = cache.set(cache_key, contests)
             if contests is None:
                 return data
         except exc.SQLAlchemyError:
@@ -153,7 +165,17 @@ def contests():
     elif title is not None:
         try:
             search = "%{}%".format(title)
-            contests = Contest.query.join(Result.contests).filter(Contest.title.ilike(search)).all()
+            cache_key_name  = "title"
+            cache_key_value = search
+            cache_key = hashlib.md5((cache_key_name + cache_key_value).encode('utf-8')).hexdigest()
+            cached_output = cache.get(cache_key)
+            if cached_output is not None:
+                current_app.log.info('found cached result for key: %s' % cache_key)
+                contests = cached_output
+            else:
+                current_app.log.info('did not find cached result for key: %s' % cache_key)
+                contests = Contest.query.join(Result.contests).filter(Contest.title.ilike(search)).all()
+                cached_output = cache.set(cache_key, contests)
             if contests is None:
                 return data
         except exc.SQLAlchemyError:
@@ -216,19 +238,9 @@ def meta():
 @bp.route('/questions/', methods=['GET'])
 @cache.cached(timeout=30, query_string=True)
 def questions():
-    if request.is_json:
-        # JSON request
-        request_json     = request.get_json()
-        question_id      = request_json.get('question_id')
-        contest_id       = request_json.get('contest_id')
-    elif request.method == 'POST':
-        # form request
-        question_id = request.form.get('question_id', None)
-        contest_id = request.form.get('contest_id', None)
-    else:
-        # GET request
-        question_id = request.values.get('question_id', None)
-        contest_id = request.values.get('contest_id', None)
+    # GET request
+    question_id = request.values.get('question_id', None)
+    contest_id = request.values.get('contest_id', None)
     
     data = []
     if question_id is not None:
@@ -264,22 +276,12 @@ def questions():
     return res
 
 
-@bp.route('/results/', methods=['GET', 'POST'])
+@bp.route('/results/', methods=['GET'])
 @cache.cached(timeout=30, query_string=True)
 def results():
-    if request.is_json:
-        # JSON request
-        request_json     = request.get_json()
-        result_id        = request_json.get('result_id')
-        contest_id       = request_json.get('contest_id')
-    elif request.method == 'POST':
-        # form request
-        result_id  = request.form.get('result_id', None)
-        contest_id = request.form.get('contest_id', None)
-    else:
-        # GET request
-        result_id  = request.values.get('result_id', None)
-        contest_id = request.values.get('contest_id', None)
+    # GET request
+    result_id  = request.values.get('result_id', None)
+    contest_id = request.values.get('contest_id', None)
     
     data = []
     if result_id is not None:
