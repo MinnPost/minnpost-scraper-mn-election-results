@@ -78,8 +78,20 @@ def query():
 @bp.route('/areas/', methods=['GET'])
 @cache.cached(timeout=30, query_string=True)
 def areas():
-    area_id = request.values.get('area_id', None)
-    areas_group = request.values.get('areas_group', None)    
+    if request.is_json:
+        # JSON request
+        request_json     = request.get_json()
+        area_id          = request_json.get('area_id')
+        areas_group      = request_json.get('areas_group')
+    elif request.method == 'POST':
+        # form request
+        area_id = request.form.get('area_id', None)
+        areas_group = request.form.get('areas_group', None)
+    else:
+        # GET request
+        area_id = request.values.get('area_id', None)
+        areas_group = request.values.get('areas_group', None)
+
     data = []
     if area_id is not None:
         try:
@@ -113,16 +125,20 @@ def areas():
     res.headers['Connection'] = 'keep-alive'
     return res
 
-        
 
 @bp.route('/contests/', methods=['GET', 'POST'])
-@cache.cached(timeout=30, query_string=True)
 def contests():
-    if request.method == 'POST':
-        # these are legacy
-        title = request.values.get('title', None)
-        contest_id = request.values.get('contest_id', None)
+    if request.is_json:
+        # JSON request
+        request_json     = request.get_json()
+        title            = request_json.get('title')
+        contest_id       = request_json.get('contest_id')
+    elif request.method == 'POST':
+        # form request
+        title = request.form.get('title', None)
+        contest_id = request.form.get('contest_id', None)
     else:
+        # GET request
         title = request.values.get('title', None)
         contest_id = request.values.get('contest_id', None)
     
@@ -136,7 +152,8 @@ def contests():
             pass
     elif title is not None:
         try:
-            contests = Contest.query.filter_by(title=title).all()
+            search = "%{}%".format(title)
+            contests = Contest.query.join(Result.contests).filter(Contest.title.ilike(search)).all()
             if contests is None:
                 return data
         except exc.SQLAlchemyError:
@@ -180,7 +197,12 @@ def meta():
         except exc.SQLAlchemyError:
             pass
     
-    data = [Meta.row2dict(metaItem) for metaItem in meta]
+    #data = [Meta.row2dict(metaItem) for metaItem in meta]
+    data = {}
+    for metaItem in meta:
+        metaValues = Meta.row2dict(metaItem)
+        data[metaValues["key"]] = metaValues["value"]
+
     output = json.dumps(data)
     mime = 'application/json'
     ctype = 'application/json; charset=UTF-8'
@@ -194,8 +216,19 @@ def meta():
 @bp.route('/questions/', methods=['GET'])
 @cache.cached(timeout=30, query_string=True)
 def questions():
-    question_id = request.values.get('question_id', None)
-    contest_id = request.values.get('contest_id', None)
+    if request.is_json:
+        # JSON request
+        request_json     = request.get_json()
+        question_id      = request_json.get('question_id')
+        contest_id       = request_json.get('contest_id')
+    elif request.method == 'POST':
+        # form request
+        question_id = request.form.get('question_id', None)
+        contest_id = request.form.get('contest_id', None)
+    else:
+        # GET request
+        question_id = request.values.get('question_id', None)
+        contest_id = request.values.get('contest_id', None)
     
     data = []
     if question_id is not None:
@@ -234,12 +267,18 @@ def questions():
 @bp.route('/results/', methods=['GET', 'POST'])
 @cache.cached(timeout=30, query_string=True)
 def results():
-    if request.method == 'POST':
-        # these are legacy
-        result_id = request.values.get('result_id', None)
-        contest_id = request.values.get('contest_id', None)
+    if request.is_json:
+        # JSON request
+        request_json     = request.get_json()
+        result_id        = request_json.get('result_id')
+        contest_id       = request_json.get('contest_id')
+    elif request.method == 'POST':
+        # form request
+        result_id  = request.form.get('result_id', None)
+        contest_id = request.form.get('contest_id', None)
     else:
-        result_id = request.values.get('result_id', None)
+        # GET request
+        result_id  = request.values.get('result_id', None)
         contest_id = request.values.get('contest_id', None)
     
     data = []
