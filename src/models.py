@@ -44,7 +44,7 @@ class ScraperModel(object):
             for c in row.__table__.columns
         }
 
-
+    
     def read_sources(self):
         """
         Read the scraper_sources.json file.
