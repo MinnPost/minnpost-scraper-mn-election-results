@@ -12,6 +12,11 @@ class Config(object):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_POOL_SIZE=int(os.environ.get("SQLALCHEMY_POOL_SIZE"))
     SQLALCHEMY_POOL_TIMEOUT=int(os.environ.get("SQLALCHEMY_POOL_TIMEOUT"))
+    SQLALCHEMY_ECHO=os.environ.get("SQLALCHEMY_ECHO", "false")
+    if SQLALCHEMY_ECHO == "true":
+        SQLALCHEMY_ECHO = True
+    else:
+        SQLALCHEMY_ECHO = False
     CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", "redis://127.0.0.1:6379/0")
     RESULT_BACKEND = os.environ.get("RESULT_BACKEND", "redis://127.0.0.1:6379/0")
     CELERY_RESULT_BACKEND = RESULT_BACKEND

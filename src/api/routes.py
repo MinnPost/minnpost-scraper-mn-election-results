@@ -134,17 +134,21 @@ def contests():
         request_json     = request.get_json()
         title            = request_json.get('title')
         contest_id       = request_json.get('contest_id')
-        contest_ids      = request_json.get('contest_ids').split(',')
+        contest_ids      = request_json.get('contest_ids')
     elif request.method == 'POST':
         # form request
         title = request.form.get('title', None)
         contest_id = request.form.get('contest_id', None)
-        contest_ids = request.form.get('contest_ids', []).split(',')
+        contest_ids = request.form.get('contest_ids', [])
     else:
         # GET request
         title = request.values.get('title', None)
         contest_id = request.values.get('contest_id', None)
-        contest_ids = request.values.get('contest_ids', []).split(',')
+        contest_ids = request.values.get('contest_ids', [])
+
+    # if the contest_ids value is provided on the url, it'll be a string and we need to make it a list
+    if isinstance(contest_ids, str):
+        contest_ids = contest_ids.split(',')
     
     data = []
     cache_key_name   = ""
@@ -184,7 +188,7 @@ def contests():
                 return data
         except exc.SQLAlchemyError:
             pass
-    elif contest_ids is not None:
+    elif len(contest_ids):
         try:
             cache_key_name  = "contest_ids"
             cache_key_value = contest_ids
