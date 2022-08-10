@@ -5,6 +5,7 @@ from datetime import datetime
 from flask import jsonify, request, Response, current_app
 from sqlalchemy import text
 from sqlalchemy import exc
+from sqlalchemy import any_
 from src.extensions import cache, db
 from src.models import Area, Contest, Meta, Question, Result
 from src.api import bp
@@ -133,14 +134,21 @@ def contests():
         request_json     = request.get_json()
         title            = request_json.get('title')
         contest_id       = request_json.get('contest_id')
+        contest_ids      = request_json.get('contest_ids')
     elif request.method == 'POST':
         # form request
         title = request.form.get('title', None)
         contest_id = request.form.get('contest_id', None)
+        contest_ids = request.form.get('contest_ids', [])
     else:
         # GET request
         title = request.values.get('title', None)
         contest_id = request.values.get('contest_id', None)
+        contest_ids = request.values.get('contest_ids', [])
+
+    # if the contest_ids value is provided on the url, it'll be a string and we need to make it a list
+    if isinstance(contest_ids, str):
+        contest_ids = contest_ids.split(',')
     
     data = []
     cache_key_name   = ""
@@ -152,10 +160,10 @@ def contests():
             cache_key = hashlib.md5((cache_key_name + cache_key_value).encode('utf-8')).hexdigest()
             cached_output = cache.get(cache_key)
             if cached_output is not None:
-                current_app.log.info('found cached result for key: %s' % cache_key)
+                current_app.log.info('found cached result for key: %s' % cache_key_name)
                 contests = cached_output
             else:
-                current_app.log.info('did not find cached result for key: %s' % cache_key)
+                current_app.log.info('did not find cached result for key: %s' % cache_key_name)
                 contests = Contest.query.join(Result.contests).filter_by(id=contest_id).all()
                 cached_output = cache.set(cache_key, contests)
             if contests is None:
@@ -170,11 +178,28 @@ def contests():
             cache_key = hashlib.md5((cache_key_name + cache_key_value).encode('utf-8')).hexdigest()
             cached_output = cache.get(cache_key)
             if cached_output is not None:
-                current_app.log.info('found cached result for key: %s' % cache_key)
+                current_app.log.info('found cached result for key: %s' % cache_key_name)
                 contests = cached_output
             else:
-                current_app.log.info('did not find cached result for key: %s' % cache_key)
+                current_app.log.info('did not find cached result for key: %s' % cache_key_name)
                 contests = Contest.query.join(Result.contests).filter(Contest.title.ilike(search)).all()
+                cached_output = cache.set(cache_key, contests)
+            if contests is None:
+                return data
+        except exc.SQLAlchemyError:
+            pass
+    elif len(contest_ids):
+        try:
+            cache_key_name  = "contest_ids"
+            cache_key_value = contest_ids
+            cache_key = hashlib.md5((cache_key_name + str(cache_key_value)).encode('utf-8')).hexdigest()
+            cached_output = cache.get(cache_key)
+            if cached_output is not None:
+                current_app.log.info('found cached result for key: %s' % cache_key_name)
+                contests = cached_output
+            else:
+                current_app.log.info('did not find cached result for key: %s' % cache_key_name)
+                contests = Contest.query.join(Result.contests).filter(Contest.id.ilike(any_(contest_ids))).all()
                 cached_output = cache.set(cache_key, contests)
             if contests is None:
                 return data
@@ -182,7 +207,16 @@ def contests():
             pass
     else:
         try:
-            contests = Contest.query.all()
+            cache_key_name = "all_contests"
+            cache_key = hashlib.md5((cache_key_name).encode('utf-8')).hexdigest()
+            cached_output = cache.get(cache_key)
+            if cached_output is not None:
+                current_app.log.info('found cached result for key: %s' % cache_key_name)
+                contests = cached_output
+            else:
+                current_app.log.info('did not find cached result for key: %s' % cache_key_name)
+                contests = Contest.query.all()
+                cached_output = cache.set(cache_key, contests)
             if contests is None:
                 return data
         except exc.SQLAlchemyError:
