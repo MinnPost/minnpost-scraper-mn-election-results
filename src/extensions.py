@@ -6,18 +6,14 @@ from src.cache import cache
 from src.logger import ScraperLogger
 
 db = SQLAlchemy()
-celery = Celery()
+celery = Celery('scraper')
 migrate = Migrate(compare_type=True)
-
 
 def register_extensions(app, worker=False):
 
     db.init_app(app)
     migrate.init_app(app, db)
     cache.init_app(app)
-
-    # load celery config
-    celery.config_from_object(app.config)
 
     app.log = ScraperLogger('scraper_results').logger
 
