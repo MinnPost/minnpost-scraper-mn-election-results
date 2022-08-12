@@ -61,6 +61,9 @@ class CacheStorage(object):
                 self.delete_cache = args["delete_cache"]
             if "cache_data" in args:
                 self.cache_data = args["cache_data"]
+        # prevent error
+        if self.delete_cache == "true" and self.cache_data == "false":
+            self.bypass_cache = "true"
 
 
     def save(self, key, data, group = None):
@@ -86,11 +89,13 @@ class CacheStorage(object):
             cache.set(hash_cache_key, output, timeout=self.cache_timeout)
             if group != None:
                 cache_group = cache.get(cache_group_key)
-                cache_group_dict = json.loads(cache_group)
-                cache_group_dict.append(key)
-                cache_group_output = json.dumps(cache_group_dict, default=str)
+                cache_group_list = []
+                if cache_group != None:
+                    cache_group_list = json.loads(cache_group)
+                cache_group_list.append(key)
+                cache_group_output = json.dumps(cache_group_list, default=str)
                 cache.set(cache_group_key, cache_group_output, timeout=self.cache_timeout)
-                current_app.log.info(f"Store model data in the cache. The key is {cache_group_key} and the value is {cache_group_output}.")
+                current_app.log.info(f"Store model data list in the cache. The key is {cache_group_key} and the value is {cache_group_output}.")
             
         return output
 

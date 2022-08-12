@@ -236,43 +236,39 @@ def contests():
 
 
 @bp.route('/meta/', methods=['GET'])
-#@cache.cached(timeout=30, query_string=True)
 def meta():
-    meta = Meta()
-    storage = Storage(request.args)
-    class_name = Meta.get_classname()
-    key = request.values.get('key', None)
+    meta_model     = Meta()
+    storage        = Storage(request.args)
+    class_name     = Meta.get_classname()
+    key            = request.values.get('key', None)
+    query_result   = None
 
-    cache_key_name   = ""
+    # set cache key
+    cache_key_name = "all_meta"
     if key is not None:
-        try:
-            cache_key_name = '{}-{}'.format("meta_key", key).lower()
-            cached_output = storage.get(cache_key_name)
-            if cached_output is not None:
-                current_app.log.info('found cached result for meta key: %s' % cache_key_name)
-                output = cached_output
-            else:
-                current_app.log.info('did not find cached result for meta key: %s' % cache_key_name)
-                query_result = Meta.query.filter_by(key=key).all()
-                output = meta.output_for_cache(query_result)
-                output = storage.save(cache_key_name, output, class_name)
+        cache_key_name = '{}-{}'.format("meta_key", key).lower()
 
-        except exc.SQLAlchemyError:
-            pass
+    # check for cached data and set the output, if it exists
+    cached_output = storage.get(cache_key_name)
+    if cached_output is not None:
+        output = cached_output
     else:
-        try:
-            cache_key_name = "all_meta"
-            cached_output = storage.get(cache_key_name)
-            if cached_output is not None:
-                output = cached_output
-            else:
+        # run the queries
+        if key is not None:
+            try:
+                query_result = Meta.query.filter_by(key=key).all()
+            except exc.SQLAlchemyError:
+                pass
+        else:
+            try:
                 query_result = Meta.query.all()
-                output = meta.output_for_cache(query_result)
-                output = storage.save(cache_key_name, output, class_name)
-
-        except exc.SQLAlchemyError:
-            pass
+            except exc.SQLAlchemyError:
+                pass
+        # set the cache and the output from the query result
+        output = meta_model.output_for_cache(query_result)
+        output = storage.save(cache_key_name, output, class_name)
     
+    # set up the response and return it
     mime = 'application/json'
     ctype = 'application/json; charset=UTF-8'
 
