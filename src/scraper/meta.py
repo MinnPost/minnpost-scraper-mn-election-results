@@ -4,7 +4,7 @@ from datetime import timedelta
 from flask import jsonify, current_app
 from src.extensions import db
 from src.extensions import celery
-from src.cache import clear_multiple_keys
+from src.storage import Storage
 from src.models import Meta
 from src.scraper import bp
 
@@ -13,6 +13,7 @@ election = None
 
 @celery.task(bind=True)
 def scrape_meta(self):
+    storage = Storage()
     meta = Meta()
     sources = meta.read_sources()
     election = meta.set_election()
@@ -47,7 +48,7 @@ def scrape_meta(self):
         "sources": group_count,
         "inserted": inserted_count,
         "parsed": parsed_count,
-        "cache": clear_multiple_keys(current_app.config['QUERY_LIST_CACHE_KEY']),
+        "cache": storage.clear(current_app.config['QUERY_LIST_CACHE_KEY']),
         "status": "completed"
     }
     current_app.log.info(result)

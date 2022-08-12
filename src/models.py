@@ -38,11 +38,28 @@ class ScraperModel(object):
         self.read_sources()
 
 
-    def row2dict(row):
+    @classmethod
+    def get_classname(cls):
+        return cls.__name__
+
+
+    def row2dict(self, row):
         return {
             c.name: str(getattr(row, c.name))
             for c in row.__table__.columns
         }
+
+    
+    def output_for_cache(self, query_result):
+        output = {}
+        if query_result is None:
+            return output
+        output["data"] = {}
+        for query_item in query_result:
+            itemValues = self.row2dict(query_item)
+            output["data"][itemValues["key"]] = itemValues["value"]
+        output["generated"] = datetime.datetime.now()
+        return output
 
     
     def read_sources(self):

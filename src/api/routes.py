@@ -1,23 +1,23 @@
 import json
 import hashlib
 import ciso8601
+import sqlparse
 from datetime import datetime
 from flask import jsonify, request, Response, current_app
 from sqlalchemy import text
 from sqlalchemy import exc
 from sqlalchemy import any_
 from src.extensions import cache, db
+from src.storage import Storage
 from src.models import Area, Contest, Meta, Question, Result
 from src.api import bp
 from src.api.errors import bad_request
-
-import sqlparse
 
 @bp.route('/query/', methods=['GET', 'POST'])
 def query():
     sql = request.args.get('q', None)
     parsed = sqlparse.parse(sql)[0]
-    cb = request.args.get('callback')
+    callback = request.args.get('callback')
     example_query = 'SELECT * FROM contests WHERE title LIKE \'%governor%\'';
     sqltype = parsed.get_type()
     if sqltype != 'SELECT' or parsed in ['', None]:
@@ -65,10 +65,12 @@ def query():
     mime = 'application/json'
     ctype = 'application/json; charset=UTF-8'
 
-    if cb is not None:
-        output = '%s(%s);' % (cb, output)
+    if callback is not None:
+        output = '%s(%s);' % (callback, output)
         mime = 'text/javascript'
         ctype = 'text/javascript; charset=UTF-8'
+
+    #response = 
 
     res = Response(response = output, status = 200, mimetype = mime)
     res.headers['Content-Type'] = ctype
@@ -234,32 +236,43 @@ def contests():
 
 
 @bp.route('/meta/', methods=['GET'])
-@cache.cached(timeout=30, query_string=True)
+#@cache.cached(timeout=30, query_string=True)
 def meta():
+    meta = Meta()
+    storage = Storage(request.args)
+    class_name = Meta.get_classname()
     key = request.values.get('key', None)
-    data = []
+
+    cache_key_name   = ""
     if key is not None:
         try:
-            meta = Meta.query.filter_by(key=key).all()
-            if meta is None:
-                return data
+            cache_key_name = '{}-{}'.format("meta_key", key).lower()
+            cached_output = storage.get(cache_key_name)
+            if cached_output is not None:
+                current_app.log.info('found cached result for meta key: %s' % cache_key_name)
+                output = cached_output
+            else:
+                current_app.log.info('did not find cached result for meta key: %s' % cache_key_name)
+                query_result = Meta.query.filter_by(key=key).all()
+                output = meta.output_for_cache(query_result)
+                output = storage.save(cache_key_name, output, class_name)
+
         except exc.SQLAlchemyError:
             pass
     else:
         try:
-            meta = Meta.query.all()
-            if meta is None:
-                return data
+            cache_key_name = "all_meta"
+            cached_output = storage.get(cache_key_name)
+            if cached_output is not None:
+                output = cached_output
+            else:
+                query_result = Meta.query.all()
+                output = meta.output_for_cache(query_result)
+                output = storage.save(cache_key_name, output, class_name)
+
         except exc.SQLAlchemyError:
             pass
     
-    #data = [Meta.row2dict(metaItem) for metaItem in meta]
-    data = {}
-    for metaItem in meta:
-        metaValues = Meta.row2dict(metaItem)
-        data[metaValues["key"]] = metaValues["value"]
-
-    output = json.dumps(data)
     mime = 'application/json'
     ctype = 'application/json; charset=UTF-8'
 
