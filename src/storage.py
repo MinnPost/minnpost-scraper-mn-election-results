@@ -64,7 +64,9 @@ class CacheStorage(object):
 
 
     def save(self, key, data, group = None):
-        hash_cache_key = hashlib.md5((key).encode('utf-8')).hexdigest()
+        if group != None:
+            cache_group_key = '{}-cache-keys'.format(group).lower()
+            data["cache_group"] = cache_group_key
         if self.cache_data == "true":
             if self.cache_timeout is not None and self.cache_timeout != 0:
                 if "generated" in data:
@@ -77,24 +79,18 @@ class CacheStorage(object):
             current_app.log.info(f"Do not cache data for the {key} key.")
         data["cache_key"] = key
         data["loaded_from_cache"] = False
-        data.pop("file_url", None)
         output = json.dumps(data, default=str)
         if self.cache_data == "true":
-            try:
-                current_app.log.info(f"Store data in the cache. The key is {key} and the timeout is {self.cache_timeout}.")
-                cache.set(hash_cache_key, output, timeout=self.cache_timeout)
-
-                if group != None:
-                    cache_group_key = '{}-cache-keys'.format(group).lower()
-                    cache_group = cache.get(cache_group_key)
-                    cache_group_dict = json.loads(cache_group)
-                    cache_group_dict.append(key)
-                    cache_group_output = json.dumps(cache_group_dict, default=str)
-                    cache.set(cache_group_key, cache_group_output, timeout=self.cache_timeout)
-                    current_app.log.info(f"Store model data in the cache. The key is {cache_group_key} and the value is {cache_group_output}.")
-            except Exception as exception:
-                current_app.log.info(f"Failed to save data with key of {key}. Exception was {exception}")
-                pass
+            current_app.log.info(f"Store data in the cache. The key is {key} and value of {output} and the timeout is {self.cache_timeout}.")
+            hash_cache_key = hashlib.md5((key).encode('utf-8')).hexdigest()
+            cache.set(hash_cache_key, output, timeout=self.cache_timeout)
+            if group != None:
+                cache_group = cache.get(cache_group_key)
+                cache_group_dict = json.loads(cache_group)
+                cache_group_dict.append(key)
+                cache_group_output = json.dumps(cache_group_dict, default=str)
+                cache.set(cache_group_key, cache_group_output, timeout=self.cache_timeout)
+                current_app.log.info(f"Store model data in the cache. The key is {cache_group_key} and the value is {cache_group_output}.")
             
         return output
 
@@ -106,11 +102,9 @@ class CacheStorage(object):
         if output != None:
             loaded_from_cache = True
             current_app.log.info(f"Get data from the cache. The key is {key}.")
-
         if self.delete_cache == "true":
             current_app.log.info(f"Delete data from the cache. The key is {key}.")
             cache.delete(key)
-
         if self.bypass_cache == "true":
             output = None
             loaded_from_cache = False
@@ -143,12 +137,8 @@ class CacheStorage(object):
                     data["not_deleted"].append(cache_key)
                     all_cache_keys.remove(cache_key)
 
-        try:
-            cache.set(key_list_name, all_cache_keys)
-            data["saved"].append(all_cache_keys)
-        except Exception as exception:
-            data["deleted"] = []
-            pass
+        cache.set(key_list_name, all_cache_keys)
+        data["saved"].append(all_cache_keys)
         
         output = data
         return output
