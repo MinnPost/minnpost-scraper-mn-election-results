@@ -9,7 +9,7 @@ import calendar
 import datetime
 from datetime import timedelta
 from flask import current_app, request
-from src.extensions import cache, db
+from src.extensions import db
 
 from sqlalchemy import text
 from sqlalchemy.ext.compiler import compiles
@@ -175,7 +175,6 @@ class ScraperModel(object):
         return supplemented_rows
 
 
-    #@cache.memoize(50)
     def supplement_connect(self, source):
         """
         Connect to supplemental source (Google spreadsheets) given set.
@@ -198,16 +197,16 @@ class ScraperModel(object):
         s = sources[election][source]
         spreadsheet_id = s["spreadsheet_id"]
         worksheet_id = str(s["worksheet_id"])
-        cache_timeout = int(current_app.config["API_CACHE_TIMEOUT"])
-        store_in_s3 = current_app.config["STORE_IN_S3"]
-        bypass_cache = current_app.config["BYPASS_API_CACHE"]
+        cache_timeout = int(current_app.config["PARSER_API_CACHE_TIMEOUT"])
+        parser_store_in_s3 = current_app.config["PARSER_STORE_IN_S3"]
+        parser_bypass_cache = current_app.config["PARSER_BYPASS_API_CACHE"]
         if spreadsheet_id is not None:
-            api_key = current_app.config["API_KEY"]
+            parser_api_key = current_app.config["PARSER_API_KEY"]
             authorize_url = current_app.config["AUTHORIZE_API_URL"]
             url = current_app.config["PARSER_API_URL"]
-            if authorize_url != "" and api_key != "" and url != "":
+            if authorize_url != "" and parser_api_key != "" and url != "":
                 token_params = {
-                    "api_key": api_key
+                    "api_key": parser_api_key
                 }
                 token_headers = {'Content-Type': 'application/json'}
                 token_result = requests.post(authorize_url, data=json.dumps(token_params), headers=token_headers)
@@ -215,7 +214,7 @@ class ScraperModel(object):
                 if token_json["token"]:
                     token = token_json["token"]
                     authorized_headers = {"Authorization": f"Bearer {token}"}
-                    result = requests.get(f"{url}?spreadsheet_id={spreadsheet_id}&worksheet_keys={worksheet_id}&external_use_s3={store_in_s3}&bypass_cache={bypass_cache}", headers=authorized_headers)
+                    result = requests.get(f"{url}?spreadsheet_id={spreadsheet_id}&worksheet_keys={worksheet_id}&external_use_s3={parser_store_in_s3}&bypass_cache={parser_bypass_cache}", headers=authorized_headers)
                     result_json = result.json()
         if result_json is not None and worksheet_id in result_json:
             data["rows"] = result_json[worksheet_id]
@@ -230,7 +229,7 @@ class ScraperModel(object):
                 data["cache_timeout"] = 0
             output = json.dumps(data, default=str)
             
-        if "customized" not in result_json or store_in_s3 == "true":
+        if "customized" not in result_json or parser_store_in_s3 == "true":
             overwrite_url = current_app.config["OVERWRITE_API_URL"]
             params = {
                 "spreadsheet_id": spreadsheet_id,
@@ -238,7 +237,7 @@ class ScraperModel(object):
                 "output": output,
                 "cache_timeout": cache_timeout,
                 "bypass_cache": "true",
-                "external_use_s3": store_in_s3
+                "external_use_s3": parser_store_in_s3
             }
 
             headers = {'Content-Type': 'application/json'}
