@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 13.4
--- Dumped by pg_dump version 13.4
+-- Dumped from database version 14.4
+-- Dumped by pg_dump version 14.4
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -21,157 +21,155 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
--- Name: areas; Type: TABLE; Schema: public;
+-- Name: areas; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.areas (
-    id text,
-    areas_group text,
-    county_id text,
-    county_name text,
-    ward_id text,
-    precinct_id text,
-    precinct_name text,
-    state_senate_id text,
-    state_house_id text,
-    county_commissioner_id text,
-    district_court_id text,
-    soil_water_id text,
-    school_district_id text,
-    school_district_name text,
-    mcd_id text,
-    precincts text,
-    name text,
-    updated bigint
+    id character varying(255) NOT NULL,
+    areas_group character varying(255),
+    county_id character varying(255),
+    county_name character varying(255),
+    ward_id character varying(255),
+    precinct_id character varying(255),
+    precinct_name character varying(255),
+    state_senate_id character varying(255),
+    state_house_id character varying(255),
+    county_commissioner_id character varying(255),
+    district_court_id character varying(255),
+    soil_water_id character varying(255),
+    school_district_id character varying(255),
+    school_district_name character varying(255),
+    mcd_id character varying(255),
+    precincts character varying(255),
+    name character varying(255),
+    updated timestamp without time zone
 );
 
+
 --
--- Name: contests; Type: TABLE; Schema: public;
+-- Name: contests; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.contests (
-    id text,
-    office_id text,
-    results_group text,
-    office_name text,
-    district_code text,
-    state text,
-    county_id text,
-    precinct_id text,
+    id character varying(255) NOT NULL,
+    office_id character varying(255),
+    results_group character varying(255),
+    office_name character varying(255),
+    district_code character varying(255),
+    state character varying(255),
+    county_id character varying(255),
+    precinct_id character varying(255),
     precincts_reporting bigint,
     total_effected_precincts bigint,
     total_votes_for_office bigint,
     seats bigint,
+    scope character varying(255),
+    title character varying(255),
+    boundary character varying(255),
+    question_body text,
+    sub_title character varying(255),
+    incumbent_party character varying(255),
+    updated timestamp without time zone,
     ranked_choice boolean,
     "primary" boolean,
-    scope text,
-    updated bigint,
-    title text,
-    boundary text,
     partisan boolean,
-    question_body text,
-    sub_title text
+    called boolean
 );
 
+
 --
--- Name: meta; Type: TABLE; Schema: public;
+-- Name: meta; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.meta (
-    key text,
+    key character varying(255) NOT NULL,
     value text,
-    type text
+    type character varying(255),
+    updated timestamp without time zone
 );
 
+
 --
--- Name: questions; Type: TABLE; Schema: public;
+-- Name: questions; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.questions (
-    id text,
-    contest_id text,
-    title text,
-    sub_title text,
+    id character varying(255) NOT NULL,
+    contest_id character varying(255),
+    title character varying(255),
+    sub_title character varying(255),
     question_body text,
-    updated bigint
+    updated timestamp without time zone
 );
 
 
 --
--- Name: results; Type: TABLE; Schema: public;
+-- Name: results; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.results (
-    id text,
-    results_group text,
-    office_name text,
-    candidate_id text,
-    candidate text,
-    suffix text,
-    incumbent_code text,
-    party_id text,
+    id character varying(255) NOT NULL,
+    contest_id character varying(255) NOT NULL,
+    office_name character varying(255),
+    candidate_id character varying(255),
+    candidate character varying(255),
+    suffix character varying(255),
+    incumbent_code character varying(255),
+    party_id character varying(255),
     votes_candidate bigint,
     percentage double precision,
     ranked_choice_place bigint,
-    contest_id text,
-    updated bigint
+    updated timestamp without time zone,
+    results_group character varying(255)
 );
 
 
 --
--- Name: areas_id_unique; Type: INDEX; Schema: public;
+-- Name: areas area_id_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX areas_id_unique ON public.areas USING btree (id);
-
-
---
--- Name: candidate; Type: INDEX; Schema: public;
---
-
-CREATE INDEX candidate ON public.results USING btree (candidate);
+ALTER TABLE ONLY public.areas
+    ADD CONSTRAINT area_id_pkey PRIMARY KEY (id);
 
 
 --
--- Name: contest_id; Type: INDEX; Schema: public;
+-- Name: contests contest_id_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-CREATE INDEX contest_id ON public.results USING btree (contest_id);
-
-
---
--- Name: contests_id_unique; Type: INDEX; Schema: public;
---
-
-CREATE UNIQUE INDEX contests_id_unique ON public.contests USING btree (id);
+ALTER TABLE ONLY public.contests
+    ADD CONSTRAINT contest_id_pkey PRIMARY KEY (id);
 
 
 --
--- Name: meta_key_unique; Type: INDEX; Schema: public;
+-- Name: meta meta_key_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX meta_key_unique ON public.meta USING btree (key);
-
-
---
--- Name: office_name; Type: INDEX; Schema: public;
---
-
-CREATE INDEX office_name ON public.results USING btree (office_name);
+ALTER TABLE ONLY public.meta
+    ADD CONSTRAINT meta_key_pkey PRIMARY KEY (key);
 
 
 --
--- Name: questions_id_unique; Type: INDEX; Schema: public;
+-- Name: questions question_id_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX questions_id_unique ON public.questions USING btree (id);
+ALTER TABLE ONLY public.questions
+    ADD CONSTRAINT question_id_pkey PRIMARY KEY (id);
 
 
 --
--- Name: results_id_unique; Type: INDEX; Schema: public;
+-- Name: results result_id_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX results_id_unique ON public.results USING btree (id);
+ALTER TABLE ONLY public.results
+    ADD CONSTRAINT result_id_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: results results_contest_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.results
+    ADD CONSTRAINT results_contest_id_fkey FOREIGN KEY (contest_id) REFERENCES public.contests(id);
 
 
 --

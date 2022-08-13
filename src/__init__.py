@@ -20,9 +20,6 @@ def create_app(config_class=Config):
     from src.api import bp as api_bp
     app.register_blueprint(api_bp, url_prefix='/api')
 
-    from src.front_end import bp as front_end_bp
-    app.register_blueprint(front_end_bp, url_prefix='/')
-
     return app
 
 def create_worker_app(config_class=Config):
