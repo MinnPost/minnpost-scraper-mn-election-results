@@ -57,6 +57,7 @@ class CacheStorage(object):
             self.delete_cache = args.get("delete_cache", "false")
             self.cache_data = args.get("cache_data", "true")
             self.cache_timeout = int(args.get("cache_timeout", self.cache_timeout))
+            self.display_cache_data = args.get("display_cache_data", "false")
         else:
             self.bypass_cache = "false"
             self.delete_cache = "false"
@@ -67,6 +68,7 @@ class CacheStorage(object):
                 self.delete_cache = args["delete_cache"]
             if "cache_data" in args:
                 self.cache_data = args["cache_data"]
+            self.display_cache_data = args["display_cache_data"]
         # prevent error
         if self.delete_cache == "true" and self.cache_data == "false":
             self.bypass_cache = "true"
@@ -75,10 +77,11 @@ class CacheStorage(object):
     def save(self, key, data, group = None):
         if group != None:
             cache_group_key = '{}-cache-keys'.format(group).lower()
-            data["cache_group"] = cache_group_key
+            if self.display_cache_data == "true":
+                data["cache_group"] = cache_group_key
         if self.cache_data == "true":
             if self.cache_timeout is not None and self.cache_timeout != 0:
-                if "generated" in data:
+                if "generated" in data and self.display_cache_data == "true":
                     if type(data["generated"]) == str:
                         data["generated"] = datetime.datetime.fromisoformat(data["generated"])
                     data["cache_timeout"] = data["generated"] + timedelta(seconds=int(self.cache_timeout))
@@ -86,8 +89,9 @@ class CacheStorage(object):
                 data["cache_timeout"] = 0
         else:
             current_app.log.info(f"Do not cache data for the {key} key.")
-        data["cache_key"] = key
-        data["loaded_from_cache"] = False
+        if self.display_cache_data == "true":
+            data["cache_key"] = key
+            data["loaded_from_cache"] = False
         output = json.dumps(data, default=str)
         if self.cache_data == "true":
             current_app.log.info(f"Store data in the cache. The key is {key} and the timeout is {self.cache_timeout}.")
@@ -133,7 +137,8 @@ class CacheStorage(object):
             current_app.log.info(f"Cached data for {key} is not available.")
         if output != None:
             output = json.loads(output)
-            output["loaded_from_cache"] = loaded_from_cache
+            if self.display_cache_data == "true":
+                output["loaded_from_cache"] = loaded_from_cache
             output = json.dumps(output, default=str)
         return output
 
@@ -142,12 +147,17 @@ class CacheStorage(object):
         data = {
             "deleted": {}
         }
+        # also have to clear the sql query cache
         if group_name != None:
             cache_group_key = '{}-cache-keys'.format(group_name).lower()
             cache_group = cache.get(cache_group_key)
             cache_group_list = {}
             if cache_group != None:
                 cache_group_list = json.loads(cache_group)
+            query_list_cache = current_app.config['QUERY_LIST_CACHE_KEY']
+            query_cache_keys = cache.get(query_list_cache)
+            if query_cache_keys != None:
+                cache_group_list = {**cache_group_list, **json.loads(query_cache_keys)}
             for cache_key in cache_group_list:
                 current_app.log.info(f"key to check is {cache_key}")
                 deleted = self.delete(cache_key)
