@@ -4,7 +4,7 @@ from datetime import timedelta
 from flask import jsonify, current_app
 from src.extensions import db
 from src.extensions import celery
-from src.cache import clear_multiple_keys
+from src.storage import Storage
 from src.models import Contest, Meta
 from src.scraper import bp
 
@@ -13,9 +13,11 @@ election = None
 
 @celery.task(bind=True)
 def scrape_contests(self):
-    contest = Contest()
-    sources = contest.read_sources()
-    election = contest.set_election()
+    storage    = Storage()
+    contest    = Contest()
+    class_name = Contest.get_classname()
+    sources    = contest.read_sources()
+    election   = contest.set_election()
 
     if election not in sources:
         return
@@ -82,7 +84,7 @@ def scrape_contests(self):
         "deleted": deleted_count,
         "parsed": parsed_count,
         "supplemented": supplemented_count,
-        "cache": clear_multiple_keys(current_app.config['QUERY_LIST_CACHE_KEY']),
+        "cache": storage.clear_group(class_name),
         "status": "completed"
     }
     current_app.log.info(result)

@@ -4,7 +4,7 @@ from datetime import timedelta
 from flask import jsonify, current_app
 from src.extensions import db
 from src.extensions import celery
-from src.cache import clear_multiple_keys
+from src.storage import Storage
 from src.models import Area
 from src.scraper import bp
 
@@ -13,7 +13,9 @@ election = None
 
 @celery.task(bind=True)
 def scrape_areas(self):
-    area = Area()
+    storage    = Storage()
+    area       = Area()
+    class_name = Area.get_classname()
     sources = area.read_sources()
     election = area.set_election()
 
@@ -56,7 +58,7 @@ def scrape_areas(self):
         "sources": group_count,
         "inserted": inserted_count,
         "parsed": parsed_count,
-        "cache": clear_multiple_keys(current_app.config['QUERY_LIST_CACHE_KEY']),
+        "cache": storage.clear_group(class_name),
         "status": "completed"
     }
     #cache_result = clear_multiple_keys(current_app.config['QUERY_LIST_CACHE_KEY'])

@@ -1,74 +1,77 @@
 import json
 import hashlib
 import ciso8601
+import sqlparse
 from datetime import datetime
 from flask import jsonify, request, Response, current_app
 from sqlalchemy import text
 from sqlalchemy import exc
 from sqlalchemy import any_
 from src.extensions import cache, db
+from src.storage import Storage
 from src.models import Area, Contest, Meta, Question, Result
 from src.api import bp
 from src.api.errors import bad_request
 
-import sqlparse
-
 @bp.route('/query/', methods=['GET', 'POST'])
 def query():
+    storage        = Storage(request.args)
     sql = request.args.get('q', None)
+    display_cache_data = request.args.get('display_cache_data', None)
     parsed = sqlparse.parse(sql)[0]
-    cb = request.args.get('callback')
+    callback = request.args.get('callback')
     example_query = 'SELECT * FROM contests WHERE title LIKE \'%governor%\'';
     sqltype = parsed.get_type()
     if sqltype != 'SELECT' or parsed in ['', None]:
-        return 'Hi, welcome to the election scraper local server. Use a URL like: <a href="/query/?q=%s">/query/?q=%s</a>' % (example_query, example_query);
+        return 'Welcome to the election scraper server. Use a URL like: <a href="/query/?q=%s">/query/?q=%s</a>' % (example_query, example_query);
 
+    # check for cached data and set the output, if it exists
     cache_list_key = current_app.config['QUERY_LIST_CACHE_KEY']
-    all_cache_keys = cache.get(cache_list_key)
-    if all_cache_keys is None:
-        all_cache_keys = []
-
-    cache_key = hashlib.md5(sql.encode('utf-8')).hexdigest()
-
-    cached_output = cache.get(cache_key)
+    cache_key = sql
+    cached_output = storage.get(cache_key)
     if cached_output is not None:
         current_app.log.info('found cached result for key: %s' % cache_key)
         output = cached_output
     else:
-        current_app.log.info('did not find cached result for key: %s' % cache_key)
-        data = []
+        current_app.log.info('did not find cached result for key: %s' % cache_list_key)
+        # run the query
         try:
-            results = db.session.execute(sql)    
-            if results is None:
-                return data
-            for row in results:
-                d = dict(row)
-                if 'updated' in d:
-                    if not isinstance(d['updated'], int):
-                        d['updated'] = datetime.timestamp(d['updated'])
-                if 'key' in d and d['key'] == 'updated' and d['type'] == 'int':
-                    if not isinstance(d['value'], int):
-                        date_object = ciso8601.parse_datetime(d['value'])
-                        d['value'] = datetime.timestamp(date_object)
-                data.append(d)
+            query_result = db.session.execute(sql)
         except exc.SQLAlchemyError:
             pass
-        output = json.dumps(data)
-        cached_output = cache.set(cache_key, output)
-        all_cache_keys.append(cache_key)
-        cached_keys_updated = cache.set(cache_list_key, all_cache_keys)
-        if cached_output == True and cached_keys_updated == True:
-            current_app.log.info('create cached result for key: %s and list of keys: %s' % (cache_key, all_cache_keys))
-        else:
-            current_app.log.info('failed to cache data for supplied key')
+        
+        # set the cache and the output from the query result
+        output = {}
+        if display_cache_data == "true":
+            output["data"] = {}
+        for count, row in enumerate(query_result):
+            d = dict(row)
+            if 'updated' in d:
+                if not isinstance(d['updated'], int):
+                    d['updated'] = datetime.timestamp(d['updated'])
+            if 'key' in d and d['key'] == 'updated' and d['type'] == 'int':
+                if not isinstance(d['value'], int):
+                    date_object = ciso8601.parse_datetime(d['value'])
+                    d['value'] = datetime.timestamp(date_object)
+            if display_cache_data == "true":
+                output["data"][count] = d
+            else:
+                output[count] = d
+        if display_cache_data == "true":
+            output["generated"] = datetime.now()
+
+        output = storage.save(cache_key, output, cache_list_key)
     
+    # set up the response and return it
     mime = 'application/json'
     ctype = 'application/json; charset=UTF-8'
 
-    if cb is not None:
-        output = '%s(%s);' % (cb, output)
+    if callback is not None:
+        output = '%s(%s);' % (callback, output)
         mime = 'text/javascript'
         ctype = 'text/javascript; charset=UTF-8'
+
+    #response = 
 
     res = Response(response = output, status = 200, mimetype = mime)
     res.headers['Content-Type'] = ctype
@@ -234,32 +237,39 @@ def contests():
 
 
 @bp.route('/meta/', methods=['GET'])
-@cache.cached(timeout=30, query_string=True)
 def meta():
-    key = request.values.get('key', None)
-    data = []
-    if key is not None:
-        try:
-            meta = Meta.query.filter_by(key=key).all()
-            if meta is None:
-                return data
-        except exc.SQLAlchemyError:
-            pass
-    else:
-        try:
-            meta = Meta.query.all()
-            if meta is None:
-                return data
-        except exc.SQLAlchemyError:
-            pass
-    
-    #data = [Meta.row2dict(metaItem) for metaItem in meta]
-    data = {}
-    for metaItem in meta:
-        metaValues = Meta.row2dict(metaItem)
-        data[metaValues["key"]] = metaValues["value"]
+    meta_model     = Meta()
+    storage        = Storage(request.args)
+    class_name     = Meta.get_classname()
+    key            = request.values.get('key', None)
+    query_result   = None
 
-    output = json.dumps(data)
+    # set cache key
+    cache_key_name = "all_meta"
+    if key is not None:
+        cache_key_name = '{}-{}'.format("meta_key", key).lower()
+
+    # check for cached data and set the output, if it exists
+    cached_output = storage.get(cache_key_name)
+    if cached_output is not None:
+        output = cached_output
+    else:
+        # run the queries
+        if key is not None:
+            try:
+                query_result = Meta.query.filter_by(key=key).all()
+            except exc.SQLAlchemyError:
+                pass
+        else:
+            try:
+                query_result = Meta.query.all()
+            except exc.SQLAlchemyError:
+                pass
+        # set the cache and the output from the query result
+        output = meta_model.output_for_cache(query_result)
+        output = storage.save(cache_key_name, output, class_name)
+    
+    # set up the response and return it
     mime = 'application/json'
     ctype = 'application/json; charset=UTF-8'
 

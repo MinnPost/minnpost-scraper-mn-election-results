@@ -4,7 +4,7 @@ from datetime import timedelta
 from flask import jsonify, current_app
 from src.extensions import db
 from src.extensions import celery
-from src.cache import clear_multiple_keys
+from src.storage import Storage
 from src.models import Question
 from src.scraper import bp
 
@@ -13,9 +13,11 @@ election = None
 
 @celery.task(bind=True)
 def scrape_questions(self):
-    question = Question()
-    sources = question.read_sources()
-    election = question.set_election()
+    storage    = Storage()
+    question   = Question()
+    class_name = Question.get_classname()
+    sources    = question.read_sources()
+    election   = question.set_election()
 
     if election not in sources:
         return
@@ -50,7 +52,7 @@ def scrape_questions(self):
         "sources": group_count,
         "inserted": inserted_count,
         "parsed": parsed_count,
-        "cache": clear_multiple_keys(current_app.config['QUERY_LIST_CACHE_KEY']),
+        "cache": storage.clear_group(class_name),
         "status": "completed"
     }
     current_app.log.info(result)
