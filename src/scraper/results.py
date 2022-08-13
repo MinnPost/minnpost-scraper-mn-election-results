@@ -8,7 +8,7 @@ from celery.schedules import schedule
 from flask import jsonify, current_app
 from src.extensions import db
 from src.extensions import celery
-from src.cache import clear_multiple_keys
+from src.storage import Storage
 from src.models import Result, Meta
 from src.scraper import bp
 
@@ -17,9 +17,11 @@ election = None
 
 @celery.task(bind=True)
 def scrape_results(self):
-    result = Result()
-    sources = result.read_sources()
-    election = result.set_election()
+    storage    = Storage()
+    result     = Result()
+    class_name = Result.get_classname()
+    sources    = result.read_sources()
+    election   = result.set_election()
 
     if election not in sources:
         return
@@ -86,7 +88,7 @@ def scrape_results(self):
         "deleted": deleted_count,
         "parsed": parsed_count,
         "supplemented": supplemented_count,
-        "cache": clear_multiple_keys(current_app.config['QUERY_LIST_CACHE_KEY']),
+        "cache": storage.clear_group(class_name),
         "status": "completed"
     }
     current_app.log.info(result)
