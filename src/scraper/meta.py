@@ -13,10 +13,11 @@ election = None
 
 @celery.task(bind=True)
 def scrape_meta(self):
-    storage = Storage()
-    meta = Meta()
-    sources = meta.read_sources()
-    election = meta.set_election()
+    storage    = Storage()
+    meta       = Meta()
+    class_name = Meta.get_classname()
+    sources    = meta.read_sources()
+    election   = meta.set_election()
 
     if election not in sources:
         return
@@ -48,7 +49,7 @@ def scrape_meta(self):
         "sources": group_count,
         "inserted": inserted_count,
         "parsed": parsed_count,
-        "cache": storage.clear(current_app.config['QUERY_LIST_CACHE_KEY']),
+        "cache": storage.clear_group(class_name),
         "status": "completed"
     }
     current_app.log.info(result)

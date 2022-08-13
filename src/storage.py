@@ -30,15 +30,21 @@ class Storage(object):
         return output
 
 
+    def delete(self, key):
+        class_to_use = self.class_to_use
+        output = class_to_use.delete(key)
+        return output
+
+
     def get(self, key):
         class_to_use = self.class_to_use
         output = class_to_use.get(key)
         return output
 
-
-    def clear(self, key_list_name):
+    
+    def clear_group(self, group_name):
         class_to_use = self.class_to_use
-        output = class_to_use.clear(key_list_name)
+        output = class_to_use.clear_group(group_name)
         return output
 
 
@@ -84,20 +90,31 @@ class CacheStorage(object):
         data["loaded_from_cache"] = False
         output = json.dumps(data, default=str)
         if self.cache_data == "true":
-            current_app.log.info(f"Store data in the cache. The key is {key} and value of {output} and the timeout is {self.cache_timeout}.")
+            current_app.log.info(f"Store data in the cache. The key is {key} and the timeout is {self.cache_timeout}.")
             hash_cache_key = hashlib.md5((key).encode('utf-8')).hexdigest()
             cache.set(hash_cache_key, output, timeout=self.cache_timeout)
             if group != None:
                 cache_group = cache.get(cache_group_key)
-                cache_group_list = []
+                cache_group_list = {}
                 if cache_group != None:
                     cache_group_list = json.loads(cache_group)
-                cache_group_list.append(key)
+                cache_group_list[key] = True
                 cache_group_output = json.dumps(cache_group_list, default=str)
                 cache.set(cache_group_key, cache_group_output, timeout=self.cache_timeout)
                 current_app.log.info(f"Store model data list in the cache. The key is {cache_group_key} and the value is {cache_group_output}.")
             
         return output
+
+
+    def delete(self, key):
+        deleted = False
+        hash_cache_key = hashlib.md5((key).encode('utf-8')).hexdigest()
+        output = cache.get(hash_cache_key)
+        if output != None:
+            current_app.log.info(f"Delete data from the cache. The key is {key}.")
+            cache.delete(hash_cache_key)
+            deleted = True
+        return deleted
 
 
     def get(self, key):
@@ -121,29 +138,25 @@ class CacheStorage(object):
         return output
 
 
-    def clear(self, key_list_name):
+    def clear_group(self, group_name):
         data = {
-            "deleted": [],
-            "not_deleted": [],
-            "saved": []
+            "deleted": {}
         }
-        all_cache_keys = cache.get(key_list_name)
-        if all_cache_keys is None:
-            all_cache_keys = []
-
-        if all_cache_keys != []:
-            for cache_key in all_cache_keys:
-                key_deleted = cache.delete(cache_key)
-
-                if key_deleted == True:
-                    data["deleted"].append(cache_key)
-                    all_cache_keys.remove(cache_key)
+        if group_name != None:
+            cache_group_key = '{}-cache-keys'.format(group_name).lower()
+            cache_group = cache.get(cache_group_key)
+            cache_group_list = {}
+            if cache_group != None:
+                cache_group_list = json.loads(cache_group)
+            for cache_key in cache_group_list:
+                current_app.log.info(f"key to check is {cache_key}")
+                deleted = self.delete(cache_key)
+                if deleted == True:
+                    data["deleted"][cache_key] = True
+                    cache_group_list.pop("cache_key", None)
                 else:
-                    data["not_deleted"].append(cache_key)
-                    all_cache_keys.remove(cache_key)
+                    data["deleted"][cache_key] = False
+            output = json.dumps(cache_group_list, default=str)
+            cache.set(cache_group_key, output, timeout=self.cache_timeout)
 
-        cache.set(key_list_name, all_cache_keys)
-        data["saved"].append(all_cache_keys)
-        
-        output = data
-        return output
+        return data
