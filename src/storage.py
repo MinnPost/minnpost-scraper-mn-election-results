@@ -147,7 +147,6 @@ class CacheStorage(object):
         data = {
             "deleted": {}
         }
-        # also have to clear the sql query cache
         if group_name != None:
             cache_group_key = '{}-cache-keys'.format(group_name).lower()
             cache_group = cache.get(cache_group_key)
@@ -155,7 +154,8 @@ class CacheStorage(object):
             if cache_group != None:
                 cache_group_list = json.loads(cache_group)
             query_list_cache = current_app.config['QUERY_LIST_CACHE_KEY']
-            query_cache_keys = cache.get(query_list_cache)
+            cache_query_key = '{}-cache-keys'.format(query_list_cache).lower()
+            query_cache_keys = cache.get(cache_query_key)
             if query_cache_keys != None:
                 cache_group_list = {**cache_group_list, **json.loads(query_cache_keys)}
             for cache_key in cache_group_list:
