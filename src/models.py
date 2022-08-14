@@ -54,10 +54,7 @@ class ScraperModel(object):
         output = {}
         if query_result is None:
             return output
-        output["data"] = {}
-        for query_item in query_result:
-            itemValues = self.row2dict(query_item)
-            output["data"][itemValues["key"]] = itemValues["value"]
+        output["data"] = [self.row2dict(item) for item in query_result]
         output["generated"] = datetime.datetime.now()
         return output
 
@@ -900,6 +897,17 @@ class Meta(ScraperModel, db.Model):
     
     def __repr__(self):
         return '<Meta {}>'.format(self.key)
+
+    def output_for_cache(self, query_result):
+        output = {}
+        if query_result is None:
+            return output
+        output["data"] = {}
+        for query_item in query_result:
+            itemValues = self.row2dict(query_item)
+            output["data"][itemValues["key"]] = itemValues["value"]
+        output["generated"] = datetime.datetime.now()
+        return output
 
     def parser(self, key, row):
         """
