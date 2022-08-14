@@ -132,6 +132,10 @@ def areas():
 
 @bp.route('/contests/', methods=['GET', 'POST'])
 def contests():
+    contest_model  = Contest()
+    storage        = Storage(request.args)
+    class_name     = Contest.get_classname()
+    query_result   = None
     if request.is_json:
         # JSON request
         request_json     = request.get_json()
@@ -152,81 +156,51 @@ def contests():
     # if the contest_ids value is provided on the url, it'll be a string and we need to make it a list
     if isinstance(contest_ids, str):
         contest_ids = contest_ids.split(',')
-    
-    data = []
-    cache_key_name   = ""
-    cache_key_value  = ""
-    if contest_id is not None:
-        try:
-            cache_key_name  = "contest_id"
-            cache_key_value = contest_id
-            cache_key = hashlib.md5((cache_key_name + cache_key_value).encode('utf-8')).hexdigest()
-            cached_output = cache.get(cache_key)
-            if cached_output is not None:
-                current_app.log.info('found cached result for key: %s' % cache_key_name)
-                contests = cached_output
-            else:
-                current_app.log.info('did not find cached result for key: %s' % cache_key_name)
-                contests = Contest.query.join(Result.contests).filter_by(id=contest_id).all()
-                cached_output = cache.set(cache_key, contests)
-            if contests is None:
-                return data
-        except exc.SQLAlchemyError:
-            pass
-    elif title is not None:
-        try:
-            search = "%{}%".format(title)
-            cache_key_name  = "title"
-            cache_key_value = search
-            cache_key = hashlib.md5((cache_key_name + cache_key_value).encode('utf-8')).hexdigest()
-            cached_output = cache.get(cache_key)
-            if cached_output is not None:
-                current_app.log.info('found cached result for key: %s' % cache_key_name)
-                contests = cached_output
-            else:
-                current_app.log.info('did not find cached result for key: %s' % cache_key_name)
-                contests = Contest.query.join(Result.contests).filter(Contest.title.ilike(search)).all()
-                cached_output = cache.set(cache_key, contests)
-            if contests is None:
-                return data
-        except exc.SQLAlchemyError:
-            pass
-    elif len(contest_ids):
-        try:
-            cache_key_name  = "contest_ids"
-            cache_key_value = contest_ids
-            cache_key = hashlib.md5((cache_key_name + str(cache_key_value)).encode('utf-8')).hexdigest()
-            cached_output = cache.get(cache_key)
-            if cached_output is not None:
-                current_app.log.info('found cached result for key: %s' % cache_key_name)
-                contests = cached_output
-            else:
-                current_app.log.info('did not find cached result for key: %s' % cache_key_name)
-                contests = Contest.query.join(Result.contests).filter(Contest.id.ilike(any_(contest_ids))).all()
-                cached_output = cache.set(cache_key, contests)
-            if contests is None:
-                return data
-        except exc.SQLAlchemyError:
-            pass
-    else:
-        try:
-            cache_key_name = "all_contests"
-            cache_key = hashlib.md5((cache_key_name).encode('utf-8')).hexdigest()
-            cached_output = cache.get(cache_key)
-            if cached_output is not None:
-                current_app.log.info('found cached result for key: %s' % cache_key_name)
-                contests = cached_output
-            else:
-                current_app.log.info('did not find cached result for key: %s' % cache_key_name)
-                contests = Contest.query.all()
-                cached_output = cache.set(cache_key, contests)
-            if contests is None:
-                return data
-        except exc.SQLAlchemyError:
-            pass
 
-    data = [Contest.row2dict(contest) for contest in contests]
-    output = json.dumps(data)
+
+
+    # set cache key
+    if contest_id is not None:
+        cache_key_name  = "contest_id"
+    elif title is not None:
+        cache_key_name  = "title"
+    elif len(contest_ids):
+        cache_key_name  = "contest_ids"
+    else:
+        cache_key_name = "all_contests"
+    
+    # check for cached data and set the output, if it exists
+    cached_output = storage.get(cache_key_name)
+    if cached_output is not None:
+        output = cached_output
+    else:
+        # run the queries
+        if contest_id is not None:
+            try:
+                query_result = Contest.query.join(Result.contests).filter_by(id=contest_id).all()
+            except exc.SQLAlchemyError:
+                pass
+        elif title is not None:
+            try:
+                query_result = Contest.query.join(Result.contests).filter(Contest.title.ilike(search)).all()
+            except exc.SQLAlchemyError:
+                pass
+        elif len(contest_ids):
+            try:
+                query_result = Contest.query.join(Result.contests).filter(Contest.id.ilike(any_(contest_ids))).all()
+            except exc.SQLAlchemyError:
+                pass
+        else:
+            try:
+                query_result = Contest.query.all()
+            except exc.SQLAlchemyError:
+                pass
+        
+        # set the cache and the output from the query result
+        output = contest_model.output_for_cache(query_result)
+        output = storage.save(cache_key_name, output, class_name)
+
+    # set up the response and return it
     mime = 'application/json'
     ctype = 'application/json; charset=UTF-8'
 
