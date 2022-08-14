@@ -15,6 +15,8 @@ from src.api.errors import bad_request
 
 @bp.route('/query/', methods=['GET', 'POST'])
 def query():
+    request.args = request.args.to_dict()
+    request.args["display_cache_data"] = "false"
     storage        = Storage(request.args)
     sql = request.args.get('q', None)
     display_cache_data = request.args.get('display_cache_data', None)
@@ -134,6 +136,8 @@ def areas():
 
 @bp.route('/contests/', methods=['GET', 'POST'])
 def contests():
+    request.args = request.args.to_dict()
+    request.args["display_cache_data"] = "true"
     contest_model  = Contest()
     storage        = Storage(request.args)
     class_name     = Contest.get_classname()
@@ -158,8 +162,6 @@ def contests():
     # if the contest_ids value is provided on the url, it'll be a string and we need to make it a list
     if isinstance(contest_ids, str):
         contest_ids = contest_ids.split(',')
-
-
 
     # set cache key
     if contest_id is not None:
@@ -200,7 +202,7 @@ def contests():
                 pass
         
         # set the cache and the output from the query result
-        output = contest_model.output_for_cache(query_result)
+        output = contest_model.output_for_cache(query_result, request.args)
         output = storage.save(cache_key_name, output, class_name)
 
     # set up the response and return it
@@ -216,6 +218,8 @@ def contests():
 
 @bp.route('/meta/', methods=['GET'])
 def meta():
+    request.args = request.args.to_dict()
+    request.args["display_cache_data"] = "true"
     meta_model     = Meta()
     storage        = Storage(request.args)
     class_name     = Meta.get_classname()
