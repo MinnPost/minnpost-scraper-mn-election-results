@@ -76,6 +76,7 @@ def query():
     res = Response(response = output, status = 200, mimetype = mime)
     res.headers['Content-Type'] = ctype
     res.headers['Connection'] = 'keep-alive'
+    res.headers.add("Access-Control-Allow-Origin", "*")
     return res
 
 
@@ -127,6 +128,7 @@ def areas():
     res = Response(response = output, status = 200, mimetype = mime)
     res.headers['Content-Type'] = ctype
     res.headers['Connection'] = 'keep-alive'
+    res.headers.add("Access-Control-Allow-Origin", "*")
     return res
 
 
@@ -164,6 +166,7 @@ def contests():
         cache_key_name  = "contest_id"
     elif title is not None:
         cache_key_name  = "title"
+        search = "%{}%".format(title)
     elif len(contest_ids):
         cache_key_name  = "contest_ids"
     else:
@@ -207,6 +210,7 @@ def contests():
     res = Response(response = output, status = 200, mimetype = mime)
     res.headers['Content-Type'] = ctype
     res.headers['Connection'] = 'keep-alive'
+    res.headers.add("Access-Control-Allow-Origin", "*")
     return res
 
 
@@ -250,6 +254,7 @@ def meta():
     res = Response(response = output, status = 200, mimetype = mime)
     res.headers['Content-Type'] = ctype
     res.headers['Connection'] = 'keep-alive'
+    res.headers.add("Access-Control-Allow-Origin", "*")
     return res
 
 
@@ -291,6 +296,7 @@ def questions():
     res = Response(response = output, status = 200, mimetype = mime)
     res.headers['Content-Type'] = ctype
     res.headers['Connection'] = 'keep-alive'
+    res.headers.add("Access-Control-Allow-Origin", "*")
     return res
 
 
@@ -332,5 +338,6 @@ def results():
     res = Response(response = output, status = 200, mimetype = mime)
     res.headers['Content-Type'] = ctype
     res.headers['Connection'] = 'keep-alive'
+    res.headers.add("Access-Control-Allow-Origin", "*")
     return res
 
