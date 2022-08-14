@@ -50,12 +50,16 @@ class ScraperModel(object):
         }
 
     
-    def output_for_cache(self, query_result):
+    def output_for_cache(self, query_result, args = {}):
         output = {}
         if query_result is None:
             return output
-        output["data"] = [self.row2dict(item) for item in query_result]
-        output["generated"] = datetime.datetime.now()
+        data = [self.row2dict(item) for item in query_result]
+        if args["display_cache_data"] == "true":
+            output["data"] = data
+            output["generated"] = datetime.datetime.now()
+        else:
+            output = data
         return output
 
     
