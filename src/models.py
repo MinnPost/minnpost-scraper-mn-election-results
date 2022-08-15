@@ -11,7 +11,7 @@ from datetime import timedelta
 from flask import current_app, request
 from src.extensions import db
 
-from sqlalchemy import text
+from sqlalchemy import text, inspect
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.expression import Insert
 
@@ -44,9 +44,13 @@ class ScraperModel(object):
 
 
     def row2dict(self, row):
+        #return {
+        #    c.name: str(getattr(row, c.name))
+        #    for c in row.__table__.columns
+        #}
         return {
-            c.name: str(getattr(row, c.name))
-            for c in row.__table__.columns
+            c.key: getattr(row, c.key)
+            for c in inspect(row).mapper.column_attrs
         }
 
     
@@ -89,7 +93,7 @@ class ScraperModel(object):
             newest_election = str(newest)
             election = newest_election
         election = election if election is not None and election != '' else newest_election
-        current_app.log.info('Set election to: %s' % election)
+        #current_app.log.info('Set election to: %s' % election)
         return election
 
 
@@ -271,6 +275,7 @@ class ScraperModel(object):
 
             if result_json is not None:
                 #output = json.dumps(result_json, default=str)
+                #current_app.log.info('data from sheet: %s' % (result_json))
                 result = result_json["rows"]
 
         return result
