@@ -231,11 +231,14 @@ class ScraperModel(object):
                 token_headers = {'Content-Type': 'application/json'}
                 token_result = requests.post(authorize_url, data=json.dumps(token_params), headers=token_headers)
                 token_json = token_result.json()
-                if token_json["token"]:
+                if "token" in token_json:
                     token = token_json["token"]
                     authorized_headers = {"Authorization": f"Bearer {token}"}
                     result = requests.get(f"{url}?spreadsheet_id={spreadsheet_id}&worksheet_keys={worksheet_id}&external_use_s3={parser_store_in_s3}&bypass_cache={parser_bypass_cache}", headers=authorized_headers)
                     result_json = result.json()
+                else:
+                    current_app.log.info('Error in authorize. Token result is: %s' % token_json)
+                    result_json = None
         if result_json is not None and worksheet_id in result_json:
             data["rows"] = result_json[worksheet_id]
 
@@ -249,7 +252,7 @@ class ScraperModel(object):
                 data["cache_timeout"] = 0
             output = json.dumps(data, default=str)
             
-        if "customized" not in result_json or parser_store_in_s3 == "true":
+        if result_json is not None and "customized" not in result_json or parser_store_in_s3 == "true":
             overwrite_url = current_app.config["OVERWRITE_API_URL"]
             params = {
                 "spreadsheet_id": spreadsheet_id,
