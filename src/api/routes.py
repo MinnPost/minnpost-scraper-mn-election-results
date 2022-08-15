@@ -53,11 +53,11 @@ def query():
                 if not isinstance(d['value'], int):
                     date_object = ciso8601.parse_datetime(d['value'])
                     d['value'] = datetime.timestamp(date_object)
-            #if 'key' in d and d['key'] == 'updated' and d['type'] == 'bool':
-            #    if d['value'] == "true":
-            #        d['value'] = True
-            #    else:
-            #        d['value'] = False
+            if 'value' in d:
+                if d['value'] == "true":
+                    d['value'] = True
+                elif d['value'] == "false":
+                    d['value'] = False
             if display_cache_data == "true":
                 output["data"][count] = d
             else:
