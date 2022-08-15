@@ -82,7 +82,7 @@ def query():
     return res
 
 
-@bp.route('/areas/', methods=['GET'])
+@bp.route('/areas/', methods=['GET', 'POST'])
 def areas():
     request.args = request.args.to_dict()
     request.args["display_cache_data"] = "true"
@@ -104,7 +104,7 @@ def areas():
         area_id = request.values.get('area_id', None)
         areas_group = request.values.get('areas_group', None)
 
-     # set cache key
+    # set cache key
     if area_id is not None:
         cache_key_name  = "area_id"
     elif areas_group is not None:
@@ -277,37 +277,63 @@ def meta():
     return res
 
 
-@bp.route('/questions/', methods=['GET'])
+@bp.route('/questions/', methods=['GET', 'POST'])
 def questions():
-    # GET request
-    question_id = request.values.get('question_id', None)
-    contest_id = request.values.get('contest_id', None)
-    
-    data = []
-    if question_id is not None:
-        try:
-            questions = Question.query.filter_by(id=question_id).all()
-            if questions is None:
-                return data
-        except exc.SQLAlchemyError:
-            pass
-    elif contest_id is not None:
-        try:
-            questions = Question.query.filter_by(contest_id=contest_id).all()
-            if questions is None:
-                return data
-        except exc.SQLAlchemyError:
-            pass
+    request.args = request.args.to_dict()
+    request.args["display_cache_data"] = "true"
+    question_model = Question()
+    storage        = Storage(request.args)
+    class_name     = Question.get_classname()
+    query_result   = None
+    if request.is_json:
+        # JSON request
+        request_json = request.get_json()
+        question_id  = request_json.get('question_id')
+        contest_id   = request_json.get('contest_id')
+    elif request.method == 'POST':
+        # form request
+        question_id = request.form.get('question_id', None)
+        contest_id = request.form.get('contest_id', None)
     else:
-        try:
-            questions = Question.query.all()
-            if questions is None:
-                return data
-        except exc.SQLAlchemyError:
-            pass
+        # GET request
+        question_id = request.values.get('question_id', None)
+        contest_id = request.values.get('contest_id', None)
 
-    data = [Question.row2dict(question) for question in questions]
-    output = json.dumps(data)
+    # set cache key
+    if question_id is not None:
+        cache_key_name  = "question_id"
+    elif contest_id is not None:
+        cache_key_name  = "contest_id"
+    else:
+        cache_key_name = "all_questions"
+
+    # check for cached data and set the output, if it exists
+    cached_output = storage.get(cache_key_name)
+    if cached_output is not None:
+        output = cached_output
+    else:
+        # run the queries
+        if question_id is not None:
+            try:
+                query_result = Question.query.filter_by(id=question_id).all()
+            except exc.SQLAlchemyError:
+                pass
+        elif contest_id is not None:
+            try:
+                query_result = Question.query.filter_by(contest_id=contest_id).all()
+            except exc.SQLAlchemyError:
+                pass
+        else:
+            try:
+                query_result = Question.query.all()
+            except exc.SQLAlchemyError:
+                pass
+
+        # set the cache and the output from the query result
+        output = question_model.output_for_cache(query_result, request.args)
+        output = storage.save(cache_key_name, output, class_name)
+
+    # set up the response and return it
     mime = 'application/json'
     ctype = 'application/json; charset=UTF-8'
 
