@@ -346,35 +346,61 @@ def questions():
 
 @bp.route('/results/', methods=['GET'])
 def results():
-    # GET request
-    result_id  = request.values.get('result_id', None)
-    contest_id = request.values.get('contest_id', None)
-    
-    data = []
-    if result_id is not None:
-        try:
-            results = Result.query.filter_by(id=result_id).all()
-            if results is None:
-                return data
-        except exc.SQLAlchemyError:
-            pass
-    elif contest_id is not None:
-        try:
-            results = Result.query.filter_by(contest_id=contest_id).all()
-            if results is None:
-                return data
-        except exc.SQLAlchemyError:
-            pass
+    request.args = request.args.to_dict()
+    request.args["display_cache_data"] = "true"
+    result_model   = Result()
+    storage        = Storage(request.args)
+    class_name     = Result.get_classname()
+    query_result   = None
+    if request.is_json:
+        # JSON request
+        request_json = request.get_json()
+        result_id  = request_json.get('result_id')
+        contest_id = request_json.get('contest_id')
+    elif request.method == 'POST':
+        # form request
+        result_id  = request.form.get('result_id', None)
+        contest_id = request.form.get('contest_id', None)
     else:
-        try:
-            results = Result.query.all()
-            if results is None:
-                return data
-        except exc.SQLAlchemyError:
-            pass
+        # GET request
+        result_id  = request.values.get('result_id', None)
+        contest_id = request.values.get('contest_id', None)
 
-    data = [Result.row2dict(result) for result in results]
-    output = json.dumps(data)
+    # set cache key
+    if result_id is not None:
+        cache_key_name  = "result_id"
+    elif contest_id is not None:
+        cache_key_name  = "contest_id"
+    else:
+        cache_key_name = "all_results"
+
+    # check for cached data and set the output, if it exists
+    cached_output = storage.get(cache_key_name)
+    if cached_output is not None:
+        output = cached_output
+    else:
+        # run the queries
+        if result_id is not None:
+            try:
+                query_result = Result.query.filter_by(id=result_id).all()
+            except exc.SQLAlchemyError:
+                pass
+        elif contest_id is not None:
+            try:
+                query_result = Result.query.filter_by(contest_id=contest_id).all()
+            except exc.SQLAlchemyError:
+                pass
+        else:
+            try:
+                query_result = Result.query.all()
+            except exc.SQLAlchemyError:
+                pass
+        
+        # set the cache and the output from the query result
+        output = result_model.output_for_cache(query_result, request.args)
+        output = storage.save(cache_key_name, output, class_name)
+
+    # set up the response and return it
     mime = 'application/json'
     ctype = 'application/json; charset=UTF-8'
 
@@ -383,4 +409,3 @@ def results():
     res.headers['Connection'] = 'keep-alive'
     res.headers.add("Access-Control-Allow-Origin", "*")
     return res
-
