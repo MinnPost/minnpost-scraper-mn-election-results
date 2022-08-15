@@ -344,7 +344,7 @@ def questions():
     return res
 
 
-@bp.route('/results/', methods=['GET'])
+@bp.route('/results/', methods=['GET', 'POST'])
 def results():
     request.args = request.args.to_dict()
     request.args["display_cache_data"] = "true"

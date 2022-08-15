@@ -78,16 +78,18 @@ class ScraperModel(object):
         return self.sources
 
 
-    def set_election(self):
-        # Get the newest set
-        newest = 0
-        for s in self.sources:
-            newest = int(s) if int(s) > newest else newest
+    def set_election(self, election = None):
+        election = current_app.config["ELECTION_DATE_OVERRIDE"]
+        if election == None:
+            # Get the newest set
+            newest = 0
+            for s in self.sources:
+                newest = int(s) if int(s) > newest else newest
 
-        newest_election = str(newest)
-        election = newest_election
-        # Usually we just want the newest election but allow for other situations
+            newest_election = str(newest)
+            election = newest_election
         election = election if election is not None and election != '' else newest_election
+        current_app.log.info('Set election to: %s' % election)
         return election
 
 
