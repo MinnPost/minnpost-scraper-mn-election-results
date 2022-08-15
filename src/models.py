@@ -377,6 +377,64 @@ class Area(ScraperModel, db.Model):
 
         return parsed
 
+
+class Election(ScraperModel, db.Model):
+
+    __tablename__ = "elections"
+
+    id = db.Column(db.String(255), primary_key=True, autoincrement=False, nullable=False)
+    base_url = db.Column(db.String(255))
+    election_date = db.Column(db.String(255))
+    contest_count = db.Column(db.BigInteger())
+    primary = db.Column(db.Boolean())
+    updated = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+
+    def __init__(self, **kwargs):
+        self.id = kwargs.get('id')
+        self.base_url = kwargs.get('base_url')
+        self.election_date = kwargs.get('election_date')
+        self.contest_count = kwargs.get('contest_count')
+        self.primary = kwargs.get('primary')
+    
+    def __repr__(self):
+        return '<Election {}>'.format(self.id)
+
+    def parser(self, row, group, source):
+        """
+        Parser for contest scraping.
+        """
+
+        election_meta = self.set_election_metadata()
+
+        # base url is stored in the meta
+        base_url = election_meta['base_url'] if 'base_url' in election_meta else row[0]
+
+        # election date is stored in the meta
+        election_date = election_meta['date'] if 'date' in election_meta else row[1]
+
+        # Create ids.
+        # id-date (the meta is base_url date primary)
+        election_id = 'id-' + election_date
+
+        contest_count = row[2]
+
+        # Primary is not designated in any way, but we can make some initial
+        # guesses. All contests in an election are considered primary, but
+        # non-partisan ones only mean there is more than one seat available.
+        primary = election_meta['primary'] if 'primary' in election_meta else row[3]
+
+        parsed = {
+            'id': election_id,
+            'base_url': base_url,
+            'election_date': election_date,
+            'contest_count': int(contest_count) if contest_count is not None else 0,
+            'primary': primary
+        }
+
+        # Return election record
+        return parsed
+
+
 class Contest(ScraperModel, db.Model):
 
     __tablename__ = "contests"

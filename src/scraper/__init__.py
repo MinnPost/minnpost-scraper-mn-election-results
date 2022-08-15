@@ -2,4 +2,4 @@ from flask import Blueprint
 
 bp = Blueprint('scraper', __name__)
 
-from src.scraper import areas, contests, meta, questions, results
+from src.scraper import areas, contests, elections, meta, questions, results
