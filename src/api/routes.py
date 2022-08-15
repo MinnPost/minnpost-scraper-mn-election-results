@@ -7,7 +7,7 @@ from flask import jsonify, request, Response, current_app
 from sqlalchemy import text
 from sqlalchemy import exc
 from sqlalchemy import any_
-from src.extensions import cache, db
+from src.extensions import db
 from src.storage import Storage
 from src.models import Area, Contest, Meta, Question, Result
 from src.api import bp
@@ -83,8 +83,13 @@ def query():
 
 
 @bp.route('/areas/', methods=['GET'])
-@cache.cached(timeout=30, query_string=True)
 def areas():
+    request.args = request.args.to_dict()
+    request.args["display_cache_data"] = "true"
+    area_model     = Area()
+    storage        = Storage(request.args)
+    class_name     = Area.get_classname()
+    query_result   = None
     if request.is_json:
         # JSON request
         request_json     = request.get_json()
@@ -99,31 +104,41 @@ def areas():
         area_id = request.values.get('area_id', None)
         areas_group = request.values.get('areas_group', None)
 
-    data = []
+     # set cache key
     if area_id is not None:
-        try:
-            areas = Area.query.filter_by(id=area_id).all()
-            if areas is None:
-                return data
-        except exc.SQLAlchemyError:
-            pass
+        cache_key_name  = "area_id"
     elif areas_group is not None:
-        try:
-            areas = Area.query.filter_by(areas_group=areas_group).all()
-            if areas is None:
-                return data
-        except exc.SQLAlchemyError:
-            pass
+        cache_key_name  = "areas_group"
     else:
-        try:
-            areas = Area.query.all()
-            if areas is None:
-                return data
-        except exc.SQLAlchemyError:
-            pass
+        cache_key_name = "all_areas"
 
-    data = [Area.row2dict(area) for area in areas]
-    output = json.dumps(data)
+    # check for cached data and set the output, if it exists
+    cached_output = storage.get(cache_key_name)
+    if cached_output is not None:
+        output = cached_output
+    else:
+        # run the queries
+        if area_id is not None:
+            try:
+                query_result = Area.query.filter_by(id=area_id).all()
+            except exc.SQLAlchemyError:
+                pass
+        elif areas_group is not None:
+            try:
+                query_result = Area.query.filter_by(areas_group=areas_group).all()
+            except exc.SQLAlchemyError:
+                pass
+        else:
+            try:
+                query_result = Area.query.all()
+            except exc.SQLAlchemyError:
+                pass
+
+        # set the cache and the output from the query result
+        output = area_model.output_for_cache(query_result, request.args)
+        output = storage.save(cache_key_name, output, class_name)
+    
+    # set up the response and return it
     mime = 'application/json'
     ctype = 'application/json; charset=UTF-8'
 
@@ -263,7 +278,6 @@ def meta():
 
 
 @bp.route('/questions/', methods=['GET'])
-@cache.cached(timeout=30, query_string=True)
 def questions():
     # GET request
     question_id = request.values.get('question_id', None)
@@ -305,7 +319,6 @@ def questions():
 
 
 @bp.route('/results/', methods=['GET'])
-@cache.cached(timeout=30, query_string=True)
 def results():
     # GET request
     result_id  = request.values.get('result_id', None)
