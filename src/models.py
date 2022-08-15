@@ -254,7 +254,8 @@ class ScraperModel(object):
                 data["cache_timeout"] = data["customized"] + timedelta(seconds=int(cache_timeout))
             else:
                 data["cache_timeout"] = 0
-            output = json.dumps(data, default=str)
+            # output = json.dumps(data, default=str)
+            output = json.dumps(data) # since this is from the spreadsheet maybe it doesn't need to be a string.
             
         if result_json is not None and "customized" not in result_json or parser_store_in_s3 == "true":
             overwrite_url = current_app.config["OVERWRITE_API_URL"]
