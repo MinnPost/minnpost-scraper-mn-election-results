@@ -11,7 +11,7 @@ from datetime import timedelta
 from flask import current_app, request
 from src.extensions import db
 
-from sqlalchemy import text
+from sqlalchemy import text, inspect
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.expression import Insert
 
@@ -44,9 +44,13 @@ class ScraperModel(object):
 
 
     def row2dict(self, row):
+        #return {
+        #    c.name: str(getattr(row, c.name))
+        #    for c in row.__table__.columns
+        #}
         return {
-            c.name: str(getattr(row, c.name))
-            for c in row.__table__.columns
+            c.key: getattr(row, c.key)
+            for c in inspect(row).mapper.column_attrs
         }
 
     
@@ -78,16 +82,18 @@ class ScraperModel(object):
         return self.sources
 
 
-    def set_election(self):
-        # Get the newest set
-        newest = 0
-        for s in self.sources:
-            newest = int(s) if int(s) > newest else newest
+    def set_election(self, election = None):
+        election = current_app.config["ELECTION_DATE_OVERRIDE"]
+        if election == None:
+            # Get the newest set
+            newest = 0
+            for s in self.sources:
+                newest = int(s) if int(s) > newest else newest
 
-        newest_election = str(newest)
-        election = newest_election
-        # Usually we just want the newest election but allow for other situations
+            newest_election = str(newest)
+            election = newest_election
         election = election if election is not None and election != '' else newest_election
+        #current_app.log.info('Set election to: %s' % election)
         return election
 
 
@@ -201,11 +207,11 @@ class ScraperModel(object):
         election = self.set_election()
 
         if election not in sources:
-            current_app.log.info('Election missing in sources: %s' % election)
+            current_app.log.error('Election missing in sources: %s' % election)
             return
 
         if source not in sources[election]:
-            current_app.log.info('Source missing in the %s election: %s' % (election, source))
+            current_app.log.error('Source missing in the %s election: %s' % (election, source))
             return
 
         data = {}
@@ -229,11 +235,14 @@ class ScraperModel(object):
                 token_headers = {'Content-Type': 'application/json'}
                 token_result = requests.post(authorize_url, data=json.dumps(token_params), headers=token_headers)
                 token_json = token_result.json()
-                if token_json["token"]:
+                if "token" in token_json:
                     token = token_json["token"]
                     authorized_headers = {"Authorization": f"Bearer {token}"}
                     result = requests.get(f"{url}?spreadsheet_id={spreadsheet_id}&worksheet_keys={worksheet_id}&external_use_s3={parser_store_in_s3}&bypass_cache={parser_bypass_cache}", headers=authorized_headers)
                     result_json = result.json()
+                else:
+                    current_app.log.error('Error in authorize. Token result is: %s' % token_json)
+                    result_json = None
         if result_json is not None and worksheet_id in result_json:
             data["rows"] = result_json[worksheet_id]
 
@@ -247,7 +256,7 @@ class ScraperModel(object):
                 data["cache_timeout"] = 0
             output = json.dumps(data, default=str)
             
-        if "customized" not in result_json or parser_store_in_s3 == "true":
+        if result_json is not None and "customized" not in result_json or parser_store_in_s3 == "true":
             overwrite_url = current_app.config["OVERWRITE_API_URL"]
             params = {
                 "spreadsheet_id": spreadsheet_id,
@@ -860,7 +869,6 @@ class Contest(ScraperModel, db.Model):
         # Determine partisanship for contests for other processing. We need to look
         # at all the candidates to know if the contest is nonpartisan or not.
         #results = db.engine.execute("select result_id from results where contest_id = '%s' and party_id not in ('%s')" % (parsed_row['contest_id'], "', '".join(self.nonpartisan_parties)))
-        #results = Result.query.filter_by(contest_id=parsed_row['contest_id'], user_location=where)
         results = Result.query.filter(
             Result.contest_id == parsed_row['contest_id'],
             Result.party_id.notin_(self.nonpartisan_parties)
@@ -888,6 +896,9 @@ class Contest(ScraperModel, db.Model):
     
     
     def supplement_row(self, spreadsheet_row):
+
+        if isinstance(spreadsheet_row, (bytes, bytearray)):
+            spreadsheet_row = json.loads(spreadsheet_row)
 
         # parse/format the row
         spreadsheet_row = self.set_db_fields_from_spreadsheet(spreadsheet_row)
@@ -936,13 +947,17 @@ class Contest(ScraperModel, db.Model):
                 supplemented_row = row_result
         return supplemented_row
 
-    # this handles the key names and value formats for the databse in the event that they are different in the spreadsheet
+    # this handles the key names and value formats for the database if they are different in the spreadsheet
     def set_db_fields_from_spreadsheet(self, spreadsheet_row):
         spreadsheet_row['id'] = str(spreadsheet_row['id'])
-        spreadsheet_row['incumbent_party'] = spreadsheet_row.get('incumbent.party', "")
-        spreadsheet_row['question_help'] = spreadsheet_row.get('question.help', "")
-        spreadsheet_row['question_body'] = spreadsheet_row.get('question.body', "")
-        spreadsheet_row['precincts_reporting'] = spreadsheet_row.get('precincts.reporting', 0)
+        if "incumbent_party" not in spreadsheet_row:
+            spreadsheet_row['incumbent_party'] = spreadsheet_row.get('incumbent.party', "")
+        if "question_help" not in spreadsheet_row:
+            spreadsheet_row['question_help'] = spreadsheet_row.get('question.help', "")
+        if "question_body" not in spreadsheet_row:
+            spreadsheet_row['question_body'] = spreadsheet_row.get('question.body', "")
+        if "precincts_reporting" not in spreadsheet_row:
+            spreadsheet_row['precincts_reporting'] = spreadsheet_row.get('precincts.reporting', 0)
         return spreadsheet_row
 
 class Meta(ScraperModel, db.Model):
@@ -1195,7 +1210,7 @@ class Result(ScraperModel, db.Model):
                     }
                     supplemented_row = delete_result
             elif (spreadsheet_row['votes_candidate'] >= 0) and spreadsheet_row['enabled'] is True:
-                # make rows to insert
+                # these rows don't have a match. they should be inserted.
                 insert_rows = []
                 # Add new row, make sure to mark the row as supplemental
                 spreadsheet_row['results_group'] = 'supplemental_results'
@@ -1211,14 +1226,19 @@ class Result(ScraperModel, db.Model):
 
         return supplemented_row
 
-    # this handles the key names and value formats for the databse in the event that they are different in the spreadsheet
+    # this handles the key names and value formats for the database if they are different in the spreadsheet
     def set_db_fields_from_spreadsheet(self, spreadsheet_row):
         spreadsheet_row['id'] = str(spreadsheet_row['id'])
-        spreadsheet_row['contest_id'] = spreadsheet_row.get('contest.id', None)
-        spreadsheet_row['candidate_id'] = spreadsheet_row.get('candidate.id', None)
-        spreadsheet_row['office_name'] = spreadsheet_row.get('office.name', None)
+        if "contest_id" not in spreadsheet_row:
+            spreadsheet_row['contest_id'] = str(spreadsheet_row.get('contest.id', None))
+        if "candidate_id" not in spreadsheet_row:
+            spreadsheet_row['candidate_id'] = str(spreadsheet_row.get('candidate.id', None))
+        if "office_name" not in spreadsheet_row:
+            spreadsheet_row['office_name'] = spreadsheet_row.get('office.name', None)
         spreadsheet_row['percentage'] = spreadsheet_row.get('percentage', None)
-        spreadsheet_row['votes_candidate'] = spreadsheet_row.get('votes.candidate', 0)
-        spreadsheet_row['ranked_choice_place'] = spreadsheet_row.get('ranked.choice.place', None)
+        if "votes_candidate" not in spreadsheet_row:
+            spreadsheet_row['votes_candidate'] = spreadsheet_row.get('votes.candidate', 0)
+        if "ranked_choice_place" not in spreadsheet_row:
+            spreadsheet_row['ranked_choice_place'] = spreadsheet_row.get('ranked.choice.place', None)
         spreadsheet_row['enabled'] = bool(spreadsheet_row.get('enabled', False))
         return spreadsheet_row

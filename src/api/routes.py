@@ -1,5 +1,3 @@
-import json
-import hashlib
 import ciso8601
 import sqlparse
 from datetime import datetime
@@ -19,6 +17,7 @@ def query():
     request.args["display_cache_data"] = "false"
     storage        = Storage(request.args)
     sql = request.args.get('q', None)
+    sql = sql.replace(" LIKE ", " ILIKE ")
     display_cache_data = request.args.get('display_cache_data', None)
     parsed = sqlparse.parse(sql)[0]
     callback = request.args.get('callback')
@@ -55,6 +54,11 @@ def query():
                 if not isinstance(d['value'], int):
                     date_object = ciso8601.parse_datetime(d['value'])
                     d['value'] = datetime.timestamp(date_object)
+            if 'value' in d:
+                if d['value'] == "true":
+                    d['value'] = True
+                elif d['value'] == "false":
+                    d['value'] = False
             if display_cache_data == "true":
                 output["data"][count] = d
             else:
@@ -344,7 +348,7 @@ def questions():
     return res
 
 
-@bp.route('/results/', methods=['GET'])
+@bp.route('/results/', methods=['GET', 'POST'])
 def results():
     request.args = request.args.to_dict()
     request.args["display_cache_data"] = "true"
