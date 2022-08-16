@@ -178,6 +178,7 @@ class ScraperModel(object):
 
         # for each row in the spreadsheet
         for spreadsheet_row in spreadsheet_rows:
+            current_app.log.info('spreadsheet row is: %s' % spreadsheet_row)
             supplement_row = self.supplement_row(spreadsheet_row)
             if 'rows' in supplement_row:
                 #supplemented_rows.append(supplement_row)
@@ -244,7 +245,6 @@ class ScraperModel(object):
                     current_app.log.error('Error in authorize. Token result is: %s' % token_json)
                     result_json = None
         if result_json is not None and worksheet_id in result_json:
-            current_app.log.info('initial data from sheet: %s' % (result_json))
             data["rows"] = result_json[worksheet_id]
 
             # set metadata and send the customized json output to the api
@@ -277,7 +277,7 @@ class ScraperModel(object):
 
             if result_json is not None:
                 #output = json.dumps(result_json, default=str)
-                current_app.log.info('final data from sheet: %s' % (result_json))
+                #current_app.log.info('final data from sheet: %s' % (result_json))
                 result = result_json["rows"]
 
         return result
@@ -1149,7 +1149,8 @@ class Result(ScraperModel, db.Model):
                     }
                     supplemented_row = delete_result
             elif (spreadsheet_row['votes_candidate'] >= 0) and spreadsheet_row['enabled'] is True:
-                # make rows to insert
+                # these rows don't have a match. they should be inserted.
+                current_app.log.info('row to insert: %s' % spreadsheet_row)
                 insert_rows = []
                 # Add new row, make sure to mark the row as supplemental
                 spreadsheet_row['results_group'] = 'supplemental_results'
@@ -1161,6 +1162,7 @@ class Result(ScraperModel, db.Model):
                     'action': 'insert',
                     'rows': insert_rows
                 }
+                current_app.log.info('insert row result: %s' % row_result)
                 supplemented_row = row_result
 
         return supplemented_row
