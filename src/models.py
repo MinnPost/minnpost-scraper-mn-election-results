@@ -1114,6 +1114,7 @@ class Result(ScraperModel, db.Model):
         if type(spreadsheet_row) is not dict:
             current_app.log.info('not a dict')
             spreadsheet_row = self.row2dict(spreadsheet_row)
+            current_app.log.info('now it is a dict. id is : %s' % spreadsheet_row['id'])
 
         # parse/format the row
         spreadsheet_row = self.set_db_fields_from_spreadsheet(spreadsheet_row)
