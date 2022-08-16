@@ -224,11 +224,13 @@ class ScraperModel(object):
         cache_timeout = int(current_app.config["PARSER_API_CACHE_TIMEOUT"])
         parser_store_in_s3 = current_app.config["PARSER_STORE_IN_S3"]
         parser_bypass_cache = current_app.config["PARSER_BYPASS_API_CACHE"]
+        current_app.log.info('Spreadsheet ID: %s' % spreadsheet_id)
         if spreadsheet_id is not None:
             parser_api_key = current_app.config["PARSER_API_KEY"]
             authorize_url = current_app.config["AUTHORIZE_API_URL"]
             url = current_app.config["PARSER_API_URL"]
             if authorize_url != "" and parser_api_key != "" and url != "":
+                current_app.log.info('try to authorize sheet')
                 token_params = {
                     "api_key": parser_api_key
                 }
@@ -244,6 +246,7 @@ class ScraperModel(object):
                     current_app.log.info('Error in authorize. Token result is: %s' % token_json)
                     result_json = None
         if result_json is not None and worksheet_id in result_json:
+            current_app.log.info('initial data from sheet: %s' % (result_json))
             data["rows"] = result_json[worksheet_id]
 
             # set metadata and send the customized json output to the api
@@ -276,7 +279,7 @@ class ScraperModel(object):
 
             if result_json is not None:
                 #output = json.dumps(result_json, default=str)
-                #current_app.log.info('data from sheet: %s' % (result_json))
+                current_app.log.info('final data from sheet: %s' % (result_json))
                 result = result_json["rows"]
 
         return result
