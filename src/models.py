@@ -255,7 +255,6 @@ class ScraperModel(object):
             else:
                 data["cache_timeout"] = 0
             output = json.dumps(data, default=str)
-            #output = json.dumps(data) # since this is from the spreadsheet maybe it doesn't need to be a string.
             
         if result_json is not None and "customized" not in result_json or parser_store_in_s3 == "true":
             overwrite_url = current_app.config["OVERWRITE_API_URL"]
@@ -813,7 +812,6 @@ class Contest(ScraperModel, db.Model):
         # Determine partisanship for contests for other processing. We need to look
         # at all the candidates to know if the contest is nonpartisan or not.
         #results = db.engine.execute("select result_id from results where contest_id = '%s' and party_id not in ('%s')" % (parsed_row['contest_id'], "', '".join(self.nonpartisan_parties)))
-        #results = Result.query.filter_by(contest_id=parsed_row['contest_id'], user_location=where)
         results = Result.query.filter(
             Result.contest_id == parsed_row['contest_id'],
             Result.party_id.notin_(self.nonpartisan_parties)
@@ -841,6 +839,8 @@ class Contest(ScraperModel, db.Model):
     
     
     def supplement_row(self, spreadsheet_row):
+        if type(spreadsheet_row) is not dict:
+            spreadsheet_row = self.row2dict(spreadsheet_row)
 
         # parse/format the row
         spreadsheet_row = self.set_db_fields_from_spreadsheet(spreadsheet_row)
@@ -1111,8 +1111,9 @@ class Result(ScraperModel, db.Model):
 
     def supplement_row(self, spreadsheet_row):
 
-        if isinstance(spreadsheet_row, (bytes, bytearray)):
-            spreadsheet_row = json.loads(spreadsheet_row)
+        if type(spreadsheet_row) is not dict:
+            current_app.log.info('not a dict')
+            spreadsheet_row = self.row2dict(spreadsheet_row)
 
         # parse/format the row
         spreadsheet_row = self.set_db_fields_from_spreadsheet(spreadsheet_row)
@@ -1164,8 +1165,6 @@ class Result(ScraperModel, db.Model):
                 }
                 current_app.log.info('insert row result: %s' % row_result)
                 supplemented_row = row_result
-            else:
-                current_app.log.info('cannot insert this row. why not? %s' % spreadsheet_row)
         else:
             current_app.log.info('invalid row to insert, update, or delete: %s' % spreadsheet_row)
 
