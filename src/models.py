@@ -889,13 +889,17 @@ class Contest(ScraperModel, db.Model):
                 supplemented_row = row_result
         return supplemented_row
 
-    # this handles the key names and value formats for the databse in the event that they are different in the spreadsheet
+    # this handles the key names and value formats for the database if they are different in the spreadsheet
     def set_db_fields_from_spreadsheet(self, spreadsheet_row):
         spreadsheet_row['id'] = str(spreadsheet_row['id'])
-        spreadsheet_row['incumbent_party'] = spreadsheet_row.get('incumbent.party', "")
-        spreadsheet_row['question_help'] = spreadsheet_row.get('question.help', "")
-        spreadsheet_row['question_body'] = spreadsheet_row.get('question.body', "")
-        spreadsheet_row['precincts_reporting'] = spreadsheet_row.get('precincts.reporting', 0)
+        if "incumbent_party" not in spreadsheet_row:
+            spreadsheet_row['incumbent_party'] = spreadsheet_row.get('incumbent.party', "")
+        if "question_help" not in spreadsheet_row:
+            spreadsheet_row['question_help'] = spreadsheet_row.get('question.help', "")
+        if "question_body" not in spreadsheet_row:
+            spreadsheet_row['question_body'] = spreadsheet_row.get('question.body', "")
+        if "precincts_reporting" not in spreadsheet_row:
+            spreadsheet_row['precincts_reporting'] = spreadsheet_row.get('precincts.reporting', 0)
         return spreadsheet_row
 
 class Meta(ScraperModel, db.Model):
@@ -1111,9 +1115,9 @@ class Result(ScraperModel, db.Model):
 
     def supplement_row(self, spreadsheet_row):
 
-        if type(spreadsheet_row) is not dict:
+        if isinstance(spreadsheet_row, (bytes, bytearray)):
             current_app.log.info('not a dict')
-            spreadsheet_row = self.row2dict(spreadsheet_row)
+            spreadsheet_row = json.loads(spreadsheet_row)
             current_app.log.info('now it is a dict. id is : %s' % spreadsheet_row['id'])
 
         # parse/format the row
@@ -1168,19 +1172,25 @@ class Result(ScraperModel, db.Model):
                 supplemented_row = row_result
         else:
             current_app.log.info('invalid row to insert, update, or delete: %s' % spreadsheet_row)
+            current_app.log.info('row id: %s' % spreadsheet_row['id'])
+            current_app.log.info('contest id: %s' % spreadsheet_row['contest_id'])
+            current_app.log.info('candidate id: %s' % spreadsheet_row['candidate_id'])
 
         return supplemented_row
 
-    # this handles the key names and value formats for the databse in the event that they are different in the spreadsheet
+    # this handles the key names and value formats for the database if they are different in the spreadsheet
     def set_db_fields_from_spreadsheet(self, spreadsheet_row):
         spreadsheet_row['id'] = str(spreadsheet_row['id'])
-        spreadsheet_row['contest_id'] = spreadsheet_row.get('contest.id', None)
-        spreadsheet_row['candidate_id'] = spreadsheet_row.get('candidate.id', None)
-        spreadsheet_row['office_name'] = spreadsheet_row.get('office.name', None)
+        if "contest_id" not in spreadsheet_row:
+            spreadsheet_row['contest_id'] = str(spreadsheet_row.get('contest.id', None))
+        if "candidate_id" not in spreadsheet_row:
+            spreadsheet_row['candidate_id'] = str(spreadsheet_row.get('candidate.id', None))
+        if "office_name" not in spreadsheet_row:
+            spreadsheet_row['office_name'] = spreadsheet_row.get('office.name', None)
         spreadsheet_row['percentage'] = spreadsheet_row.get('percentage', None)
-        spreadsheet_row['votes_candidate'] = spreadsheet_row.get('votes.candidate', 0)
-        spreadsheet_row['ranked_choice_place'] = spreadsheet_row.get('ranked.choice.place', None)
-        spreadsheet_row['enabled'] = spreadsheet_row.get('enabled', False)
-        if bool(spreadsheet_row['enabled']) == True or spreadsheet_row['enabled'] == 'Y':
-            spreadsheet_row['enabled'] = True
+        if "votes_candidate" not in spreadsheet_row:
+            spreadsheet_row['votes_candidate'] = spreadsheet_row.get('votes.candidate', 0)
+        if "ranked_choice_place" not in spreadsheet_row:
+            spreadsheet_row['ranked_choice_place'] = spreadsheet_row.get('ranked.choice.place', None)
+        spreadsheet_row['enabled'] = bool(spreadsheet_row.get('enabled', False))
         return spreadsheet_row
