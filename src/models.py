@@ -207,11 +207,11 @@ class ScraperModel(object):
         election = self.set_election()
 
         if election not in sources:
-            current_app.log.info('Election missing in sources: %s' % election)
+            current_app.log.error('Election missing in sources: %s' % election)
             return
 
         if source not in sources[election]:
-            current_app.log.info('Source missing in the %s election: %s' % (election, source))
+            current_app.log.error('Source missing in the %s election: %s' % (election, source))
             return
 
         data = {}
@@ -224,13 +224,11 @@ class ScraperModel(object):
         cache_timeout = int(current_app.config["PARSER_API_CACHE_TIMEOUT"])
         parser_store_in_s3 = current_app.config["PARSER_STORE_IN_S3"]
         parser_bypass_cache = current_app.config["PARSER_BYPASS_API_CACHE"]
-        current_app.log.info('Spreadsheet ID: %s' % spreadsheet_id)
         if spreadsheet_id is not None:
             parser_api_key = current_app.config["PARSER_API_KEY"]
             authorize_url = current_app.config["AUTHORIZE_API_URL"]
             url = current_app.config["PARSER_API_URL"]
             if authorize_url != "" and parser_api_key != "" and url != "":
-                current_app.log.info('try to authorize sheet')
                 token_params = {
                     "api_key": parser_api_key
                 }
@@ -243,7 +241,7 @@ class ScraperModel(object):
                     result = requests.get(f"{url}?spreadsheet_id={spreadsheet_id}&worksheet_keys={worksheet_id}&external_use_s3={parser_store_in_s3}&bypass_cache={parser_bypass_cache}", headers=authorized_headers)
                     result_json = result.json()
                 else:
-                    current_app.log.info('Error in authorize. Token result is: %s' % token_json)
+                    current_app.log.error('Error in authorize. Token result is: %s' % token_json)
                     result_json = None
         if result_json is not None and worksheet_id in result_json:
             current_app.log.info('initial data from sheet: %s' % (result_json))
@@ -257,8 +255,8 @@ class ScraperModel(object):
                 data["cache_timeout"] = data["customized"] + timedelta(seconds=int(cache_timeout))
             else:
                 data["cache_timeout"] = 0
-            # output = json.dumps(data, default=str)
-            output = json.dumps(data) # since this is from the spreadsheet maybe it doesn't need to be a string.
+            output = json.dumps(data, default=str)
+            #output = json.dumps(data) # since this is from the spreadsheet maybe it doesn't need to be a string.
             
         if result_json is not None and "customized" not in result_json or parser_store_in_s3 == "true":
             overwrite_url = current_app.config["OVERWRITE_API_URL"]
