@@ -178,7 +178,6 @@ class ScraperModel(object):
 
         # for each row in the spreadsheet
         for spreadsheet_row in spreadsheet_rows:
-            current_app.log.info('spreadsheet row is: %s' % spreadsheet_row)
             supplement_row = self.supplement_row(spreadsheet_row)
             if 'rows' in supplement_row:
                 #supplemented_rows.append(supplement_row)
@@ -1164,6 +1163,8 @@ class Result(ScraperModel, db.Model):
                 }
                 current_app.log.info('insert row result: %s' % row_result)
                 supplemented_row = row_result
+            else:
+                current_app.log.info('cannot insert this row. why not? %s' % spreadsheet_row)
 
         return supplemented_row
 
@@ -1176,5 +1177,7 @@ class Result(ScraperModel, db.Model):
         spreadsheet_row['percentage'] = spreadsheet_row.get('percentage', None)
         spreadsheet_row['votes_candidate'] = spreadsheet_row.get('votes.candidate', 0)
         spreadsheet_row['ranked_choice_place'] = spreadsheet_row.get('ranked.choice.place', None)
-        spreadsheet_row['enabled'] = bool(spreadsheet_row.get('enabled', False))
+        enabled = spreadsheet_row.get('enabled', False)
+        if bool(enabled) == True or enabled == 'Y':
+            spreadsheet_row['enabled'] = True
         return spreadsheet_row
