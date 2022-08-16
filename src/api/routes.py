@@ -17,6 +17,7 @@ def query():
     request.args["display_cache_data"] = "false"
     storage        = Storage(request.args)
     sql = request.args.get('q', None)
+    sql = sql.replace(" LIKE ", " ILIKE ")
     display_cache_data = request.args.get('display_cache_data', None)
     parsed = sqlparse.parse(sql)[0]
     callback = request.args.get('callback')
