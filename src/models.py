@@ -275,7 +275,6 @@ class ScraperModel(object):
 
             if result_json is not None:
                 #output = json.dumps(result_json, default=str)
-                #current_app.log.info('final data from sheet: %s' % (result_json))
                 result = result_json["rows"]
 
         return result
@@ -839,8 +838,9 @@ class Contest(ScraperModel, db.Model):
     
     
     def supplement_row(self, spreadsheet_row):
-        if type(spreadsheet_row) is not dict:
-            spreadsheet_row = self.row2dict(spreadsheet_row)
+
+        if isinstance(spreadsheet_row, (bytes, bytearray)):
+            spreadsheet_row = json.loads(spreadsheet_row)
 
         # parse/format the row
         spreadsheet_row = self.set_db_fields_from_spreadsheet(spreadsheet_row)
@@ -1116,9 +1116,7 @@ class Result(ScraperModel, db.Model):
     def supplement_row(self, spreadsheet_row):
 
         if isinstance(spreadsheet_row, (bytes, bytearray)):
-            current_app.log.info('not a dict')
             spreadsheet_row = json.loads(spreadsheet_row)
-            current_app.log.info('now it is a dict. id is : %s' % spreadsheet_row['id'])
 
         # parse/format the row
         spreadsheet_row = self.set_db_fields_from_spreadsheet(spreadsheet_row)
@@ -1129,7 +1127,6 @@ class Result(ScraperModel, db.Model):
 
         # If valid data
         if spreadsheet_row['id'] is not None and spreadsheet_row['contest_id'] is not None and spreadsheet_row['candidate_id'] is not None:
-            current_app.log.info('valid row to insert, update, or delete: %s' % spreadsheet_row)
             # there are rows in the database to update or delete
             if results != None and results != []:
                 # these rows can be updated
@@ -1156,7 +1153,6 @@ class Result(ScraperModel, db.Model):
                     supplemented_row = delete_result
             elif (spreadsheet_row['votes_candidate'] >= 0) and spreadsheet_row['enabled'] is True:
                 # these rows don't have a match. they should be inserted.
-                current_app.log.info('row to insert: %s' % spreadsheet_row)
                 insert_rows = []
                 # Add new row, make sure to mark the row as supplemental
                 spreadsheet_row['results_group'] = 'supplemental_results'
@@ -1168,13 +1164,7 @@ class Result(ScraperModel, db.Model):
                     'action': 'insert',
                     'rows': insert_rows
                 }
-                current_app.log.info('insert row result: %s' % row_result)
                 supplemented_row = row_result
-        else:
-            current_app.log.info('invalid row to insert, update, or delete: %s' % spreadsheet_row)
-            current_app.log.info('row id: %s' % spreadsheet_row['id'])
-            current_app.log.info('contest id: %s' % spreadsheet_row['contest_id'])
-            current_app.log.info('candidate id: %s' % spreadsheet_row['candidate_id'])
 
         return supplemented_row
 
