@@ -1123,6 +1123,7 @@ class Result(ScraperModel, db.Model):
 
         # If valid data
         if spreadsheet_row['id'] is not None and spreadsheet_row['contest_id'] is not None and spreadsheet_row['candidate_id'] is not None:
+            current_app.log.info('valid row to insert, update, or delete: %s' % spreadsheet_row)
             # there are rows in the database to update or delete
             if results != None and results != []:
                 # these rows can be updated
@@ -1165,6 +1166,8 @@ class Result(ScraperModel, db.Model):
                 supplemented_row = row_result
             else:
                 current_app.log.info('cannot insert this row. why not? %s' % spreadsheet_row)
+        else:
+            current_app.log.info('invalid row to insert, update, or delete: %s' % spreadsheet_row)
 
         return supplemented_row
 
@@ -1177,7 +1180,7 @@ class Result(ScraperModel, db.Model):
         spreadsheet_row['percentage'] = spreadsheet_row.get('percentage', None)
         spreadsheet_row['votes_candidate'] = spreadsheet_row.get('votes.candidate', 0)
         spreadsheet_row['ranked_choice_place'] = spreadsheet_row.get('ranked.choice.place', None)
-        enabled = spreadsheet_row.get('enabled', False)
-        if bool(enabled) == True or enabled == 'Y':
+        spreadsheet_row['enabled'] = spreadsheet_row.get('enabled', False)
+        if bool(spreadsheet_row['enabled']) == True or spreadsheet_row['enabled'] == 'Y':
             spreadsheet_row['enabled'] = True
         return spreadsheet_row
