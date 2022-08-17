@@ -17,7 +17,6 @@ def query():
     request.args["display_cache_data"] = "false"
     storage        = Storage(request.args)
     sql = request.args.get('q', None)
-    sql = sql.replace(" LIKE ", " ILIKE ")
     display_cache_data = request.args.get('display_cache_data', None)
     parsed = sqlparse.parse(sql)[0]
     callback = request.args.get('callback')
@@ -25,6 +24,9 @@ def query():
     sqltype = parsed.get_type()
     if sqltype != 'SELECT' or parsed in ['', None]:
         return 'Welcome to the election scraper server. Use a URL like: <a href="/query/?q=%s">/query/?q=%s</a>' % (example_query, example_query);
+
+    # make the query case insensitive
+    sql = sql.replace(" LIKE ", " ILIKE ")
 
     # check for cached data and set the output, if it exists
     cache_list_key = current_app.config['QUERY_LIST_CACHE_KEY']
