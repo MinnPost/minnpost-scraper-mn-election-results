@@ -14,40 +14,24 @@ def scrape_elections(self):
     election   = Election()
     class_name = Election.get_classname()
     sources    = election.read_sources()
-    election   = election.set_election()
 
-    if election not in sources:
-        return
-
-    # Get metadata about election
-    election_meta = election.set_election_metadata()
     inserted_count = 0
     parsed_count = 0
-    group_count = 0
 
-    for group in sources[election]:
-        source = sources[election][group]
-        group_count = group_count + 1
+    for key in sources:
+        row = sources[key]
+        parsed = election.parser(row, key)
 
-        if 'type' in source and source['type'] == 'areas':
-            # handle parsed areas
-            rows = election.parse_election(source, election_meta)
+        election = Election()
+        election.from_dict(parsed, new=True)
 
-            for row in rows:
-                parsed = election.parser(row, group)
+        db.session.merge(election)
+        inserted_count = inserted_count + 1
+        parsed_count = parsed_count + 1
+        # commit parsed rows
+        db.session.commit()
 
-                election = Election()
-                election.from_dict(parsed, new=True)
-
-                db.session.merge(election)
-                inserted_count = inserted_count + 1
-                parsed_count = parsed_count + 1
-
-            # commit parsed rows
-            db.session.commit()
-    
     result = {
-        "sources": group_count,
         "inserted": inserted_count,
         "parsed": parsed_count,
         "cache": storage.clear_group(class_name),
