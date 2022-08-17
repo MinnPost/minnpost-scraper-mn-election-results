@@ -11,9 +11,10 @@ from datetime import timedelta
 from flask import current_app, request
 from src.extensions import db
 
-from sqlalchemy import text, inspect
+from sqlalchemy import text, inspect, func
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.expression import Insert
+from sqlalchemy.ext.hybrid import hybrid_property
 
 scraper_sources_inline = None
 
@@ -411,6 +412,14 @@ class Election(ScraperModel, db.Model):
     
     def __repr__(self):
         return '<Election {}>'.format(self.id)
+
+    @hybrid_property
+    def election_datetime(self):
+        return datetime.datetime.strptime(self.election_date, '%Y-%m-%d')
+
+    @election_datetime.expression
+    def election_datetime(self):
+        return func.to_date(self.election_date, "%Y-%m-%d")
 
     def parser(self, row, key):
         """
