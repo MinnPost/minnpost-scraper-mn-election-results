@@ -18,26 +18,26 @@ def scrape_areas(self):
     class_name = Area.get_classname()
     sources = area.read_sources()
     election = area.set_election()
+    election_key = area.set_election_key(election.id)
 
-    if election not in sources:
+    if election_key not in sources:
         return
 
-    # Get metadata about election
-    election_meta = area.set_election_metadata()
+    # set up count for results
     inserted_count = 0
     parsed_count = 0
     group_count = 0
 
-    for group in sources[election]:
-        source = sources[election][group]
+    for group in sources[election_key]:
+        source = sources[election_key][group]
         group_count = group_count + 1
 
         if 'type' in source and source['type'] == 'areas':
             # handle parsed areas
-            rows = area.parse_election(source, election_meta)
+            rows = area.parse_election(source, election)
 
             for row in rows:
-                parsed = area.parser(row, group)
+                parsed = area.parser(row, group, election.id)
 
                 area = Area()
                 area.from_dict(parsed, new=True)

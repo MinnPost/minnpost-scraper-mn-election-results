@@ -8,9 +8,6 @@ from src.storage import Storage
 from src.models import Question
 from src.scraper import bp
 
-newest_election = None
-election = None
-
 @celery.task(bind=True)
 def scrape_questions(self):
     storage    = Storage()
@@ -18,26 +15,26 @@ def scrape_questions(self):
     class_name = Question.get_classname()
     sources    = question.read_sources()
     election   = question.set_election()
+    election_key = question.set_election_key(election.id)
 
-    if election not in sources:
+    if election_key not in sources:
         return
 
-    # Get metadata about election
-    election_meta = question.set_election_metadata()
+    # set up count for results
     inserted_count = 0
     parsed_count = 0
     group_count = 0
 
-    for group in sources[election]:
-        source = sources[election][group]
+    for group in sources[election_key]:
+        source = sources[election_key][group]
         group_count = group_count + 1
 
         if 'type' in source and source['type'] == 'questions':
 
-            rows = question.parse_election(source, election_meta)
+            rows = question.parse_election(source, election)
 
             for row in rows:
-                parsed = question.parser(row, group)
+                parsed = question.parser(row, group, election.id)
 
                 question = Question()
                 question.from_dict(parsed, new=True)

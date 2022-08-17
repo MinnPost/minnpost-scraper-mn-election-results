@@ -9,7 +9,7 @@ from flask import jsonify, current_app
 from src.extensions import db
 from src.extensions import celery
 from src.storage import Storage
-from src.models import Result, Meta
+from src.models import Result
 from src.scraper import bp
 
 newest_election = None
@@ -22,12 +22,12 @@ def scrape_results(self):
     class_name = Result.get_classname()
     sources    = result.read_sources()
     election   = result.set_election()
+    election_key = result.set_election_key(election.id)
 
-    if election not in sources:
+    if election_key not in sources:
         return
 
-    # Get metadata about election
-    election_meta = result.set_election_metadata()
+    # set up count for results
     inserted_count = 0
     updated_count = 0
     deleted_count = 0
@@ -35,15 +35,15 @@ def scrape_results(self):
     supplemented_count = 0
     group_count = 0
 
-    for group in sources[election]:
-        source = sources[election][group]
+    for group in sources[election_key]:
+        source = sources[election_key][group]
         group_count = group_count + 1
 
         if 'type' in source and source['type'] == 'results':
             # handle parsed results
-            rows = result.parse_election(source, election_meta)
+            rows = result.parse_election(source, election)
             for row in rows:
-                parsed = result.parser(row, group)
+                parsed = result.parser(row, group, election.id)
 
                 result = Result()
                 result.from_dict(parsed, new=True)
@@ -56,7 +56,7 @@ def scrape_results(self):
 
     # Handle post processing actions. this only needs to happen once, not for every group.
     supplemental = result.post_processing('results')
-    meta = Meta()
+    #meta = Meta()
     for supplemental_result in supplemental:
         rows = supplemental_result['rows']
         action = supplemental_result['action']
@@ -73,11 +73,11 @@ def scrape_results(self):
                     elif action == 'delete':
                         db.session.delete(row)
                         deleted_count = deleted_count + 1
-                    elif action == 'meta':
-                        parsed = row # it's already in the format we need to save it
-                        meta = Meta()
-                        meta.from_dict(parsed, new=True)
-                        db.session.merge(meta)
+                    #elif action == 'meta':
+                    #    parsed = row # it's already in the format we need to save it
+                    #    meta = Meta()
+                    #    meta.from_dict(parsed, new=True)
+                    #    db.session.merge(meta)
     # commit supplemental rows
     db.session.commit()
 

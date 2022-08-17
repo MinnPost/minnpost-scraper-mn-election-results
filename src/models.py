@@ -60,7 +60,7 @@ class ScraperModel(object):
         if query_result is None:
             return output
         if single_row == False:
-        data = [self.row2dict(item) for item in query_result]
+            data = [self.row2dict(item) for item in query_result]
         else:
             data = self.row2dict(query_result)
         if "display_cache_data" in args and args["display_cache_data"] == "true":
@@ -86,40 +86,39 @@ class ScraperModel(object):
         return self.sources
 
 
-    def set_election(self, election = None):
-        election = current_app.config["ELECTION_DATE_OVERRIDE"]
-        if election == None:
-            # Get the newest set
-            newest = 0
-            for s in self.sources:
-                newest = int(s) if int(s) > newest else newest
+    def set_election(self, election_key = None):
+        # priority:
+        # 1. url or other function argument for election
+        # 2. config level override
+        # 3. newest election in the elections table
 
-            newest_election = str(newest)
-            election = newest_election
-        election = election if election is not None and election != '' else newest_election
-        #current_app.log.info('Set election to: %s' % election)
+        if election_key == None:
+            election_key = current_app.config["ELECTION_DATE_OVERRIDE"]
+
+        # if there is an election key from anywhere
+        if election_key is not None and election_key != "":
+            election_id = 'id-' + election_key
+            election = Election.query.filter_by(id=election_id).first()
+        
+        if election == None:
+            election = Election.query.order_by(Election.election_datetime.desc()).first()
+            #query_result = Election.query.order_by(Election.election_datetime.desc()).all()
+
+        current_app.log.info('Set election to: %s' % election)
         return election
 
-
-    def set_election_metadata(self):
-        sources = self.read_sources()
-        election = self.set_election()
-
-        if election not in sources:
-            return
-
-        # Get metadata about election
-        election_meta = sources[election]['meta'] if 'meta' in sources[election] else {}
-        return election_meta
+    def set_election_key(self, election_id):
+        key = ''.join(election_id.split('id-', 3))
+        return key
 
 
-    def parse_election(self, source, election_meta = {}):
+    def parse_election(self, source, election = {}):
 
         # Ensure we have a valid parser for this type
         parser_method = getattr(self, "parser", None)
         if callable(parser_method):
             # Check if election has base_url
-            source['url'] = election_meta['base_url'] + source['url'] if 'base_url' in election_meta else source['url']
+            source['url'] = election.base_url + source['url'] if election.base_url else source['url']
 
             # Get data from URL
             try:
@@ -146,7 +145,7 @@ class ScraperModel(object):
         return slug
 
 
-    def post_processing(self, type):
+    def post_processing(self, type, election_id = None):
 
         # Handle any supplemental data
         spreadsheet_rows = self.supplement_connect('supplemental_' + type)
@@ -154,35 +153,35 @@ class ScraperModel(object):
         insert_rows = {'action': 'insert', 'rows': []}
         update_rows = {'action': 'update', 'rows': []}
         delete_rows = {'action': 'delete', 'rows': []}
-        meta_rows = {'action': 'meta', 'rows': []}
+        #meta_rows = {'action': 'meta', 'rows': []}
 
         if type == 'contests' or type == 'results':
             updated = {"key" : "updated", "value" : db.func.current_timestamp(), "type" : "int"}
-            meta_rows['rows'].append(updated)
+            #meta_rows['rows'].append(updated)
 
             if type == 'results':
                 sql = text("select count(distinct contest_id) as contest_count from results")
                 result_contests = db.session.execute(sql)
                 result_contest_count = [row[0] for row in result_contests]
                 contest_count = {"key" : "contests", "value" : int(result_contest_count[0]), "type" : "int"}
-                meta_rows['rows'].append(contest_count)
+                #meta_rows['rows'].append(contest_count)
 
                 # Use the first state level race to get general number of precincts reporting
                 state_contest_results = Contest.query.filter_by(county_id='88').first()
                 if state_contest_results is not None:
                     precincts_reporting = {"key" : "precincts_reporting", "value" : state_contest_results.precincts_reporting, "type" : "int"}
                     total_effected_precincts = {"key" : "total_effected_precincts", "value" : state_contest_results.total_effected_precincts, "type" : "int"}
-                    meta_rows['rows'].append(precincts_reporting)
-                    meta_rows['rows'].append(total_effected_precincts)
+                    #meta_rows['rows'].append(precincts_reporting)
+                    #meta_rows['rows'].append(total_effected_precincts)
 
-            supplemented_rows.append(meta_rows)
+            #supplemented_rows.append(meta_rows)
 
         if spreadsheet_rows is None:
             return supplemented_rows
 
         # for each row in the spreadsheet
         for spreadsheet_row in spreadsheet_rows:
-            supplement_row = self.supplement_row(spreadsheet_row)
+            supplement_row = self.supplement_row(spreadsheet_row, election_id)
             if 'rows' in supplement_row:
                 #supplemented_rows.append(supplement_row)
                 if supplement_row['action'] == 'insert' and supplement_row['rows'] not in insert_rows['rows']:
@@ -209,20 +208,21 @@ class ScraperModel(object):
         """
         sources = self.read_sources()
         election = self.set_election()
+        election_key = self.set_election_key(election.id)
 
-        if election not in sources:
-            current_app.log.error('Election missing in sources: %s' % election)
+        if election_key not in sources:
+            current_app.log.error('Election missing in sources: %s' % election_key)
             return
 
-        if source not in sources[election]:
-            current_app.log.error('Source missing in the %s election: %s' % (election, source))
+        if source not in sources[election_key]:
+            current_app.log.error('Source missing in the %s election: %s' % (election_key, source))
             return
 
         data = {}
         result_json = None
         result = {}
 
-        s = sources[election][source]
+        s = sources[election_key][source]
         spreadsheet_id = s["spreadsheet_id"]
         worksheet_id = str(s["worksheet_id"])
         cache_timeout = int(current_app.config["PARSER_API_CACHE_TIMEOUT"])
@@ -332,11 +332,12 @@ class Area(ScraperModel, db.Model):
     def __repr__(self):
         return '<Area {}>'.format(self.id)
 
-    def parser(self, row, group):
+    def parser(self, row, group, election_id):
 
         # General data
         parsed = {
             'area_id': group + '-',
+            'election_id': election_id,
             'areas_group': group,
             'county_id': None,
             'county_name': None,
@@ -423,6 +424,15 @@ class Election(ScraperModel, db.Model):
     @election_datetime.expression
     def election_datetime(self):
         return func.to_date(self.date, "%Y-%m-%d")
+
+    @hybrid_property
+    def election_key(self):
+        fixed = ''.join(self.id.split('id-', 3))
+        return fixed
+
+    @election_key.expression
+    def election_key(self):
+        return func.substr(self.id, func.strpos(self.id,'id-'))
 
     def parser(self, row, key):
         """
@@ -521,12 +531,10 @@ class Contest(ScraperModel, db.Model):
     def __repr__(self):
         return '<Contest {}>'.format(self.id)
 
-    def parser(self, row, group, source):
+    def parser(self, row, group, election, source):
         """
         Parser for contest scraping.
         """
-
-        election_meta = self.set_election_metadata()
 
         # SSD1 is Minneapolis and ISD1 is Aitkin, though they have the same
         # numbers and therefor make the same ID
@@ -562,7 +570,7 @@ class Contest(ScraperModel, db.Model):
         # Primary is not designated in any way, but we can make some initial
         # guesses. All contests in an election are considered primary, but
         # non-partisan ones only mean there is more than one seat available.
-        primary = election_meta['primary'] if 'primary' in election_meta else False
+        primary = election.primary if election.primary else False
 
         re_question = re.compile(r'.*question.*', re.IGNORECASE)
         matched_question = re_question.match(row[4])
@@ -575,6 +583,7 @@ class Contest(ScraperModel, db.Model):
         parsed = {
             'id': contest_id,
             'contest_id': contest_id,
+            'election_id': election.id,
             'office_id': office_id,
             'results_group': group,
             'office_name': office_name,
@@ -908,13 +917,13 @@ class Contest(ScraperModel, db.Model):
         return seats
     
     
-    def supplement_row(self, spreadsheet_row):
+    def supplement_row(self, spreadsheet_row, election_id=None):
 
         if isinstance(spreadsheet_row, (bytes, bytearray)):
             spreadsheet_row = json.loads(spreadsheet_row)
 
         # parse/format the row
-        spreadsheet_row = self.set_db_fields_from_spreadsheet(spreadsheet_row)
+        spreadsheet_row = self.set_db_fields_from_spreadsheet(spreadsheet_row, election_id)
 
         supplemented_row = {}
 
@@ -961,8 +970,10 @@ class Contest(ScraperModel, db.Model):
         return supplemented_row
 
     # this handles the key names and value formats for the database if they are different in the spreadsheet
-    def set_db_fields_from_spreadsheet(self, spreadsheet_row):
+    def set_db_fields_from_spreadsheet(self, spreadsheet_row, election_id=None):
         spreadsheet_row['id'] = str(spreadsheet_row['id'])
+        if election_id is not None:
+            spreadsheet_row['election_id'] = election_id
         if "incumbent_party" not in spreadsheet_row:
             spreadsheet_row['incumbent_party'] = spreadsheet_row.get('incumbent.party', "")
         if "question_help" not in spreadsheet_row:
@@ -972,44 +983,6 @@ class Contest(ScraperModel, db.Model):
         if "precincts_reporting" not in spreadsheet_row:
             spreadsheet_row['precincts_reporting'] = spreadsheet_row.get('precincts.reporting', 0)
         return spreadsheet_row
-
-class Meta(ScraperModel, db.Model):
-
-    __tablename__ = "meta"
-
-    key = db.Column(db.String(255), primary_key=True, autoincrement=False, nullable=False)
-    value = db.Column(db.Text)
-    type = db.Column(db.String(255))
-    updated = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
-
-    def __init__(self, **kwargs):
-        super(Meta, self).__init__(**kwargs)
-    
-    def __repr__(self):
-        return '<Meta {}>'.format(self.key)
-
-    def output_for_cache(self, query_result):
-        output = {}
-        if query_result is None:
-            return output
-        output["data"] = {}
-        for query_item in query_result:
-            itemValues = self.row2dict(query_item)
-            output["data"][itemValues["key"]] = itemValues["value"]
-        output["generated"] = datetime.datetime.now()
-        return output
-
-    def parser(self, key, row):
-        """
-        Parser for meta scraping.
-        """
-
-        parsed = {
-            'key': key,
-            'value': row,
-            'type': type(row).__name__
-        }
-        return parsed
 
 
 class Question(ScraperModel, db.Model):
@@ -1030,7 +1003,7 @@ class Question(ScraperModel, db.Model):
     def __repr__(self):
         return '<Question {}>'.format(self.id)
 
-    def parser(self, row, group):
+    def parser(self, row, group, election_id):
 
         """
         Parser for ballot questions data.  Note that for whatever reason there
@@ -1081,6 +1054,7 @@ class Question(ScraperModel, db.Model):
             'id': combined_id,
             'question_id': combined_id,
             'contest_id': contest_id,
+            'election_id': election_id,
             'title': row[4],
             'sub_title': row[5].title(),
             'question_body': question_body
@@ -1126,7 +1100,7 @@ class Result(ScraperModel, db.Model):
     def __repr__(self):
         return '<Result {}>'.format(self.id)
 
-    def parser(self, row, group):
+    def parser(self, row, group, election_id):
         """
         Parser for results type scraping.
         """
@@ -1170,6 +1144,7 @@ class Result(ScraperModel, db.Model):
         parsed = {
             'id': row_id,
             'result_id': row_id,
+            'election_id': election_id,
             'results_group': group,
             'office_name': row[4],
             'candidate_id': row[6],
@@ -1186,13 +1161,13 @@ class Result(ScraperModel, db.Model):
         # Return results record for the database
         return parsed
 
-    def supplement_row(self, spreadsheet_row):
+    def supplement_row(self, spreadsheet_row, election_id=None):
 
         if isinstance(spreadsheet_row, (bytes, bytearray)):
             spreadsheet_row = json.loads(spreadsheet_row)
 
         # parse/format the row
-        spreadsheet_row = self.set_db_fields_from_spreadsheet(spreadsheet_row)
+        spreadsheet_row = self.set_db_fields_from_spreadsheet(spreadsheet_row, election_id)
         supplemented_row = {}
 
         # Check for existing result rows
@@ -1242,8 +1217,10 @@ class Result(ScraperModel, db.Model):
         return supplemented_row
 
     # this handles the key names and value formats for the database if they are different in the spreadsheet
-    def set_db_fields_from_spreadsheet(self, spreadsheet_row):
+    def set_db_fields_from_spreadsheet(self, spreadsheet_row, election_id=None):
         spreadsheet_row['id'] = str(spreadsheet_row['id'])
+        if election_id is not None:
+            spreadsheet_row['election_id'] = election_id
         if "contest_id" not in spreadsheet_row:
             spreadsheet_row['contest_id'] = str(spreadsheet_row.get('contest.id', None))
         if "candidate_id" not in spreadsheet_row:

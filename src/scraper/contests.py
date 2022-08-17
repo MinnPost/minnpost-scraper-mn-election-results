@@ -5,11 +5,8 @@ from flask import jsonify, current_app
 from src.extensions import db
 from src.extensions import celery
 from src.storage import Storage
-from src.models import Contest, Meta
+from src.models import Contest
 from src.scraper import bp
-
-newest_election = None
-election = None
 
 @celery.task(bind=True)
 def scrape_contests(self):
@@ -18,12 +15,12 @@ def scrape_contests(self):
     class_name = Contest.get_classname()
     sources    = contest.read_sources()
     election   = contest.set_election()
+    election_key = election.election_key
 
-    if election not in sources:
+    if election_key not in sources:
         return
 
-    # Get metadata about election
-    election_meta = contest.set_election_metadata()
+    # set up count for results
     inserted_count = 0
     updated_count = 0
     deleted_count = 0
@@ -31,15 +28,15 @@ def scrape_contests(self):
     supplemented_count = 0
     group_count = 0
 
-    for group in sources[election]:
-        source = sources[election][group]
+    for group in sources[election_key]:
+        source = sources[election_key][group]
         group_count = group_count + 1
 
         if 'type' in source and source['type'] == 'results':
             # handle parsed contests
-            rows = contest.parse_election(source, election_meta)
+            rows = contest.parse_election(source, election)
             for row in rows:
-                parsed = contest.parser(row, group, source)
+                parsed = contest.parser(row, group, election, source)
 
                 contest = Contest()
                 contest.from_dict(parsed, new=True)
@@ -51,8 +48,8 @@ def scrape_contests(self):
             db.session.commit()
             
     # Handle post processing actions. this only needs to happen once, not for every group.
-    supplemental = contest.post_processing('contests')
-    meta = Meta()
+    supplemental = contest.post_processing('contests', election.id)
+    #meta = Meta()
     for supplemental_contest in supplemental:
         rows = supplemental_contest['rows']
         action = supplemental_contest['action']
@@ -69,11 +66,11 @@ def scrape_contests(self):
                     elif action == 'delete':
                         db.session.delete(row)
                         deleted_count = deleted_count + 1
-                    elif action == 'meta':
-                        parsed = row # it's already in the format we need to save it
-                        meta = Meta()
-                        meta.from_dict(parsed, new=True)
-                        db.session.merge(meta)
+                    #elif action == 'meta':
+                    #    parsed = row # it's already in the format we need to save it
+                    #    meta = Meta()
+                    #    meta.from_dict(parsed, new=True)
+                    #    db.session.merge(meta)
     # commit supplemental rows
     db.session.commit()
 
