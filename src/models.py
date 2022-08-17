@@ -59,7 +59,7 @@ class ScraperModel(object):
         if query_result is None:
             return output
         data = [self.row2dict(item) for item in query_result]
-        if args["display_cache_data"] == "true":
+        if "display_cache_data" in args and args["display_cache_data"] == "true":
             output["data"] = data
             output["generated"] = datetime.datetime.now()
         else:
