@@ -55,11 +55,14 @@ class ScraperModel(object):
         }
 
     
-    def output_for_cache(self, query_result, args = {}):
+    def output_for_cache(self, query_result, args = {}, single_row=False):
         output = {}
         if query_result is None:
             return output
+        if single_row == False:
         data = [self.row2dict(item) for item in query_result]
+        else:
+            data = self.row2dict(query_result)
         if "display_cache_data" in args and args["display_cache_data"] == "true":
             output["data"] = data
             output["generated"] = datetime.datetime.now()
@@ -395,7 +398,7 @@ class Election(ScraperModel, db.Model):
 
     id = db.Column(db.String(255), primary_key=True, autoincrement=False, nullable=False)
     base_url = db.Column(db.String(255))
-    election_date = db.Column(db.String(255))
+    date = db.Column(db.String(255))
     primary = db.Column(db.Boolean())
     updated = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
 
@@ -407,7 +410,7 @@ class Election(ScraperModel, db.Model):
     def __init__(self, **kwargs):
         self.id = kwargs.get('id')
         self.base_url = kwargs.get('base_url')
-        self.election_date = kwargs.get('election_date')
+        self.date = kwargs.get('date')
         self.primary = kwargs.get('primary')
     
     def __repr__(self):
@@ -415,11 +418,11 @@ class Election(ScraperModel, db.Model):
 
     @hybrid_property
     def election_datetime(self):
-        return datetime.datetime.strptime(self.election_date, '%Y-%m-%d')
+        return datetime.datetime.strptime(self.date, '%Y-%m-%d')
 
     @election_datetime.expression
     def election_datetime(self):
-        return func.to_date(self.election_date, "%Y-%m-%d")
+        return func.to_date(self.date, "%Y-%m-%d")
 
     def parser(self, row, key):
         """
@@ -432,7 +435,7 @@ class Election(ScraperModel, db.Model):
         base_url = election_meta['base_url'] if 'base_url' in election_meta else ""
 
         # election date is stored in the meta
-        election_date = election_meta['date'] if 'date' in election_meta else ""
+        date = election_meta['date'] if 'date' in election_meta else ""
 
         # Create ids.
         election_id = 'id-' + key
@@ -445,7 +448,7 @@ class Election(ScraperModel, db.Model):
         parsed = {
             'id': election_id,
             'base_url': base_url,
-            'election_date': election_date,
+            'date': date,
             'primary': primary
         }
 
