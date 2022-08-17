@@ -104,14 +104,17 @@ def areas():
         request_json     = request.get_json()
         area_id          = request_json.get('area_id')
         areas_group      = request_json.get('areas_group')
+        election_key     = request_json.get('election_key')
     elif request.method == 'POST':
         # form request
-        area_id = request.form.get('area_id', None)
-        areas_group = request.form.get('areas_group', None)
+        area_id      = request.form.get('area_id', None)
+        areas_group  = request.form.get('areas_group', None)
+        election_key = request.form.get('election_key', None)
     else:
         # GET request
-        area_id = request.values.get('area_id', None)
-        areas_group = request.values.get('areas_group', None)
+        area_id      = request.values.get('area_id', None)
+        areas_group  = request.values.get('areas_group', None)
+        election_key = request.values.get('election_key', None)
 
     # set cache key
     if area_id is not None:
@@ -121,6 +124,11 @@ def areas():
     else:
         cache_key_name = "all_areas"
 
+    # add election to cache key, even if it's None
+    election       = area_model.set_election(election_key)
+    election_id    = election.id
+    cache_key_name = cache_key_name + "-election-" + election_id
+
     # check for cached data and set the output, if it exists
     cached_output = storage.get(cache_key_name)
     if cached_output is not None:
@@ -129,17 +137,17 @@ def areas():
         # run the queries
         if area_id is not None:
             try:
-                query_result = Area.query.filter_by(id=area_id).all()
+                query_result = Area.query.filter_by(id=area_id, election_id=election_id).all()
             except exc.SQLAlchemyError:
                 pass
         elif areas_group is not None:
             try:
-                query_result = Area.query.filter_by(areas_group=areas_group).all()
+                query_result = Area.query.filter_by(areas_group=areas_group, election_id=election_id).all()
             except exc.SQLAlchemyError:
                 pass
         else:
             try:
-                query_result = Area.query.all()
+                query_result = Area.query.filter_by(election_id=election_id).all()
             except exc.SQLAlchemyError:
                 pass
 
@@ -172,16 +180,19 @@ def contests():
         title            = request_json.get('title')
         contest_id       = request_json.get('contest_id')
         contest_ids      = request_json.get('contest_ids')
+        election_key     = request_json.get('election_key')
     elif request.method == 'POST':
         # form request
-        title = request.form.get('title', None)
-        contest_id = request.form.get('contest_id', None)
-        contest_ids = request.form.get('contest_ids', [])
+        title        = request.form.get('title', None)
+        contest_id   = request.form.get('contest_id', None)
+        contest_ids  = request.form.get('contest_ids', [])
+        election_key = request.form.get('election_key', None)
     else:
         # GET request
-        title = request.values.get('title', None)
-        contest_id = request.values.get('contest_id', None)
-        contest_ids = request.values.get('contest_ids', [])
+        title        = request.values.get('title', None)
+        contest_id   = request.values.get('contest_id', None)
+        contest_ids  = request.values.get('contest_ids', [])
+        election_key = request.values.get('election_key', None)
 
     # if the contest_ids value is provided on the url, it'll be a string and we need to make it a list
     if isinstance(contest_ids, str):
@@ -197,6 +208,11 @@ def contests():
         cache_key_name  = "contest_ids"
     else:
         cache_key_name = "all_contests"
+
+    # add election to cache key, even if it's None
+    election       = contest_model.set_election(election_key)
+    election_id    = election.id
+    cache_key_name = cache_key_name + "-election-" + election_id
     
     # check for cached data and set the output, if it exists
     cached_output = storage.get(cache_key_name)
@@ -206,22 +222,22 @@ def contests():
         # run the queries
         if contest_id is not None:
             try:
-                query_result = Contest.query.join(Result.contests).filter_by(id=contest_id).all()
+                query_result = Contest.query.join(Result.contests).filter_by(id=contest_id, election_id=election_id).all()
             except exc.SQLAlchemyError:
                 pass
         elif title is not None:
             try:
-                query_result = Contest.query.join(Result.contests).filter(Contest.title.ilike(search)).all()
+                query_result = Contest.query.join(Result.contests).filter(Contest.title.ilike(search), Contest.election_id == election_id).all()
             except exc.SQLAlchemyError:
                 pass
         elif len(contest_ids):
             try:
-                query_result = Contest.query.join(Result.contests).filter(Contest.id.ilike(any_(contest_ids))).all()
+                query_result = Contest.query.join(Result.contests).filter(Contest.id.ilike(any_(contest_ids)), Contest.election_id == election_id).all()
             except exc.SQLAlchemyError:
                 pass
         else:
             try:
-                query_result = Contest.query.all()
+                query_result = Contest.query.filter_by(election_id=election_id).all()
             except exc.SQLAlchemyError:
                 pass
         
@@ -402,14 +418,17 @@ def questions():
         request_json = request.get_json()
         question_id  = request_json.get('question_id')
         contest_id   = request_json.get('contest_id')
+        election_key = request_json.get('election_key')
     elif request.method == 'POST':
         # form request
         question_id = request.form.get('question_id', None)
         contest_id = request.form.get('contest_id', None)
+        election_key = request.form.get('election_key', None)
     else:
         # GET request
         question_id = request.values.get('question_id', None)
         contest_id = request.values.get('contest_id', None)
+        election_key = request.values.get('election_key', None)
 
     # set cache key
     if question_id is not None:
@@ -419,6 +438,11 @@ def questions():
     else:
         cache_key_name = "all_questions"
 
+    # add election to cache key, even if it's None
+    election       = question_model.set_election(election_key)
+    election_id    = election.id
+    cache_key_name = cache_key_name + "-election-" + election_id
+
     # check for cached data and set the output, if it exists
     cached_output = storage.get(cache_key_name)
     if cached_output is not None:
@@ -427,17 +451,17 @@ def questions():
         # run the queries
         if question_id is not None:
             try:
-                query_result = Question.query.filter_by(id=question_id).all()
+                query_result = Question.query.filter_by(id=question_id, election_id=election_id).all()
             except exc.SQLAlchemyError:
                 pass
         elif contest_id is not None:
             try:
-                query_result = Question.query.filter_by(contest_id=contest_id).all()
+                query_result = Question.query.filter_by(contest_id=contest_id, election_id=election_id).all()
             except exc.SQLAlchemyError:
                 pass
         else:
             try:
-                query_result = Question.query.all()
+                query_result = Question.query.filter_by(election_id=election_id).all()
             except exc.SQLAlchemyError:
                 pass
 
@@ -467,16 +491,19 @@ def results():
     if request.is_json:
         # JSON request
         request_json = request.get_json()
-        result_id  = request_json.get('result_id')
-        contest_id = request_json.get('contest_id')
+        result_id    = request_json.get('result_id')
+        contest_id   = request_json.get('contest_id')
+        election_key = request_json.get('election_key')
     elif request.method == 'POST':
         # form request
-        result_id  = request.form.get('result_id', None)
-        contest_id = request.form.get('contest_id', None)
+        result_id    = request.form.get('result_id', None)
+        contest_id   = request.form.get('contest_id', None)
+        election_key = request.form.get('election_key', None)
     else:
         # GET request
-        result_id  = request.values.get('result_id', None)
-        contest_id = request.values.get('contest_id', None)
+        result_id    = request.values.get('result_id', None)
+        contest_id   = request.values.get('contest_id', None)
+        election_key = request.values.get('election_key', None)
 
     # set cache key
     if result_id is not None:
@@ -486,6 +513,11 @@ def results():
     else:
         cache_key_name = "all_results"
 
+    # add election to cache key, even if it's None
+    election       = result_model.set_election(election_key)
+    election_id    = election.id
+    cache_key_name = cache_key_name + "-election-" + election_id
+
     # check for cached data and set the output, if it exists
     cached_output = storage.get(cache_key_name)
     if cached_output is not None:
@@ -494,17 +526,17 @@ def results():
         # run the queries
         if result_id is not None:
             try:
-                query_result = Result.query.filter_by(id=result_id).all()
+                query_result = Result.query.filter_by(id=result_id, election_id=election_id).all()
             except exc.SQLAlchemyError:
                 pass
         elif contest_id is not None:
             try:
-                query_result = Result.query.filter_by(contest_id=contest_id).all()
+                query_result = Result.query.filter_by(contest_id=contest_id, election_id=election_id).all()
             except exc.SQLAlchemyError:
                 pass
         else:
             try:
-                query_result = Result.query.all()
+                query_result = Result.query.filter_by(election_id=election_id).all()
             except exc.SQLAlchemyError:
                 pass
         
