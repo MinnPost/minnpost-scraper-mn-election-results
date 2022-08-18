@@ -360,6 +360,11 @@ def meta():
     else:
         cache_key_name = "all_elections"
 
+    # add election to cache key, even if it's None
+    election       = election_model.set_election(key)
+    election_id    = election.id
+    cache_key_name = cache_key_name + "-election-" + election_id
+
     # check for cached data and set the output, if it exists
     cached_output = storage.get(cache_key_name)
     if cached_output is not None:

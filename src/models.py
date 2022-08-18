@@ -489,16 +489,16 @@ class Election(ScraperModel, db.Model):
         if query_result is None:
             return output
         if single_row == False:
-            #data = [self.row2dict(item) for item in query_result]
             data = []
             for item in query_result:
                 election = self.row2dict(item)
                 if "contest_count" not in election:
                     election["contest_count"] = len(item.contests)
-                    #election["contest_count"] = self.contest_count # this doesn't work
                 data.append(election)
         else:
             data = self.row2dict(query_result)
+            if "contest_count" not in data:
+                data["contest_count"] = len(query_result.contests)
         if "display_cache_data" in args and args["display_cache_data"] == "true":
             output["data"] = data
             output["generated"] = datetime.datetime.now()
