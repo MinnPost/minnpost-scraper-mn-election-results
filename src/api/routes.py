@@ -1,5 +1,4 @@
 import ciso8601
-import sqlparse
 from datetime import datetime
 from flask import jsonify, request, Response, current_app
 from sqlalchemy import text
@@ -7,7 +6,7 @@ from sqlalchemy import exc
 from sqlalchemy import any_
 from src.extensions import db
 from src.storage import Storage
-from src.models import Area, Contest, Election, Question, Result
+from src.models import Area, Contest, Election, Question, Result, ScraperModel
 from src.api import bp
 from src.api.errors import bad_request
 
@@ -17,19 +16,19 @@ def query():
     request.args["display_cache_data"] = "false"
     storage        = Storage(request.args)
 
+    scraper_model     = ScraperModel()
     sql = request.args.get('q', None)
     display_cache_data = request.args.get('display_cache_data', None)
     callback = request.args.get('callback')
-    election_key = request.args.get('election_key', None)
-    parsed = sqlparse.parse(sql)[0]
-    
-    example_query = 'SELECT * FROM contests WHERE title LIKE \'%governor%\'';
-    sqltype = parsed.get_type()
-    if sqltype != 'SELECT' or parsed in ['', None]:
-        return 'Welcome to the election scraper server. Use a URL like: <a href="/query/?q=%s">/query/?q=%s</a>' % (example_query, example_query);
 
-    # make the query case insensitive
-    sql = sql.replace(" LIKE ", " ILIKE ")
+    election_key = request.args.get('election_key', None)
+    election     = scraper_model.set_election(election_key)
+    election_id  = election.id
+
+    sql = scraper_model.format_sql(sql, election_id)
+    if sql == "":
+        example_query = 'SELECT * FROM contests WHERE title LIKE \'%governor%\'';
+        return 'Welcome to the election scraper server. Use a URL like: <a href="/query/?q=%s">/query/?q=%s</a>' % (example_query, example_query);
 
     # check for cached data and set the output, if it exists
     cache_list_key = current_app.config['QUERY_LIST_CACHE_KEY']

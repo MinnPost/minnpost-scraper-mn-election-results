@@ -11,6 +11,8 @@ from datetime import timedelta
 from flask import current_app, request
 from src.extensions import db
 
+from sqlglot import exp, parse_one, condition, errors
+
 from sqlalchemy import text, inspect, func
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.expression import Insert
@@ -106,6 +108,24 @@ class ScraperModel(object):
 
         current_app.log.info('Set election to: %s' % election)
         return election
+
+
+    def format_sql(self, sql, election_id = None):
+        try:
+            expression_tree = parse_one(sql).assert_is(exp.Select).where('1=1')
+        except errors.ParseError:
+            return ""
+        transformed_tree = expression_tree.transform(self.transform_sql, election_id=election_id)
+        # make the query case insensitive
+        sql = transformed_tree.sql().replace(" LIKE ", " ILIKE ")
+        return sql
+    
+
+    def transform_sql(self, node, election_id = None):
+        if isinstance(node, exp.Where):
+            node.args["this"] = parse_one(f"{node.this.sql()} AND election_id = '{election_id}'")
+        return node
+
 
     def set_election_key(self, election_id):
         key = ''.join(election_id.split('id-', 3))
