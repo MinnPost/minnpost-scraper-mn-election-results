@@ -43,6 +43,7 @@ def query():
         try:
             query_result = db.session.execute(sql)
         except exc.SQLAlchemyError:
+            query_result = {}
             pass
         
         # set the cache and the output from the query result

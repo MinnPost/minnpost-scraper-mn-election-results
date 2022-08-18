@@ -115,15 +115,31 @@ class ScraperModel(object):
             expression_tree = parse_one(sql).assert_is(exp.Select).where('1=1')
         except errors.ParseError:
             return ""
-        transformed_tree = expression_tree.transform(self.transform_sql, election_id=election_id)
+        alias = ""
+        if "areas AS a" in sql:
+            alias = "a"
+        elif "contests AS c" in sql:
+            alias = "c"
+        elif "elections AS e" in sql:
+            alias = "e"
+        elif "questions AS q" in sql:
+            alias = "q"
+        elif "results AS r" in sql:
+            alias = "r"
+        transformed_tree = expression_tree.transform(self.transform_sql, election_id=election_id, alias=alias)
         # make the query case insensitive
         sql = transformed_tree.sql().replace(" LIKE ", " ILIKE ")
         return sql
     
 
-    def transform_sql(self, node, election_id = None):
+    def transform_sql(self, node, election_id = None, alias = ""):
         if isinstance(node, exp.Where):
-            node.args["this"] = parse_one(f"{node.this.sql()} AND election_id = '{election_id}'")
+            if alias == "c":
+                node.args["this"] = parse_one(f"{node.this.sql()} AND c.election_id = '{election_id}'")
+            elif alias == "r":
+                node.args["this"] = parse_one(f"{node.this.sql()} AND r.election_id = '{election_id}'")
+            else:
+                node.args["this"] = parse_one(f"{node.this.sql()} AND election_id = '{election_id}'")
         return node
 
 
