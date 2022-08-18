@@ -390,8 +390,6 @@ def meta():
 
         # set the cache and the output from the query result
         output = election_model.output_for_cache(query_result, request.args, returning_single_row)
-        if returning_single_row == True:
-            output['data'] = {key: output['data'][key]}
         output = storage.save(cache_key_name, output, class_name)
     
     # set up the response and return it

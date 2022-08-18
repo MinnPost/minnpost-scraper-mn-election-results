@@ -11,9 +11,9 @@ from datetime import timedelta
 from flask import current_app, request
 from src.extensions import db
 
-from sqlglot import exp, parse_one, condition, errors
+from sqlglot import exp, parse_one, errors
 
-from sqlalchemy import text, inspect, func
+from sqlalchemy import text, inspect, func, select
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.expression import Insert
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -469,6 +469,43 @@ class Election(ScraperModel, db.Model):
     @election_key.expression
     def election_key(self):
         return func.substr(self.id, func.strpos(self.id,'id-'))
+
+
+    @hybrid_property
+    def contest_count(self):
+        #return len(self.contests)   # @note: use when non-dynamic relationship
+        return self.contests.count()# @note: use when dynamic relationship
+
+    @contest_count.expression
+    def contest_count(cls):
+        return (select([func.count(Contest.id)]).
+                where(Contest.election_id == cls.id).
+                label("contest_count")
+                )
+
+
+    def output_for_cache(self, query_result, args = {}, single_row=False):
+        output = {}
+        if query_result is None:
+            return output
+        if single_row == False:
+            #data = [self.row2dict(item) for item in query_result]
+            data = []
+            for item in query_result:
+                election = self.row2dict(item)
+                if "contest_count" not in election:
+                    election["contest_count"] = len(item.contests)
+                    #election["contest_count"] = self.contest_count # this doesn't work
+                data.append(election)
+        else:
+            data = self.row2dict(query_result)
+        if "display_cache_data" in args and args["display_cache_data"] == "true":
+            output["data"] = data
+            output["generated"] = datetime.datetime.now()
+        else:
+            output = data
+        return output
+
 
     def parser(self, row, key):
         """
