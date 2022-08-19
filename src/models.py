@@ -93,25 +93,22 @@ class ScraperModel(object):
         # 1. url or other function argument for election
         # 2. config level override
         # 3. newest election in the elections table
-        current_app.log.info('parameter election id is %s' % election_id)
+        election = None
         if election_id == None:
             election_id = current_app.config["ELECTION_DATE_OVERRIDE"]
-            current_app.log.info('override election id is %s' % election_id)
 
         # if there is an election id value from anywhere
         if election_id is not None and election_id != "":
             if not election_id.startswith('id-'):
                 election_id = 'id-' + election_id
-            current_app.log.info('query election key is %s' % election_id)
             election = Election.query.filter_by(id=election_id).first()
         
         if election == None:
-            current_app.log.info('no election object is present, get the newest one')
             election = Election.query.order_by(Election.election_datetime.desc()).first()
             #query_result = Election.query.order_by(Election.election_datetime.desc()).all()
 
         sources      = self.read_sources()
-        election_key = ''.join(election_id.split('id-', 3))
+        election_key = ''.join(election.id.split('id-', 3))
         if election_key not in sources:
             return None
 
