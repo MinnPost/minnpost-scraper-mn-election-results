@@ -11,7 +11,7 @@ from datetime import timedelta
 from flask import current_app, request
 from src.extensions import db
 
-from sqlglot import exp, parse_one, errors, condition
+from sqlglot import exp, parse_one, errors
 
 from sqlalchemy import text, inspect, func, select
 from sqlalchemy.ext.compiler import compiles
@@ -105,7 +105,6 @@ class ScraperModel(object):
         
         if election == None:
             election = Election.query.order_by(Election.election_datetime.desc()).first()
-            #query_result = Election.query.order_by(Election.election_datetime.desc()).all()
 
         sources      = self.read_sources()
         election_key = ''.join(election.id.split('id-', 3))
@@ -118,9 +117,10 @@ class ScraperModel(object):
 
     def format_sql(self, sql, election_id = None):
         try:
-            expression_tree = parse_one(sql).assert_is(exp.Select).where('1=1')
+            expression_tree = parse_one(sql).assert_is(exp.Select)
         except errors.ParseError:
             return ""
+
         alias = ""
         if "areas AS a" in sql:
             alias = "a"
@@ -136,18 +136,15 @@ class ScraperModel(object):
         election_id_field = "election_id"
         if " from elections" in sql.lower():
             election_id_field = "id"
-        transformed_tree = expression_tree.transform(self.transform_sql, election_id=election_id, alias=alias, election_id_field=election_id_field)
+        if alias != "":
+            alias = alias + '.'
+        if election_id is not None:
+            expression_tree = expression_tree.where(f"{alias}{election_id_field}='{election_id}'")
+        
         # make the query case insensitive
-        sql = transformed_tree.sql().replace(" LIKE ", " ILIKE ")
+        sql = expression_tree.sql().replace(" LIKE ", " ILIKE ")
+        current_app.log.info('sql is %s' % sql)
         return sql
-    
-
-    def transform_sql(self, node, election_id = None, alias = "", election_id_field = ""):
-        if isinstance(node, exp.Where):
-            if alias != "":
-                alias = alias + '.'
-            node.args["this"] = parse_one(f"{node.this.sql()} AND {alias}{election_id_field} = '{election_id}'")
-        return node
 
 
     def set_election_key(self, election_id):
