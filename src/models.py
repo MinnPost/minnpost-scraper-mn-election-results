@@ -165,7 +165,10 @@ class ScraperModel(object):
                 response = urllib.request.urlopen(source['url'])
                 lines = [l.decode('latin-1') for l in response.readlines()]
                 rows = csv.reader(lines, delimiter=';')
-                return rows
+                election = {}
+                election["rows"] = rows
+                election["updated"] = dict(response.getheaders())['Last-Modified']
+                return election
             except Exception as err:
                 current_app.log.error('[%s] Error when trying to read URL and parse CSV: %s' % (source['type'], source['url']))
                 raise
@@ -376,7 +379,7 @@ class Area(ScraperModel, db.Model):
         return '<Area {}>'.format(self.id)
 
 
-    def parser(self, row, group, election_id):
+    def parser(self, row, group, election_id, updated = None):
 
         # General data
         parsed = {
@@ -432,6 +435,9 @@ class Area(ScraperModel, db.Model):
             parsed['county_id'] = row[2]
             parsed['county_name'] = row[3]
 
+        if updated is not None:
+            parsed['updated'] = updated
+
         parsed['id'] = parsed['area_id']
 
         return parsed
@@ -458,6 +464,7 @@ class Election(ScraperModel, db.Model):
         self.base_url = kwargs.get('base_url')
         self.date = kwargs.get('date')
         self.primary = kwargs.get('primary')
+        self.updated = kwargs.get('primary')
 
 
     def __repr__(self):
@@ -543,11 +550,20 @@ class Election(ScraperModel, db.Model):
         # non-partisan ones only mean there is more than one seat available.
         primary = election_meta['primary'] if 'primary' in election_meta else False
 
+        # try to set the updated value based on the most recently updated result
+        try:
+            query_result = Result.query.filter_by(election_id=election_id).order_by(Result.updated.desc()).first()
+            updated = query_result.updated
+        except Exception as e:
+            updated = db.func.current_timestamp()
+            pass
+
         parsed = {
             'id': election_id,
             'base_url': base_url,
             'date': date,
-            'primary': primary
+            'primary': primary,
+            'updated': updated
         }
 
         # Return election record
@@ -638,7 +654,7 @@ class Contest(ScraperModel, db.Model):
         return '<Contest {}>'.format(self.id)
 
 
-    def parser(self, row, group, election, source):
+    def parser(self, row, group, election, source, updated = None):
         """
         Parser for contest scraping.
         """
@@ -715,6 +731,9 @@ class Contest(ScraperModel, db.Model):
         parsed = self.set_question_fields(parsed)
         parsed['partisan'] = self.set_partisanship(parsed)
         parsed['seats'] = self.set_seats(parsed)
+
+        if updated is not None:
+            parsed['updated'] = updated
 
         # Return contest record
         return parsed
@@ -1141,7 +1160,7 @@ class Question(ScraperModel, db.Model):
         return '<Question {}>'.format(self.id)
 
 
-    def parser(self, row, group, election_id):
+    def parser(self, row, group, election_id, updated = None):
 
         """
         Parser for ballot questions data.  Note that for whatever reason there
@@ -1198,6 +1217,9 @@ class Question(ScraperModel, db.Model):
             'question_body': question_body
         }
 
+        if updated is not None:
+            parsed['updated'] = updated
+
         return parsed
 
 
@@ -1240,7 +1262,7 @@ class Result(ScraperModel, db.Model):
         return '<Result {}>'.format(self.id)
 
 
-    def parser(self, row, group, election_id):
+    def parser(self, row, group, election_id, updated = None):
         """
         Parser for results type scraping.
         """
@@ -1297,6 +1319,9 @@ class Result(ScraperModel, db.Model):
             'ranked_choice_place': int(ranked_choice_place) if ranked_choice_place is not None else 0,
             'contest_id': contest_id
         }
+
+        if updated is not None:
+            parsed['updated'] = updated
 
         # Return results record for the database
         return parsed

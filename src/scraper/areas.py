@@ -36,10 +36,12 @@ def scrape_areas(self, election_id = None):
 
         if 'type' in source and source['type'] == 'areas':
             # handle parsed areas
-            rows = area.parse_election(source, election)
+            parsed_election = area.parse_election(source, election)
+            rows = parsed_election['rows']
+            updated = parsed_election['updated']
 
             for row in rows:
-                parsed = area.parser(row, group, election.id)
+                parsed = area.parser(row, group, election.id, updated)
 
                 area = Area()
                 area.from_dict(parsed, new=True)

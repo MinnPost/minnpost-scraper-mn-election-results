@@ -43,9 +43,11 @@ def scrape_results(self, election_id = None):
 
         if 'type' in source and source['type'] == 'results':
             # handle parsed results
-            rows = result.parse_election(source, election)
+            parsed_election = result.parse_election(source, election)
+            rows = parsed_election['rows']
+            updated = parsed_election['updated']
             for row in rows:
-                parsed = result.parser(row, group, election.id)
+                parsed = result.parser(row, group, election.id, updated)
 
                 result = Result()
                 result.from_dict(parsed, new=True)

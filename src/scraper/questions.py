@@ -33,10 +33,12 @@ def scrape_questions(self, election_id = None):
 
         if 'type' in source and source['type'] == 'questions':
 
-            rows = question.parse_election(source, election)
+            parsed_election = question.parse_election(source, election)
+            rows = parsed_election['rows']
+            updated = parsed_election['updated']
 
             for row in rows:
-                parsed = question.parser(row, group, election.id)
+                parsed = question.parser(row, group, election.id, updated)
 
                 question = Question()
                 question.from_dict(parsed, new=True)
