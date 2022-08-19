@@ -25,6 +25,10 @@ def query():
     election     = scraper_model.set_election(election_key)
     election_id  = election.id
 
+    if sql == "select * from meta":
+        election_model = Election()
+        return election_model.legacy_meta_output(election_id)
+
     sql = scraper_model.format_sql(sql, election_id)
     if sql == "":
         example_query = 'SELECT * FROM contests WHERE title LIKE \'%governor%\'';
@@ -35,10 +39,10 @@ def query():
     cache_key = sql
     cached_output = storage.get(cache_key)
     if cached_output is not None:
-        current_app.log.info('found cached result for key: %s' % cache_key)
+        current_app.log.debug('found cached result for key: %s' % cache_key)
         output = cached_output
     else:
-        current_app.log.info('did not find cached result for key: %s' % cache_list_key)
+        current_app.log.debug('did not find cached result for key: %s' % cache_list_key)
         # run the query
         try:
             query_result = db.session.execute(sql)

@@ -11,7 +11,7 @@ from datetime import timedelta
 from flask import current_app, request
 from src.extensions import db
 
-from sqlglot import exp, parse_one, errors
+from sqlglot import exp, parse_one, errors, condition
 
 from sqlalchemy import text, inspect, func, select
 from sqlalchemy.ext.compiler import compiles
@@ -106,7 +106,7 @@ class ScraperModel(object):
             election = Election.query.order_by(Election.election_datetime.desc()).first()
             #query_result = Election.query.order_by(Election.election_datetime.desc()).all()
 
-        current_app.log.info('Set election to: %s' % election)
+        current_app.log.debug('Set election to: %s' % election)
         return election
 
 
@@ -126,20 +126,21 @@ class ScraperModel(object):
             alias = "q"
         elif "results AS r" in sql:
             alias = "r"
-        transformed_tree = expression_tree.transform(self.transform_sql, election_id=election_id, alias=alias)
+
+        election_id_field = "election_id"
+        if " from elections" in sql.lower():
+            election_id_field = "id"
+        transformed_tree = expression_tree.transform(self.transform_sql, election_id=election_id, alias=alias, election_id_field=election_id_field)
         # make the query case insensitive
         sql = transformed_tree.sql().replace(" LIKE ", " ILIKE ")
         return sql
     
 
-    def transform_sql(self, node, election_id = None, alias = ""):
+    def transform_sql(self, node, election_id = None, alias = "", election_id_field = ""):
         if isinstance(node, exp.Where):
-            if alias == "c":
-                node.args["this"] = parse_one(f"{node.this.sql()} AND c.election_id = '{election_id}'")
-            elif alias == "r":
-                node.args["this"] = parse_one(f"{node.this.sql()} AND r.election_id = '{election_id}'")
-            else:
-                node.args["this"] = parse_one(f"{node.this.sql()} AND election_id = '{election_id}'")
+            if alias != "":
+                alias = alias + '.'
+            node.args["this"] = parse_one(f"{node.this.sql()} AND {alias}{election_id_field} = '{election_id}'")
         return node
 
 
@@ -537,6 +538,20 @@ class Election(ScraperModel, db.Model):
 
         # Return election record
         return parsed
+
+
+    def legacy_meta_output(self, election_id):
+        query_result = self.query.filter_by(id=election_id).first()
+        election = self.row2dict(query_result)
+        data = []
+        for key in election:
+            row = {}
+            row["key"] = key
+            row["value"] = election[key]
+            row["type"] = type(election[key]).__name__
+            data.append(row)
+        current_app.log.info(data)
+        return data
 
 
 class Contest(ScraperModel, db.Model):
