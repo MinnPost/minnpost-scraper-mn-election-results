@@ -14,8 +14,9 @@ from src.api.errors import bad_request
 def query():
     request.args = request.args.to_dict()
     request.args["display_cache_data"] = "false"
-    storage = Storage(request.args)
-    output  = None
+    storage       = Storage(request.args)
+    output        = None
+    example_query = 'SELECT * FROM contests WHERE title LIKE \'%governor%\'';
 
     scraper_model     = ScraperModel()
     sql = request.args.get('q', None)
@@ -23,7 +24,10 @@ def query():
     callback = request.args.get('callback')
 
     election_id = request.args.get('election_id', None)
-    #election     = scraper_model.set_election(election_id) # verify that it's valid here though.
+    election    = scraper_model.set_election(election_id)
+
+    if election is None:
+        return 'Welcome to the election scraper server. Use a URL like: <a href="/query/?q=%s">/query/?q=%s</a>' % (example_query, example_query);
 
     # set up sql query as cache key
     cache_list_key = current_app.config['QUERY_LIST_CACHE_KEY']
@@ -39,13 +43,12 @@ def query():
             output = cached_output
         else:
             current_app.log.debug('did not find cached result for legacy meta key: %s' % cache_list_key)
-            output = election_model.legacy_meta_output(election_id)
+            output = election_model.legacy_meta_output(election.id)
             output = storage.save(cache_key, output, cache_list_key)
 
     # verify/format the sql
-    sql = scraper_model.format_sql(sql, election_id)
+    sql = scraper_model.format_sql(sql, election.id)
     if sql == "":
-        example_query = 'SELECT * FROM contests WHERE title LIKE \'%governor%\'';
         return 'Welcome to the election scraper server. Use a URL like: <a href="/query/?q=%s">/query/?q=%s</a>' % (example_query, example_query);
 
     if output == None:
@@ -142,8 +145,10 @@ def areas():
         cache_key_name = "all_areas"
 
     # add election to cache key, even if it's None
-    election       = area_model.set_election(election_id) # verify that the id is valid here
-    cache_key_name = cache_key_name + "-election-" + election_id
+    election = area_model.set_election(election_id)
+    if election is None:
+        return
+    cache_key_name = cache_key_name + "-election-" + election.id
 
     # check for cached data and set the output, if it exists
     cached_output = storage.get(cache_key_name)
@@ -153,17 +158,17 @@ def areas():
         # run the queries
         if area_id is not None:
             try:
-                query_result = Area.query.filter_by(id=area_id, election_id=election_id).all()
+                query_result = Area.query.filter_by(id=area_id, election_id=election.id).all()
             except exc.SQLAlchemyError:
                 pass
         elif areas_group is not None:
             try:
-                query_result = Area.query.filter_by(areas_group=areas_group, election_id=election_id).all()
+                query_result = Area.query.filter_by(areas_group=areas_group, election_id=election.id).all()
             except exc.SQLAlchemyError:
                 pass
         else:
             try:
-                query_result = Area.query.filter_by(election_id=election_id).all()
+                query_result = Area.query.filter_by(election_id=election.id).all()
             except exc.SQLAlchemyError:
                 pass
 
@@ -226,8 +231,10 @@ def contests():
         cache_key_name = "all_contests"
 
     # add election to cache key, even if it's None
-    election       = contest_model.set_election(election_id) # verify that it's valid
-    cache_key_name = cache_key_name + "-election-" + election_id
+    election = contest_model.set_election(election_id)
+    if election is None:
+        return
+    cache_key_name = cache_key_name + "-election-" + election.id
     
     # check for cached data and set the output, if it exists
     cached_output = storage.get(cache_key_name)
@@ -237,22 +244,22 @@ def contests():
         # run the queries
         if contest_id is not None:
             try:
-                query_result = Contest.query.join(Result.contests).filter_by(id=contest_id, election_id=election_id).all()
+                query_result = Contest.query.join(Result.contests).filter_by(id=contest_id, election_id=election.id).all()
             except exc.SQLAlchemyError:
                 pass
         elif title is not None:
             try:
-                query_result = Contest.query.join(Result.contests).filter(Contest.title.ilike(search), Contest.election_id == election_id).all()
+                query_result = Contest.query.join(Result.contests).filter(Contest.title.ilike(search), Contest.election_id == election.id).all()
             except exc.SQLAlchemyError:
                 pass
         elif len(contest_ids):
             try:
-                query_result = Contest.query.join(Result.contests).filter(Contest.id.ilike(any_(contest_ids)), Contest.election_id == election_id).all()
+                query_result = Contest.query.join(Result.contests).filter(Contest.id.ilike(any_(contest_ids)), Contest.election_id == election.id).all()
             except exc.SQLAlchemyError:
                 pass
         else:
             try:
-                query_result = Contest.query.filter_by(election_id=election_id).all()
+                query_result = Contest.query.filter_by(election_id=election.id).all()
             except exc.SQLAlchemyError:
                 pass
         
@@ -376,9 +383,10 @@ def meta():
         cache_key_name = "all_elections"
 
     # add election to cache key, even if it's None
-    election       = election_model.set_election(key)
-    election_id    = election.id
-    cache_key_name = cache_key_name + "-election-" + election_id
+    election = election_model.set_election(election_id)
+    if election is None:
+        return
+    cache_key_name = cache_key_name + "-election-" + election.id
 
     # check for cached data and set the output, if it exists
     cached_output = storage.get(cache_key_name)
@@ -386,9 +394,9 @@ def meta():
         output = cached_output
     else:
         # run the queries
-        if election_id is not None:
+        if election.id is not None:
             try:
-                query_result = Election.query.filter_by(id=election_id).all()
+                query_result = Election.query.filter_by(id=election.id).all()
             except exc.SQLAlchemyError:
                 pass
         elif election_date is not None:
@@ -457,8 +465,10 @@ def questions():
         cache_key_name = "all_questions"
 
     # add election to cache key, even if it's None
-    election       = question_model.set_election(election_id) # verify that it's valid
-    cache_key_name = cache_key_name + "-election-" + election_id
+    election = question_model.set_election(election_id)
+    if election is None:
+        return
+    cache_key_name = cache_key_name + "-election-" + election.id
 
     # check for cached data and set the output, if it exists
     cached_output = storage.get(cache_key_name)
@@ -468,17 +478,17 @@ def questions():
         # run the queries
         if question_id is not None:
             try:
-                query_result = Question.query.filter_by(id=question_id, election_id=election_id).all()
+                query_result = Question.query.filter_by(id=question_id, election_id=election.id).all()
             except exc.SQLAlchemyError:
                 pass
         elif contest_id is not None:
             try:
-                query_result = Question.query.filter_by(contest_id=contest_id, election_id=election_id).all()
+                query_result = Question.query.filter_by(contest_id=contest_id, election_id=election.id).all()
             except exc.SQLAlchemyError:
                 pass
         else:
             try:
-                query_result = Question.query.filter_by(election_id=election_id).all()
+                query_result = Question.query.filter_by(election_id=election.id).all()
             except exc.SQLAlchemyError:
                 pass
 
@@ -531,8 +541,10 @@ def results():
         cache_key_name = "all_results"
 
     # add election to cache key, even if it's None
-    election       = result_model.set_election(election_id) # verify that id is valid
-    cache_key_name = cache_key_name + "-election-" + election_id
+    election = result_model.set_election(election_id)
+    if election is None:
+        return
+    cache_key_name = cache_key_name + "-election-" + election.id
 
     # check for cached data and set the output, if it exists
     cached_output = storage.get(cache_key_name)
@@ -542,17 +554,17 @@ def results():
         # run the queries
         if result_id is not None:
             try:
-                query_result = Result.query.filter_by(id=result_id, election_id=election_id).all()
+                query_result = Result.query.filter_by(id=result_id, election_id=election.id).all()
             except exc.SQLAlchemyError:
                 pass
         elif contest_id is not None:
             try:
-                query_result = Result.query.filter_by(contest_id=contest_id, election_id=election_id).all()
+                query_result = Result.query.filter_by(contest_id=contest_id, election_id=election.id).all()
             except exc.SQLAlchemyError:
                 pass
         else:
             try:
-                query_result = Result.query.filter_by(election_id=election_id).all()
+                query_result = Result.query.filter_by(election_id=election.id).all()
             except exc.SQLAlchemyError:
                 pass
         
