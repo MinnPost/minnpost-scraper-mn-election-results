@@ -1034,7 +1034,12 @@ class Contest(ScraperModel, db.Model):
     def supplement_row(self, spreadsheet_row, election_id=None):
 
         if isinstance(spreadsheet_row, (bytes, bytearray)):
-            spreadsheet_row = json.loads(spreadsheet_row)
+            try:
+                spreadsheet_row = json.loads(spreadsheet_row)
+            except Exception:
+                current_app.log.debug('Failed to load json into a dict. The json data is %s ' % spreadsheet_row)
+                supplemented_row = {}
+                return supplemented_row
 
         # parse/format the row
         spreadsheet_row = self.set_db_fields_from_spreadsheet(spreadsheet_row, election_id)
