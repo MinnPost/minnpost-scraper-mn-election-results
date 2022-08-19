@@ -229,7 +229,8 @@ class ScraperModel(object):
                     update_rows['rows'] = list(set(update_rows['rows'] + supplement_row['rows']))
                 elif supplement_row['action'] == 'delete' and supplement_row['rows'] not in delete_rows['rows']:
                     #delete_rows['rows'] = [*delete_rows['rows'], *supplement_row['rows']]
-                    delete_rows['rows'] = list(set(insert_rows['rows'] + supplement_row['rows']))
+                    #delete_rows['rows'] = list(set(insert_rows['rows'] + supplement_row['rows'])) # seems like this is wrong
+                    delete_rows['rows'] = list(set(delete_rows['rows'] + supplement_row['rows']))
         if insert_rows not in supplemented_rows:
             supplemented_rows.append(insert_rows)
         if update_rows not in supplemented_rows:
@@ -669,7 +670,9 @@ class Contest(ScraperModel, db.Model):
         
         office_name = row[4]
         county_id = row[1]
-        title = self.generate_title(office_name, county_id, row)
+        scope = source['contest_scope'] if 'contest_scope' in source else None
+        district_code = row[5]
+        title = self.generate_title(office_name, county_id, row, scope, district_code)
 
         parsed = {
             'id': contest_id,
@@ -678,7 +681,7 @@ class Contest(ScraperModel, db.Model):
             'office_id': office_id,
             'results_group': group,
             'office_name': office_name,
-            'district_code': row[5],
+            'district_code': district_code,
             'state': row[0],
             'county_id': county_id,
             'precinct_id': row[2],
@@ -688,7 +691,7 @@ class Contest(ScraperModel, db.Model):
             'seats': int(matched_seats.group(1)) if matched_seats is not None else 1,
             'ranked_choice': ranked_choice is not None,
             'primary': primary,
-            'scope': source['contest_scope'] if 'contest_scope' in source else None,
+            'scope': scope,
             'title': title
         }
 
@@ -701,9 +704,8 @@ class Contest(ScraperModel, db.Model):
         # Return contest record
         return parsed
 
-    def generate_title(self, office_name, county_id, row):
+    def generate_title(self, office_name, county_id, row, scope = None, district_code = None):
         # Title and search term
-        
         title = office_name
         title = re.compile(r'(\(elect [0-9]+\))', re.IGNORECASE).sub('', title)
         title = re.compile(r'((first|second|third|\w*th) choice)', re.IGNORECASE).sub('', title)
@@ -729,6 +731,27 @@ class Contest(ScraperModel, db.Model):
         if 'COUNTY QUESTION' in title and county_id:
             county_index = int(county_id) - 1
             title = self.mn_counties[county_index].upper() + " " + title
+        
+        #Add school district names to school district contests
+        #with special handling for the SSD1 vs ISD1 issue
+        if scope == "school" and district_code != None:
+            if district_code == '0001':
+                title = title[0:-1] + " - Aitkin)"
+            elif district_code == '1-1':
+                title = title[0:-1] + " - Minneapolis)"
+            else:
+                area_model = Area()
+                #areas = Area.query.filter_by(school_district_id=district_code).all()
+                try:
+                    query_result = Area.query.filter_by(school_district_id=district_code).all()
+                    # set the output
+                    output = area_model.output_for_cache(query_result, {})
+                except Exception:
+                    output = {}
+                    pass
+                for a in output:
+                    if a['school_district_id']:
+                        title = title[0:-1] + " - " + a['school_district_name'].title() + ")"
 
         return title
 
@@ -873,7 +896,7 @@ class Contest(ScraperModel, db.Model):
                 boundary = 'wards-2012/' + self.slugify(wards_matched.group(3)) + '-w-' + '{0:02d}'.format(int(wards_matched.group(2))) + '-1'
                 boundary_type = 'wards-2012'
             elif mpls_parks_matched is not None:
-                boundary = 'minneapolis-parks-and-recreation-districts-2014/' + mpls_parks_matched.group(1)
+                boundary = 'minneapolis-parks-and-recreation-districts-2014/' + mpls_parks_matched.group(1) + '-1'
                 boundary_type = 'minneapolis-parks-and-recreation-districts-2014'
             else:
                 if parsed_row['county_id']:
