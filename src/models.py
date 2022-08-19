@@ -8,7 +8,7 @@ import requests
 import calendar
 import datetime
 from datetime import timedelta
-from flask import current_app, request
+from flask import current_app
 from src.extensions import db
 
 from sqlglot import exp, parse_one, errors
@@ -30,15 +30,11 @@ class ScraperModel(object):
 
     nonpartisan_parties = ['NP', 'WI', 'N P']
 
+
     def __init__(self, group_type = None):
         """
         Constructor
         """
-
-        # this is where scraperwiki was creating and connecting to its database
-        # we do this in the imported sql file instead
-
-        self.read_sources()
 
 
     @classmethod
@@ -352,6 +348,7 @@ class Area(ScraperModel, db.Model):
     name = db.Column(db.String(255))
     updated = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
 
+
     def __init__(self, **kwargs):
         self.id = kwargs.get('id')
         self.areas_group = kwargs.get('areas_group')
@@ -369,12 +366,15 @@ class Area(ScraperModel, db.Model):
         self.school_district_name = kwargs.get('school_district_name')
         self.mcd_id = kwargs.get('mcd_id')
         self.name = kwargs.get('name')
-    
+
+
     def __repr__(self):
         return '<Area {}>'.format(self.id)
-    
+
+
     def __repr__(self):
         return '<Area {}>'.format(self.id)
+
 
     def parser(self, row, group, election_id):
 
@@ -452,27 +452,33 @@ class Election(ScraperModel, db.Model):
     questions = db.relationship('Question', backref=__tablename__, lazy=True)
     results = db.relationship('Result', backref=__tablename__, lazy=True)
 
+
     def __init__(self, **kwargs):
         self.id = kwargs.get('id')
         self.base_url = kwargs.get('base_url')
         self.date = kwargs.get('date')
         self.primary = kwargs.get('primary')
-    
+
+
     def __repr__(self):
         return '<Election {}>'.format(self.id)
+
 
     @hybrid_property
     def election_datetime(self):
         return datetime.datetime.strptime(self.date, '%Y-%m-%d')
 
+
     @election_datetime.expression
     def election_datetime(self):
         return func.to_date(self.date, "%Y-%m-%d")
+
 
     @hybrid_property
     def election_key(self):
         fixed = ''.join(self.id.split('id-', 3))
         return fixed
+
 
     @election_key.expression
     def election_key(self):
@@ -483,6 +489,7 @@ class Election(ScraperModel, db.Model):
     def contest_count(self):
         #return len(self.contests)   # @note: use when non-dynamic relationship
         return self.contests.count()# @note: use when dynamic relationship
+
 
     @contest_count.expression
     def contest_count(cls):
@@ -601,8 +608,8 @@ class Contest(ScraperModel, db.Model):
 
     results = db.relationship('Result', backref=__tablename__, lazy=True)
 
+
     def __init__(self, **kwargs):
-        #self.result_id = kwargs.get('result_id') I don't think this is necessary
         self.id = kwargs.get('id')
         self.office_id = kwargs.get('office_id')
         self.results_group = kwargs.get('results_group')
@@ -625,9 +632,11 @@ class Contest(ScraperModel, db.Model):
         self.sub_title = kwargs.get('sub_title')
         self.incumbent_party = kwargs.get('incumbent_party')
         self.called = kwargs.get('called')
-    
+
+
     def __repr__(self):
         return '<Contest {}>'.format(self.id)
+
 
     def parser(self, row, group, election, source):
         """
@@ -710,6 +719,7 @@ class Contest(ScraperModel, db.Model):
         # Return contest record
         return parsed
 
+
     def generate_title(self, office_name, county_id, row, scope = None, district_code = None):
         # Title and search term
         title = office_name
@@ -747,7 +757,6 @@ class Contest(ScraperModel, db.Model):
                 title = title[0:-1] + " - Minneapolis)"
             else:
                 area_model = Area()
-                #areas = Area.query.filter_by(school_district_id=district_code).all()
                 try:
                     query_result = Area.query.filter_by(school_district_id=district_code).all()
                     # set the output
@@ -1094,6 +1103,7 @@ class Contest(ScraperModel, db.Model):
                 supplemented_row = row_result
         return supplemented_row
 
+
     # this handles the key names and value formats for the database if they are different in the spreadsheet
     def set_db_fields_from_spreadsheet(self, spreadsheet_row, election_id=None):
         spreadsheet_row['id'] = str(spreadsheet_row['id'])
@@ -1122,11 +1132,14 @@ class Question(ScraperModel, db.Model):
     question_body = db.Column(db.Text)
     updated = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
 
+
     def __init__(self, **kwargs):
         super(Question, self).__init__(**kwargs)
-    
+
+
     def __repr__(self):
         return '<Question {}>'.format(self.id)
+
 
     def parser(self, row, group, election_id):
 
@@ -1193,7 +1206,6 @@ class Result(ScraperModel, db.Model):
     __tablename__ = "results"
 
     id = db.Column(db.String(255), primary_key=True, autoincrement=False, nullable=False)
-    #contest_id = db.Column(db.String(255))
     contest_id = db.Column(db.String(255), db.ForeignKey('contests.id'), nullable=False)
     election_id = db.Column(db.String(255), db.ForeignKey('elections.id'), nullable=True)
     results_group = db.Column(db.String(255))
@@ -1208,6 +1220,7 @@ class Result(ScraperModel, db.Model):
     ranked_choice_place = db.Column(db.BigInteger())
     updated = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
 
+
     def __init__(self, **kwargs):
         self.id = kwargs.get('id')
         self.contest_id = kwargs.get('contest_id')
@@ -1221,9 +1234,11 @@ class Result(ScraperModel, db.Model):
         self.votes_candidate = kwargs.get('votes_candidate')
         self.percentage = kwargs.get('percentage')
         self.ranked_choice_place = kwargs.get('ranked_choice_place')
-    
+
+
     def __repr__(self):
         return '<Result {}>'.format(self.id)
+
 
     def parser(self, row, group, election_id):
         """
@@ -1286,6 +1301,7 @@ class Result(ScraperModel, db.Model):
         # Return results record for the database
         return parsed
 
+
     def supplement_row(self, spreadsheet_row, election_id=None):
 
         if isinstance(spreadsheet_row, (bytes, bytearray)):
@@ -1345,6 +1361,7 @@ class Result(ScraperModel, db.Model):
                 supplemented_row = row_result
 
         return supplemented_row
+
 
     # this handles the key names and value formats for the database if they are different in the spreadsheet
     def set_db_fields_from_spreadsheet(self, spreadsheet_row, election_id=None):
