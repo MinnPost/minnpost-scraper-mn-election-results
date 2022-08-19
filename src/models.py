@@ -551,7 +551,7 @@ class Election(ScraperModel, db.Model):
             if key == "updated":
                 row["value"] = calendar.timegm(election[key].timetuple())
             else:
-            row["value"] = election[key]
+                row["value"] = election[key]
             row["type"] = type(election[key]).__name__
             data.append(row)
         current_app.log.info(data)
