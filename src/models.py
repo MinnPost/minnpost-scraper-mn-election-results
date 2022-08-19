@@ -189,7 +189,8 @@ class ScraperModel(object):
                     update_rows['rows'] = list(set(update_rows['rows'] + supplement_row['rows']))
                 elif supplement_row['action'] == 'delete' and supplement_row['rows'] not in delete_rows['rows']:
                     #delete_rows['rows'] = [*delete_rows['rows'], *supplement_row['rows']]
-                    delete_rows['rows'] = list(set(insert_rows['rows'] + supplement_row['rows']))
+                    #delete_rows['rows'] = list(set(insert_rows['rows'] + supplement_row['rows'])) # seems like this is wrong
+                    delete_rows['rows'] = list(set(delete_rows['rows'] + supplement_row['rows']))
         if insert_rows not in supplemented_rows:
             supplemented_rows.append(insert_rows)
         if update_rows not in supplemented_rows:
@@ -702,7 +703,7 @@ class Contest(ScraperModel, db.Model):
                 boundary = 'wards-2012/' + self.slugify(wards_matched.group(3)) + '-w-' + '{0:02d}'.format(int(wards_matched.group(2))) + '-1'
                 boundary_type = 'wards-2012'
             elif mpls_parks_matched is not None:
-                boundary = 'minneapolis-parks-and-recreation-districts-2014/' + mpls_parks_matched.group(1)
+                boundary = 'minneapolis-parks-and-recreation-districts-2014/' + mpls_parks_matched.group(1) + '-1'
                 boundary_type = 'minneapolis-parks-and-recreation-districts-2014'
             else:
                 if parsed_row['county_id']:
