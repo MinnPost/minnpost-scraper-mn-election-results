@@ -91,7 +91,7 @@ def scrape_results(self):
         "cache": storage.clear_group(class_name),
         "status": "completed"
     }
-    current_app.log.info(result)
+    current_app.log.debug(result)
 
     now = datetime.now(pytz.timezone('America/Chicago'))
     #offset = now.strftime('%z')

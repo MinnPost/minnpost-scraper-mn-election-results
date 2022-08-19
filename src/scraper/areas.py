@@ -64,7 +64,7 @@ def scrape_areas(self):
     #cache_result = clear_multiple_keys(current_app.config['QUERY_LIST_CACHE_KEY'])
 
     #result = result + cache_result
-    current_app.log.info(result)
+    current_app.log.debug(result)
     return json.dumps(result)
 
 

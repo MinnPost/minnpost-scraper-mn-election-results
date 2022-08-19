@@ -52,7 +52,7 @@ def scrape_questions(self):
         "cache": storage.clear_group(class_name),
         "status": "completed"
     }
-    current_app.log.info(result)
+    current_app.log.debug(result)
     return json.dumps(result)
 
 

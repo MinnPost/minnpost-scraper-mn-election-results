@@ -25,18 +25,23 @@ def query():
     election     = scraper_model.set_election(election_key)
     election_id  = election.id
 
+    # set up sql query as cache key
+    cache_list_key = current_app.config['QUERY_LIST_CACHE_KEY']
+    cache_key = sql
+
+    # the meta query for the old dashboard
     if sql.lower() == "select * from meta":
         election_model = Election()
-        return election_model.legacy_meta_output(election_id)
+        output = election_model.legacy_meta_output(election_id)
+        output = storage.save(cache_key, output, cache_list_key)
 
+    # verify/format the sql
     sql = scraper_model.format_sql(sql, election_id)
     if sql == "":
         example_query = 'SELECT * FROM contests WHERE title LIKE \'%governor%\'';
         return 'Welcome to the election scraper server. Use a URL like: <a href="/query/?q=%s">/query/?q=%s</a>' % (example_query, example_query);
 
     # check for cached data and set the output, if it exists
-    cache_list_key = current_app.config['QUERY_LIST_CACHE_KEY']
-    cache_key = sql
     cached_output = storage.get(cache_key)
     if cached_output is not None:
         current_app.log.debug('found cached result for key: %s' % cache_key)
