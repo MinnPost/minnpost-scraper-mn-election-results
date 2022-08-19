@@ -7,6 +7,7 @@ from src.extensions import celery
 from src.storage import Storage
 from src.models import Contest
 from src.scraper import bp
+from src.scraper import elections
 
 @celery.task(bind=True)
 def scrape_contests(self, election_id = None):
@@ -53,7 +54,6 @@ def scrape_contests(self, election_id = None):
             
     # Handle post processing actions. this only needs to happen once, not for every group.
     supplemental = contest.post_processing('contests', election.id)
-    #meta = Meta()
     for supplemental_contest in supplemental:
         rows = supplemental_contest['rows']
         action = supplemental_contest['action']
@@ -70,11 +70,6 @@ def scrape_contests(self, election_id = None):
                     elif action == 'delete':
                         db.session.delete(row)
                         deleted_count = deleted_count + 1
-                    #elif action == 'meta':
-                    #    parsed = row # it's already in the format we need to save it
-                    #    meta = Meta()
-                    #    meta.from_dict(parsed, new=True)
-                    #    db.session.merge(meta)
     # commit supplemental rows
     db.session.commit()
 
@@ -89,6 +84,7 @@ def scrape_contests(self, election_id = None):
         "status": "completed"
     }
     current_app.log.debug(result)
+
     return json.dumps(result)
 
 
@@ -105,11 +101,18 @@ def contests_index():
     else:
         # GET request
         election_id = request.values.get('election_id', None)
+
     eta = datetime.utcnow() + timedelta(seconds=10)
-    task = scrape_contests.apply_async(args=[election_id], eta=eta)
+    contest_task = scrape_contests.apply_async(args=[election_id], eta=eta)
+    election_task = elections.scrape_elections.apply_async(args=[election_id], eta=eta)
+
+    contest_json = contest_task.get(propagate=False)
+    election_json = election_task.get(propagate=False)
+
     return (
         jsonify(
-            json.loads(task.get(propagate=False))
+            contests=json.loads(contest_json),
+            elections=json.loads(election_json)
         ),
         202,
     )

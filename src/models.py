@@ -194,29 +194,29 @@ class ScraperModel(object):
         insert_rows = {'action': 'insert', 'rows': []}
         update_rows = {'action': 'update', 'rows': []}
         delete_rows = {'action': 'delete', 'rows': []}
-        #meta_rows = {'action': 'meta', 'rows': []}
+        #election_rows = {'action': 'election', 'rows': []}
 
-        if type == 'contests' or type == 'results':
-            updated = {"key" : "updated", "value" : db.func.current_timestamp(), "type" : "int"}
-            #meta_rows['rows'].append(updated)
+        #election_row = {
+        #    "id": election_id
+        #}
 
-            if type == 'results':
-                sql = text("select count(distinct contest_id) as contest_count from results")
-                result_contests = db.session.execute(sql)
-                result_contest_count = [row[0] for row in result_contests]
-                contest_count = {"key" : "contests", "value" : int(result_contest_count[0]), "type" : "int"}
-                #meta_rows['rows'].append(contest_count)
+        #if type == 'contests' or type == 'results':
+            #election_row['updated'] = db.func.current_timestamp()
+
+            #if type == 'results':
+                #sql = text("select count(distinct contest_id) as contest_count from results")
+                #result_contests = db.session.execute(sql)
+                #result_contest_count = [row[0] for row in result_contests]
+                #contest_count = {"contests" : int(result_contest_count[0])}
+                #election_rows['rows'].append(contest_count)
 
                 # Use the first state level race to get general number of precincts reporting
-                state_contest_results = Contest.query.filter_by(county_id='88').first()
-                if state_contest_results is not None:
-                    precincts_reporting = {"key" : "precincts_reporting", "value" : state_contest_results.precincts_reporting, "type" : "int"}
-                    total_effected_precincts = {"key" : "total_effected_precincts", "value" : state_contest_results.total_effected_precincts, "type" : "int"}
-                    #meta_rows['rows'].append(precincts_reporting)
-                    #meta_rows['rows'].append(total_effected_precincts)
-
-            #supplemented_rows.append(meta_rows)
-
+                #state_contest_results = Contest.query.filter_by(county_id='88').first()
+                #if state_contest_results is not None:
+                    #election_row['precincts_reporting'] = state_contest_results.precincts_reporting
+                    #election_row['total_effected_precincts'] = state_contest_results.total_effected_precincts
+            #election_rows["rows"].append(election_row)
+            #supplemented_rows.append(election_rows)
         if spreadsheet_rows is None:
             return supplemented_rows
 

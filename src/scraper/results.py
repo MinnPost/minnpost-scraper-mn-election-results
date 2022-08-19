@@ -11,6 +11,7 @@ from src.extensions import celery
 from src.storage import Storage
 from src.models import Result
 from src.scraper import bp
+from src.scraper import elections
 
 newest_election = None
 election = None
@@ -152,11 +153,18 @@ def results_index():
     else:
         # GET request
         election_id = request.values.get('election_id', None)
+
     eta = datetime.utcnow() + timedelta(seconds=10)
-    task = scrape_results.apply_async(args=[election_id], eta=eta)
+    result_task = scrape_results.apply_async(args=[election_id], eta=eta)
+    election_task = elections.scrape_elections.apply_async(args=[election_id], eta=eta)
+
+    result_json = result_task.get(propagate=False)
+    election_json = election_task.get(propagate=False)
+
     return (
         jsonify(
-            json.loads(task.get(propagate=False))
+            results=json.loads(result_json),
+            elections=json.loads(election_json)
         ),
         202,
     )
