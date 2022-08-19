@@ -14,7 +14,8 @@ from src.api.errors import bad_request
 def query():
     request.args = request.args.to_dict()
     request.args["display_cache_data"] = "false"
-    storage        = Storage(request.args)
+    storage = Storage(request.args)
+    output  = None
 
     scraper_model     = ScraperModel()
     sql = request.args.get('q', None)
@@ -29,11 +30,18 @@ def query():
     cache_list_key = current_app.config['QUERY_LIST_CACHE_KEY']
     cache_key = sql
 
-    # the meta query for the old dashboard
+    # the meta query for the old dashboard. ideally we will remove this.
     if sql.lower() == "select * from meta":
         election_model = Election()
-        output = election_model.legacy_meta_output(election_id)
-        output = storage.save(cache_key, output, cache_list_key)
+        # check for cached data and set the output, if it exists
+        cached_output = storage.get(cache_key)
+        if cached_output is not None:
+            current_app.log.debug('found cached result for legacy meta key: %s' % cache_key)
+            output = cached_output
+        else:
+            current_app.log.debug('did not find cached result for legacy meta key: %s' % cache_list_key)
+            output = election_model.legacy_meta_output(election_id)
+            output = storage.save(cache_key, output, cache_list_key)
 
     # verify/format the sql
     sql = scraper_model.format_sql(sql, election_id)
@@ -41,46 +49,47 @@ def query():
         example_query = 'SELECT * FROM contests WHERE title LIKE \'%governor%\'';
         return 'Welcome to the election scraper server. Use a URL like: <a href="/query/?q=%s">/query/?q=%s</a>' % (example_query, example_query);
 
-    # check for cached data and set the output, if it exists
-    cached_output = storage.get(cache_key)
-    if cached_output is not None:
-        current_app.log.debug('found cached result for key: %s' % cache_key)
-        output = cached_output
-    else:
-        current_app.log.debug('did not find cached result for key: %s' % cache_list_key)
-        # run the query
-        try:
-            query_result = db.session.execute(sql)
-        except exc.SQLAlchemyError:
-            query_result = {}
-            pass
-        
-        # set the cache and the output from the query result
-        output = {}
-        if display_cache_data == "true":
-            output["data"] = {}
-        for count, row in enumerate(query_result):
-            d = dict(row)
-            if 'updated' in d:
-                if not isinstance(d['updated'], int):
-                    d['updated'] = datetime.timestamp(d['updated'])
-            if 'key' in d and d['key'] == 'updated' and d['type'] == 'int':
-                if not isinstance(d['value'], int):
-                    date_object = ciso8601.parse_datetime(d['value'])
-                    d['value'] = datetime.timestamp(date_object)
-            if 'value' in d:
-                if d['value'] == "true":
-                    d['value'] = True
-                elif d['value'] == "false":
-                    d['value'] = False
+    if output == None:
+        # check for cached data and set the output, if it exists
+        cached_output = storage.get(cache_key)
+        if cached_output is not None:
+            current_app.log.debug('found cached result for key: %s' % cache_key)
+            output = cached_output
+        else:
+            current_app.log.debug('did not find cached result for key: %s' % cache_key)
+            # run the query
+            try:
+                query_result = db.session.execute(sql)
+            except exc.SQLAlchemyError:
+                query_result = {}
+                pass
+            
+            # set the cache and the output from the query result
+            output = {}
             if display_cache_data == "true":
-                output["data"][count] = d
-            else:
-                output[count] = d
-        if display_cache_data == "true":
-            output["generated"] = datetime.now()
+                output["data"] = {}
+            for count, row in enumerate(query_result):
+                d = dict(row)
+                if 'updated' in d:
+                    if not isinstance(d['updated'], int):
+                        d['updated'] = datetime.timestamp(d['updated'])
+                if 'key' in d and d['key'] == 'updated' and d['type'] == 'int':
+                    if not isinstance(d['value'], int):
+                        date_object = ciso8601.parse_datetime(d['value'])
+                        d['value'] = datetime.timestamp(date_object)
+                if 'value' in d:
+                    if d['value'] == "true":
+                        d['value'] = True
+                    elif d['value'] == "false":
+                        d['value'] = False
+                if display_cache_data == "true":
+                    output["data"][count] = d
+                else:
+                    output[count] = d
+            if display_cache_data == "true":
+                output["generated"] = datetime.now()
 
-        output = storage.save(cache_key, output, cache_list_key)
+            output = storage.save(cache_key, output, cache_list_key)
     
     # set up the response and return it
     mime = 'application/json'
