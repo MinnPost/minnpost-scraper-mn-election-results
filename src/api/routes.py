@@ -25,7 +25,7 @@ def query():
     election     = scraper_model.set_election(election_key)
     election_id  = election.id
 
-    if sql == "select * from meta":
+    if sql.lower() == "select * from meta":
         election_model = Election()
         return election_model.legacy_meta_output(election_id)
 
