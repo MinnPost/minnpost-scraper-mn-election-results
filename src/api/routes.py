@@ -322,7 +322,7 @@ def elections():
                 pass
         elif election_date is not None:
             try:
-                query_result = Election.query.filter_by(election_date=election_date).all()
+                query_result = Election.query.filter_by(date=election_date).all()
             except exc.SQLAlchemyError:
                 pass
         else:
