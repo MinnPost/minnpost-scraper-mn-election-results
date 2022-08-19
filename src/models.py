@@ -189,7 +189,10 @@ class ScraperModel(object):
     def post_processing(self, type, election_id = None):
 
         # Handle any supplemental data
-        spreadsheet_rows = self.supplement_connect('supplemental_' + type, election_id)
+        spreadsheet_result = self.supplement_connect('supplemental_' + type, election_id)
+        spreadsheet_rows   = None
+        if "rows" in spreadsheet_result:
+            spreadsheet_rows = spreadsheet_result['rows']
         supplemented_rows = []
         insert_rows = {'action': 'insert', 'rows': []}
         update_rows = {'action': 'update', 'rows': []}
@@ -222,17 +225,13 @@ class ScraperModel(object):
 
         # for each row in the spreadsheet
         for spreadsheet_row in spreadsheet_rows:
-            supplement_row = self.supplement_row(spreadsheet_row, election_id)
+            supplement_row = self.supplement_row(spreadsheet_row, election_id, spreadsheet_result["updated"])
             if 'rows' in supplement_row:
-                #supplemented_rows.append(supplement_row)
                 if supplement_row['action'] == 'insert' and supplement_row['rows'] not in insert_rows['rows']:
-                    #insert_rows['rows'] = [*insert_rows['rows'], *supplement_row['rows']]
                     insert_rows['rows'] = list(set(insert_rows['rows'] + supplement_row['rows']))
                 elif supplement_row['action'] == 'update' and supplement_row['rows'] not in update_rows['rows']:
-                    #update_rows['rows'] = [*update_rows['rows'], *supplement_row['rows']]
                     update_rows['rows'] = list(set(update_rows['rows'] + supplement_row['rows']))
                 elif supplement_row['action'] == 'delete' and supplement_row['rows'] not in delete_rows['rows']:
-                    #delete_rows['rows'] = [*delete_rows['rows'], *supplement_row['rows']]
                     #delete_rows['rows'] = list(set(insert_rows['rows'] + supplement_row['rows'])) # seems like this is wrong
                     delete_rows['rows'] = list(set(delete_rows['rows'] + supplement_row['rows']))
         if insert_rows not in supplemented_rows:
@@ -252,18 +251,18 @@ class ScraperModel(object):
         election = self.set_election(election_id)
         election_key = self.set_election_key(election.id)
 
+        data = {}
+        result_json = None
+        supplemental_output = {}
+
         if election_key not in sources:
             current_app.log.error('Election missing in sources: %s' % election_key)
-            return
+            return supplemental_output
 
         if source not in sources[election_key]:
             # this just means there isn't a supplemental spreadsheet for that source
             current_app.log.debug('Source missing in the %s election: %s' % (election_key, source))
-            return
-
-        data = {}
-        result_json = None
-        result = {}
+            return supplemental_output
 
         s = sources[election_key][source]
         spreadsheet_id = s["spreadsheet_id"]
@@ -320,11 +319,15 @@ class ScraperModel(object):
             result = requests.post(overwrite_url, data=json.dumps(params), headers=headers)
             result_json = result.json()
 
-            if result_json is not None:
+            if result_json is not None and "rows" in result_json:
                 #output = json.dumps(result_json, default=str)
-                result = result_json["rows"]
+                supplemental_output["rows"] = result_json["rows"]
+                if "generated" in result_json:
+                    supplemental_output["updated"] = result_json["generated"]
+                if "customized" in data:
+                    supplemental_output["updated"] = data["customized"]
 
-        return result
+        return supplemental_output
 
 
 class Area(ScraperModel, db.Model):
@@ -1065,7 +1068,7 @@ class Contest(ScraperModel, db.Model):
         return seats
     
     
-    def supplement_row(self, spreadsheet_row, election_id=None):
+    def supplement_row(self, spreadsheet_row, election_id=None, updated=None):
 
         if isinstance(spreadsheet_row, (bytes, bytearray)):
             try:
@@ -1093,6 +1096,8 @@ class Contest(ScraperModel, db.Model):
                     for field in spreadsheet_row:
                         if spreadsheet_row[field] is not None and spreadsheet_row[field] != '':
                             matching_result.field = spreadsheet_row[field]
+                    if updated is not None:
+                        matching_result.updated = updated
                     if matching_result not in update_results:
                         update_results.append(matching_result)
                 row_result = {
@@ -1111,6 +1116,8 @@ class Contest(ScraperModel, db.Model):
                         new_contest['id'] = spreadsheet_row[field]
                     elif spreadsheet_row[field] is not None and spreadsheet_row[field] != '':
                         new_contest[field] = spreadsheet_row[field]
+                if updated is not None:
+                    new_contest.updated = updated
                 new_contest['results_group'] = 'supplemental_results'
                 contest_model = Contest(**new_contest)
                 if contest_model not in insert_rows:
@@ -1327,7 +1334,7 @@ class Result(ScraperModel, db.Model):
         return parsed
 
 
-    def supplement_row(self, spreadsheet_row, election_id=None):
+    def supplement_row(self, spreadsheet_row, election_id=None, updated=None):
 
         if isinstance(spreadsheet_row, (bytes, bytearray)):
             try:
@@ -1355,7 +1362,9 @@ class Result(ScraperModel, db.Model):
                     for matching_result in results:
                         matching_result.percentage = spreadsheet_row['percentage']
                         matching_result.votes_candidate = spreadsheet_row['votes_candidate']
-                        matching_result.ranked_choice_place = spreadsheet_row['ranked_choice_place'],
+                        matching_result.ranked_choice_place = spreadsheet_row['ranked_choice_place']
+                        if updated is not None:
+                            matching_result.updated = spreadsheet_row['updated']
                         if matching_result not in update_results:
                             update_results.append(matching_result)
                     row_result = {
@@ -1376,6 +1385,8 @@ class Result(ScraperModel, db.Model):
                 # Add new row, make sure to mark the row as supplemental
                 spreadsheet_row['results_group'] = 'supplemental_results'
                 insert_result = spreadsheet_row
+                if updated is not None:
+                    insert_result['updated'] = updated
                 result_model = Result(**insert_result)
                 if result_model not in insert_rows:
                     insert_rows.append(result_model)

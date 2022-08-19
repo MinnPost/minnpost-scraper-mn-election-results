@@ -103,16 +103,14 @@ def contests_index():
         election_id = request.values.get('election_id', None)
 
     eta = datetime.utcnow() + timedelta(seconds=10)
-    contest_task = scrape_contests.apply_async(args=[election_id], eta=eta)
-    election_task = elections.scrape_elections.apply_async(args=[election_id], eta=eta)
-
-    contest_json = contest_task.get(propagate=False)
-    election_json = election_task.get(propagate=False)
+    task = scrape_contests.apply_async(
+        args=[election_id], eta=eta,
+        link=elections.scrape_elections(args=[election_id])
+    )
 
     return (
         jsonify(
-            contests=json.loads(contest_json),
-            elections=json.loads(election_json)
+            json.loads(task.get(propagate=False))
         ),
         202,
     )
