@@ -9,7 +9,7 @@ from src.models import Election
 from src.scraper import bp
 
 @celery.task(bind=True)
-def scrape_elections(self):
+def scrape_elections(self, election_id = None):
     storage    = Storage()
     election   = Election()
     class_name = Election.get_classname()
@@ -18,18 +18,27 @@ def scrape_elections(self):
     inserted_count = 0
     parsed_count = 0
 
-    for key in sources:
+    if election_id == None:
+        for key in sources:
+            row = sources[key]
+            parsed = election.parser(row, key)
+            election.from_dict(parsed, new=True)
+
+            db.session.merge(election)
+            inserted_count = inserted_count + 1
+            parsed_count = parsed_count + 1
+    else:
+        key = election.set_election_key(election_id)
         row = sources[key]
         parsed = election.parser(row, key)
-
-        election = Election()
         election.from_dict(parsed, new=True)
 
         db.session.merge(election)
         inserted_count = inserted_count + 1
         parsed_count = parsed_count + 1
-        # commit parsed rows
-        db.session.commit()
+
+    # commit parsed rows
+    db.session.commit()
 
     result = {
         "inserted": inserted_count,
