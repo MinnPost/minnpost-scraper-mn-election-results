@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 from datetime import timedelta
-from flask import jsonify, current_app
+from flask import jsonify, current_app, request
 from src.extensions import db
 from src.extensions import celery
 from src.storage import Storage
@@ -9,14 +9,16 @@ from src.models import Question
 from src.scraper import bp
 
 @celery.task(bind=True)
-def scrape_questions(self):
-    storage    = Storage()
-    question   = Question()
-    class_name = Question.get_classname()
-    sources    = question.read_sources()
-    election   = question.set_election()
-    election_key = question.set_election_key(election.id)
+def scrape_questions(self, election_id = None):
+    storage      = Storage()
+    question     = Question()
+    class_name   = Question.get_classname()
+    election     = question.set_election(election_id)
+    if election is None:
+        return
 
+    sources      = question.read_sources()
+    election_key = question.set_election_key(election.id)
     if election_key not in sources:
         return
 
@@ -56,11 +58,21 @@ def scrape_questions(self):
     return json.dumps(result)
 
 
-@bp.route("/questions")
+@bp.route("/questions/")
 def questions_index():
     """Add a new question scrape task and start running it after 10 seconds."""
+    if request.is_json:
+        # JSON request
+        request_json = request.get_json()
+        election_id  = request_json.get('election_id')
+    elif request.method == 'POST':
+        # form request
+        election_id = request.form.get('election_id', None)
+    else:
+        # GET request
+        election_id = request.values.get('election_id', None)
     eta = datetime.utcnow() + timedelta(seconds=10)
-    task = scrape_questions.apply_async(eta=eta)
+    task = scrape_questions.apply_async(args=[election_id], eta=eta)
     return (
         jsonify(
             json.loads(task.get(propagate=False))

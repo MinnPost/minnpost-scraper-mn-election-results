@@ -22,9 +22,8 @@ def query():
     display_cache_data = request.args.get('display_cache_data', None)
     callback = request.args.get('callback')
 
-    election_key = request.args.get('election_key', None)
-    election     = scraper_model.set_election(election_key)
-    election_id  = election.id
+    election_id = request.args.get('election_id', None)
+    #election     = scraper_model.set_election(election_id) # verify that it's valid here though.
 
     # set up sql query as cache key
     cache_list_key = current_app.config['QUERY_LIST_CACHE_KEY']
@@ -119,20 +118,20 @@ def areas():
     query_result   = None
     if request.is_json:
         # JSON request
-        request_json     = request.get_json()
-        area_id          = request_json.get('area_id')
-        areas_group      = request_json.get('areas_group')
-        election_key     = request_json.get('election_key')
+        request_json = request.get_json()
+        area_id      = request_json.get('area_id')
+        areas_group  = request_json.get('areas_group')
+        election_id  = request_json.get('election_id')
     elif request.method == 'POST':
         # form request
-        area_id      = request.form.get('area_id', None)
-        areas_group  = request.form.get('areas_group', None)
-        election_key = request.form.get('election_key', None)
+        area_id     = request.form.get('area_id', None)
+        areas_group = request.form.get('areas_group', None)
+        election_id = request.form.get('election_id', None)
     else:
         # GET request
-        area_id      = request.values.get('area_id', None)
-        areas_group  = request.values.get('areas_group', None)
-        election_key = request.values.get('election_key', None)
+        area_id     = request.values.get('area_id', None)
+        areas_group = request.values.get('areas_group', None)
+        election_id = request.values.get('election_id', None)
 
     # set cache key
     if area_id is not None:
@@ -143,8 +142,7 @@ def areas():
         cache_key_name = "all_areas"
 
     # add election to cache key, even if it's None
-    election       = area_model.set_election(election_key)
-    election_id    = election.id
+    election       = area_model.set_election(election_id) # verify that the id is valid here
     cache_key_name = cache_key_name + "-election-" + election_id
 
     # check for cached data and set the output, if it exists
@@ -194,23 +192,23 @@ def contests():
     query_result   = None
     if request.is_json:
         # JSON request
-        request_json     = request.get_json()
-        title            = request_json.get('title')
-        contest_id       = request_json.get('contest_id')
-        contest_ids      = request_json.get('contest_ids')
-        election_key     = request_json.get('election_key')
+        request_json = request.get_json()
+        title        = request_json.get('title')
+        contest_id   = request_json.get('contest_id')
+        contest_ids  = request_json.get('contest_ids')
+        election_id  = request_json.get('election_id')
     elif request.method == 'POST':
         # form request
-        title        = request.form.get('title', None)
-        contest_id   = request.form.get('contest_id', None)
-        contest_ids  = request.form.get('contest_ids', [])
-        election_key = request.form.get('election_key', None)
+        title       = request.form.get('title', None)
+        contest_id  = request.form.get('contest_id', None)
+        contest_ids = request.form.get('contest_ids', [])
+        election_id = request.form.get('election_id', None)
     else:
         # GET request
-        title        = request.values.get('title', None)
-        contest_id   = request.values.get('contest_id', None)
-        contest_ids  = request.values.get('contest_ids', [])
-        election_key = request.values.get('election_key', None)
+        title       = request.values.get('title', None)
+        contest_id  = request.values.get('contest_id', None)
+        contest_ids = request.values.get('contest_ids', [])
+        election_id = request.values.get('election_id', None)
 
     # if the contest_ids value is provided on the url, it'll be a string and we need to make it a list
     if isinstance(contest_ids, str):
@@ -228,8 +226,7 @@ def contests():
         cache_key_name = "all_contests"
 
     # add election to cache key, even if it's None
-    election       = contest_model.set_election(election_key)
-    election_id    = election.id
+    election       = contest_model.set_election(election_id) # verify that it's valid
     cache_key_name = cache_key_name + "-election-" + election_id
     
     # check for cached data and set the output, if it exists
@@ -364,7 +361,7 @@ def meta():
         key           = request.form.get('key', None)
     else:
         # GET request
-        election_id = request.values.get('election_id', None)
+        election_id   = request.values.get('election_id', None)
         election_date = request.values.get('election_date', None)
         key           = request.values.get('key', None)
 
@@ -439,17 +436,17 @@ def questions():
         request_json = request.get_json()
         question_id  = request_json.get('question_id')
         contest_id   = request_json.get('contest_id')
-        election_key = request_json.get('election_key')
+        election_id  = request_json.get('election_id')
     elif request.method == 'POST':
         # form request
         question_id = request.form.get('question_id', None)
-        contest_id = request.form.get('contest_id', None)
-        election_key = request.form.get('election_key', None)
+        contest_id  = request.form.get('contest_id', None)
+        election_id = request.form.get('election_id', None)
     else:
         # GET request
         question_id = request.values.get('question_id', None)
-        contest_id = request.values.get('contest_id', None)
-        election_key = request.values.get('election_key', None)
+        contest_id  = request.values.get('contest_id', None)
+        election_id = request.values.get('election_id', None)
 
     # set cache key
     if question_id is not None:
@@ -460,8 +457,7 @@ def questions():
         cache_key_name = "all_questions"
 
     # add election to cache key, even if it's None
-    election       = question_model.set_election(election_key)
-    election_id    = election.id
+    election       = question_model.set_election(election_id) # verify that it's valid
     cache_key_name = cache_key_name + "-election-" + election_id
 
     # check for cached data and set the output, if it exists
@@ -514,17 +510,17 @@ def results():
         request_json = request.get_json()
         result_id    = request_json.get('result_id')
         contest_id   = request_json.get('contest_id')
-        election_key = request_json.get('election_key')
+        election_id  = request_json.get('election_id')
     elif request.method == 'POST':
         # form request
-        result_id    = request.form.get('result_id', None)
-        contest_id   = request.form.get('contest_id', None)
-        election_key = request.form.get('election_key', None)
+        result_id   = request.form.get('result_id', None)
+        contest_id  = request.form.get('contest_id', None)
+        election_id = request.form.get('election_id', None)
     else:
         # GET request
-        result_id    = request.values.get('result_id', None)
-        contest_id   = request.values.get('contest_id', None)
-        election_key = request.values.get('election_key', None)
+        result_id   = request.values.get('result_id', None)
+        contest_id  = request.values.get('contest_id', None)
+        election_id = request.values.get('election_id', None)
 
     # set cache key
     if result_id is not None:
@@ -535,8 +531,7 @@ def results():
         cache_key_name = "all_results"
 
     # add election to cache key, even if it's None
-    election       = result_model.set_election(election_key)
-    election_id    = election.id
+    election       = result_model.set_election(election_id) # verify that id is valid
     cache_key_name = cache_key_name + "-election-" + election_id
 
     # check for cached data and set the output, if it exists

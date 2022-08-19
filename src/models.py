@@ -88,23 +88,32 @@ class ScraperModel(object):
         return self.sources
 
 
-    def set_election(self, election_key = None):
+    def set_election(self, election_id = None):
         # priority:
         # 1. url or other function argument for election
         # 2. config level override
         # 3. newest election in the elections table
+        current_app.log.info('parameter election id is %s' % election_id)
+        if election_id == None:
+            election_id = current_app.config["ELECTION_DATE_OVERRIDE"]
+            current_app.log.info('override election id is %s' % election_id)
 
-        if election_key == None:
-            election_key = current_app.config["ELECTION_DATE_OVERRIDE"]
-
-        # if there is an election key from anywhere
-        if election_key is not None and election_key != "":
-            election_id = 'id-' + election_key
+        # if there is an election id value from anywhere
+        if election_id is not None and election_id != "":
+            if not election_id.startswith('id-'):
+                election_id = 'id-' + election_id
+            current_app.log.info('query election key is %s' % election_id)
             election = Election.query.filter_by(id=election_id).first()
         
         if election == None:
+            current_app.log.info('no election object is present, get the newest one')
             election = Election.query.order_by(Election.election_datetime.desc()).first()
             #query_result = Election.query.order_by(Election.election_datetime.desc()).all()
+
+        sources      = self.read_sources()
+        election_key = ''.join(election_id.split('id-', 3))
+        if election_key not in sources:
+            return None
 
         current_app.log.debug('Set election to: %s' % election)
         return election
@@ -145,7 +154,9 @@ class ScraperModel(object):
 
 
     def set_election_key(self, election_id):
-        key = ''.join(election_id.split('id-', 3))
+        key = election_id
+        if election_id.startswith('id-'):
+            key = ''.join(election_id.split('id-', 3))
         return key
 
 
@@ -185,7 +196,7 @@ class ScraperModel(object):
     def post_processing(self, type, election_id = None):
 
         # Handle any supplemental data
-        spreadsheet_rows = self.supplement_connect('supplemental_' + type)
+        spreadsheet_rows = self.supplement_connect('supplemental_' + type, election_id)
         supplemented_rows = []
         insert_rows = {'action': 'insert', 'rows': []}
         update_rows = {'action': 'update', 'rows': []}
@@ -240,12 +251,12 @@ class ScraperModel(object):
         return supplemented_rows
 
 
-    def supplement_connect(self, source):
+    def supplement_connect(self, source, election_id = None):
         """
         Connect to supplemental source (Google spreadsheets) given set.
         """
         sources = self.read_sources()
-        election = self.set_election()
+        election = self.set_election(election_id)
         election_key = self.set_election_key(election.id)
 
         if election_key not in sources:
@@ -253,7 +264,8 @@ class ScraperModel(object):
             return
 
         if source not in sources[election_key]:
-            current_app.log.error('Source missing in the %s election: %s' % (election_key, source))
+            # this just means there isn't a supplemental spreadsheet for that source
+            current_app.log.debug('Source missing in the %s election: %s' % (election_key, source))
             return
 
         data = {}

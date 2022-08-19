@@ -41,7 +41,7 @@ def scrape_elections(self):
     return json.dumps(result)
 
 
-@bp.route("/elections")
+@bp.route("/elections/")
 def elections_index():
     """Add a new election scrape task and start running it after 10 seconds."""
     eta = datetime.utcnow() + timedelta(seconds=10)

@@ -5,7 +5,7 @@ import pytz
 from datetimerange import DateTimeRange
 from redbeat import RedBeatSchedulerEntry as Entry
 from celery.schedules import schedule
-from flask import jsonify, current_app
+from flask import jsonify, current_app, request
 from src.extensions import db
 from src.extensions import celery
 from src.storage import Storage
@@ -16,14 +16,16 @@ newest_election = None
 election = None
 
 @celery.task(bind=True)
-def scrape_results(self):
-    storage    = Storage()
-    result     = Result()
-    class_name = Result.get_classname()
-    sources    = result.read_sources()
-    election   = result.set_election()
-    election_key = result.set_election_key(election.id)
+def scrape_results(self, election_id = None):
+    storage      = Storage()
+    result       = Result()
+    class_name   = Result.get_classname()
+    election     = result.set_election(election_id)
+    if election is None:
+        return
 
+    sources      = result.read_sources()
+    election_key = result.set_election_key(election.id)
     if election_key not in sources:
         return
 
@@ -55,7 +57,7 @@ def scrape_results(self):
             db.session.commit()
 
     # Handle post processing actions. this only needs to happen once, not for every group.
-    supplemental = result.post_processing('results')
+    supplemental = result.post_processing('results', election.id)
     #meta = Meta()
     for supplemental_result in supplemental:
         rows = supplemental_result['rows']
@@ -135,11 +137,21 @@ def scrape_results(self):
     return json.dumps(result)
 
 
-@bp.route("/results")
+@bp.route("/results/")
 def results_index():
     """Add a new result scrape task and start running it after 10 seconds."""
+    if request.is_json:
+        # JSON request
+        request_json = request.get_json()
+        election_id  = request_json.get('election_id')
+    elif request.method == 'POST':
+        # form request
+        election_id = request.form.get('election_id', None)
+    else:
+        # GET request
+        election_id = request.values.get('election_id', None)
     eta = datetime.utcnow() + timedelta(seconds=10)
-    task = scrape_results.apply_async(eta=eta)
+    task = scrape_results.apply_async(args=[election_id], eta=eta)
     return (
         jsonify(
             json.loads(task.get(propagate=False))
