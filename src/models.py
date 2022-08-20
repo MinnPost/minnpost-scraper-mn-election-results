@@ -192,34 +192,12 @@ class ScraperModel(object):
         spreadsheet_result = self.supplement_connect('supplemental_' + type, election_id)
         spreadsheet_rows   = None
         if "rows" in spreadsheet_result:
+            current_app.log.debug('Empty spreadsheet rows result. Spreadsheet result is %s ' % spreadsheet_result)
             spreadsheet_rows = spreadsheet_result['rows']
         supplemented_rows = []
         insert_rows = {'action': 'insert', 'rows': []}
         update_rows = {'action': 'update', 'rows': []}
         delete_rows = {'action': 'delete', 'rows': []}
-        #election_rows = {'action': 'election', 'rows': []}
-
-        #election_row = {
-        #    "id": election_id
-        #}
-
-        #if type == 'contests' or type == 'results':
-            #election_row['updated'] = db.func.current_timestamp()
-
-            #if type == 'results':
-                #sql = text("select count(distinct contest_id) as contest_count from results")
-                #result_contests = db.session.execute(sql)
-                #result_contest_count = [row[0] for row in result_contests]
-                #contest_count = {"contests" : int(result_contest_count[0])}
-                #election_rows['rows'].append(contest_count)
-
-                # Use the first state level race to get general number of precincts reporting
-                #state_contest_results = Contest.query.filter_by(county_id='88').first()
-                #if state_contest_results is not None:
-                    #election_row['precincts_reporting'] = state_contest_results.precincts_reporting
-                    #election_row['total_effected_precincts'] = state_contest_results.total_effected_precincts
-            #election_rows["rows"].append(election_row)
-            #supplemented_rows.append(election_rows)
         if spreadsheet_rows is None:
             return supplemented_rows
 
@@ -1073,6 +1051,7 @@ class Contest(ScraperModel, db.Model):
         if isinstance(spreadsheet_row, (bytes, bytearray)):
             try:
                 spreadsheet_row = json.loads(spreadsheet_row)
+                current_app.log.info('Spreadsheet row: %s ' % spreadsheet_row)
             except Exception:
                 current_app.log.debug('Failed to load contest json into a dict. The json data is %s ' % spreadsheet_row)
                 supplemented_row = {}
@@ -1364,7 +1343,7 @@ class Result(ScraperModel, db.Model):
                         matching_result.votes_candidate = spreadsheet_row['votes_candidate']
                         matching_result.ranked_choice_place = spreadsheet_row['ranked_choice_place']
                         if updated is not None:
-                            matching_result.updated = spreadsheet_row['updated']
+                            matching_result.updated = updated
                         if matching_result not in update_results:
                             update_results.append(matching_result)
                     row_result = {
