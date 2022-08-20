@@ -192,7 +192,7 @@ class ScraperModel(object):
         spreadsheet_result = self.supplement_connect('supplemental_' + type, election_id)
         spreadsheet_rows   = None
         if "rows" in spreadsheet_result:
-            current_app.log.debug('Empty spreadsheet rows result. Spreadsheet result is %s ' % spreadsheet_result)
+            current_app.log.debug('Valid spreadsheet rows result. Spreadsheet result is %s ' % spreadsheet_result)
             spreadsheet_rows = spreadsheet_result['rows']
         supplemented_rows = []
         insert_rows = {'action': 'insert', 'rows': []}
