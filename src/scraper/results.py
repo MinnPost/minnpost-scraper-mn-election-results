@@ -5,13 +5,14 @@ import pytz
 from datetimerange import DateTimeRange
 from redbeat import RedBeatSchedulerEntry as Entry
 from celery.schedules import schedule
-from flask import jsonify, current_app, request
+from flask import jsonify, current_app, request, Response
 from src.extensions import db
 from src.extensions import celery
 from src.storage import Storage
 from src.models import Result
 from src.scraper import bp
 from src.scraper import elections
+from celery import chain
 
 newest_election = None
 election = None
@@ -87,14 +88,16 @@ def scrape_results(self, election_id = None):
     db.session.commit()
 
     result = {
-        "sources": group_count,
-        "inserted": inserted_count,
-        "updated": updated_count,
-        "deleted": deleted_count,
-        "parsed": parsed_count,
-        "supplemented": supplemented_count,
-        "cache": storage.clear_group(class_name),
-        "status": "completed"
+        "results" : {
+            "sources": group_count,
+            "inserted": inserted_count,
+            "updated": updated_count,
+            "deleted": deleted_count,
+            "parsed": parsed_count,
+            "supplemented": supplemented_count,
+            "cache": storage.clear_group(class_name),
+            "status": "completed"
+        }
     }
     current_app.log.debug(result)
 
@@ -137,7 +140,8 @@ def scrape_results(self, election_id = None):
                 current_app.log.info("this task does not exist. create it.")
                 e = Entry(entry_key, 'src.scraper.results.scrape_results', interval, app=celery)
                 e.save()
-    return json.dumps(result)
+
+    return result
 
 
 @bp.route("/results/")
@@ -155,14 +159,15 @@ def results_index():
         election_id = request.values.get('election_id', None)
 
     eta = datetime.utcnow() + timedelta(seconds=10)
-    task = scrape_results.apply_async(
-        args=[election_id], eta=eta,
-        link=elections.scrape_elections(args=[election_id])
-    )
+    res = chain(scrape_results.s() | elections.scrape_elections.s()).apply_async(args=[election_id], eta=eta)
+    output = res.get()
 
-    return (
-        jsonify(
-            json.loads(task.get(propagate=False))
-        ),
-        202,
-    )
+    # set up the response and return it
+    mime = 'application/json'
+    ctype = 'application/json; charset=UTF-8'
+
+    res = Response(response = output, status = 200, mimetype = mime)
+    res.headers['Content-Type'] = ctype
+    res.headers['Connection'] = 'keep-alive'
+    res.headers.add("Access-Control-Allow-Origin", "*")
+    return res

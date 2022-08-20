@@ -1,13 +1,14 @@
 import json
 from datetime import datetime
 from datetime import timedelta
-from flask import jsonify, current_app, request
+from flask import jsonify, current_app, request, Response
 from src.extensions import db
 from src.extensions import celery
 from src.storage import Storage
 from src.models import Contest
 from src.scraper import bp
 from src.scraper import elections
+from celery import chain
 
 @celery.task(bind=True)
 def scrape_contests(self, election_id = None):
@@ -74,18 +75,19 @@ def scrape_contests(self, election_id = None):
     db.session.commit()
 
     result = {
-        "sources": group_count,
-        "inserted": inserted_count,
-        "updated": updated_count,
-        "deleted": deleted_count,
-        "parsed": parsed_count,
-        "supplemented": supplemented_count,
-        "cache": storage.clear_group(class_name),
-        "status": "completed"
+        "contests" : {
+            "sources": group_count,
+            "inserted": inserted_count,
+            "updated": updated_count,
+            "deleted": deleted_count,
+            "parsed": parsed_count,
+            "supplemented": supplemented_count,
+            "cache": storage.clear_group(class_name),
+            "status": "completed"
+        }
     }
     current_app.log.debug(result)
-
-    return json.dumps(result)
+    return result
 
 
 @bp.route("/contests/")
@@ -103,14 +105,15 @@ def contests_index():
         election_id = request.values.get('election_id', None)
 
     eta = datetime.utcnow() + timedelta(seconds=10)
-    task = scrape_contests.apply_async(
-        args=[election_id], eta=eta,
-        link=elections.scrape_elections(args=[election_id])
-    )
+    res = chain(scrape_contests.s() | elections.scrape_elections.s()).apply_async(args=[election_id], eta=eta)
+    output = res.get()
 
-    return (
-        jsonify(
-            json.loads(task.get(propagate=False))
-        ),
-        202,
-    )
+    # set up the response and return it
+    mime = 'application/json'
+    ctype = 'application/json; charset=UTF-8'
+
+    res = Response(response = output, status = 200, mimetype = mime)
+    res.headers['Content-Type'] = ctype
+    res.headers['Connection'] = 'keep-alive'
+    res.headers.add("Access-Control-Allow-Origin", "*")
+    return res
