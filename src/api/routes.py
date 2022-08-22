@@ -225,19 +225,23 @@ def boundaries():
     # set cache key
     if contest_id is not None:
         cache_key_name  = "contest_id"
+        cache_key_value = contest_id
     elif title is not None:
         cache_key_name  = "title"
         search = "%{}%".format(title)
+        cache_key_value = title
     elif len(contest_ids):
         cache_key_name  = "contest_ids"
+        cache_key_value = ','.join(contest_ids)
     else:
         cache_key_name = "all_contests"
+        cache_key_value = ""
 
     # add election to cache key, even if it's None
     election = contest_model.set_election(election_id)
     if election is None:
         return
-    cache_key_name = cache_key_name + "-election-" + election.id
+    cache_key_name = cache_key_name + "-" + cache_key_value + "-election-" + election.id
     
     # check for cached data and set the output, if it exists
     #cached_output = storage.get(cache_key_name)
@@ -324,7 +328,7 @@ def contests():
         cache_key_value = title
     elif len(contest_ids):
         cache_key_name  = "contest_ids"
-        cache_key_value = contest_ids
+        cache_key_value = ','.join(contest_ids)
     else:
         cache_key_name = "all_contests"
         cache_key_value = ""
