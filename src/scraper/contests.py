@@ -86,7 +86,7 @@ def scrape_contests(self, election_id = None):
             "status": "completed"
         }
     }
-    current_app.log.debug(result)
+    #current_app.log.debug(result)
     return result
 
 

@@ -39,10 +39,10 @@ def query():
         # check for cached data and set the output, if it exists
         cached_output = storage.get(cache_key)
         if cached_output is not None:
-            current_app.log.debug('found cached result for legacy meta key: %s' % cache_key)
+            #current_app.log.debug('found cached result for legacy meta key: %s' % cache_key)
             output = cached_output
         else:
-            current_app.log.debug('did not find cached result for legacy meta key: %s' % cache_list_key)
+            #current_app.log.debug('did not find cached result for legacy meta key: %s' % cache_list_key)
             output = election_model.legacy_meta_output(election.id)
             output = storage.save(cache_key, output, cache_list_key)
 

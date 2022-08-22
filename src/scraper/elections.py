@@ -63,7 +63,7 @@ def scrape_elections(self, args=[]):
             result['contests'] = contests
         elif results is not None:
             result['results'] = results
-    current_app.log.debug(result)
+    #current_app.log.debug(result)
     return json.dumps(result)
 
 

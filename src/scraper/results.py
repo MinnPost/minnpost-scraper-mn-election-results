@@ -99,7 +99,7 @@ def scrape_results(self, election_id = None):
             "status": "completed"
         }
     }
-    current_app.log.debug(result)
+    #current_app.log.debug(result)
 
     now = datetime.now(pytz.timezone('America/Chicago'))
     #offset = now.strftime('%z')

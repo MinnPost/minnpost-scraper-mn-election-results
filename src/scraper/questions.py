@@ -56,7 +56,7 @@ def scrape_questions(self, election_id = None):
         "cache": storage.clear_group(class_name),
         "status": "completed"
     }
-    current_app.log.debug(result)
+    #current_app.log.debug(result)
     return json.dumps(result)
 
 
