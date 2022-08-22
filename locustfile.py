@@ -21,7 +21,7 @@ class UserBehavior(TaskSet):
   Locust task class.
   """
 
-  query_call = '/?box=ubuntu&method=sql&q=%s'
+  query_call = '/api/query/?q=%s'
 
 
   def on_start(self):
