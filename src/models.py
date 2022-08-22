@@ -999,6 +999,32 @@ class Contest(ScraperModel, db.Model):
         mcd = Area.query.filter_by(areas_group='municipalities', mcd_id=parsed_row['district_code']).all()
         return mcd
 
+
+    def check_boundary(self, query_result):
+        boundary_url = 'https://represent-minnesota.herokuapp.com/boundaries/%s';
+        contests_count = 0
+        boundaries_found = 0
+        boundaries_not_found = []
+        for item in query_result:
+            contest = self.row2dict(item)
+            contests_count = contests_count + 1
+            for boundary in contest['boundary'].split(','):
+                boundary_not_found = {}
+                boundary_request = requests.get(boundary_url % boundary, verify = False)
+                if boundary_request.status_code == 200:
+                    boundaries_found = boundaries_found + 1
+                else:
+                    boundary_not_found['contest'] = contest['title']
+                    boundary_not_found['status_code'] = boundary_request.status_code
+                    boundary_not_found['boundary'] = boundary
+                    boundaries_not_found.append(boundary_not_found)
+        output = {
+            "contests_count": contests_count,
+            "boundaries_found": boundaries_found,
+            "boundaries_not_found": boundaries_not_found
+        }
+        return json.dumps(output)
+
     
     def set_question_fields(self, parsed_row):
         # Get question data

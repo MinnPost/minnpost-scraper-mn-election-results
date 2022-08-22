@@ -187,6 +187,98 @@ def areas():
     return res
 
 
+@bp.route('/boundaries/', methods=['GET', 'POST'])
+def boundaries():
+    request.args = request.args.to_dict()
+    request.args["display_cache_data"] = "true"
+    contest_model  = Contest()
+    storage        = Storage(request.args)
+    class_name     = Contest.get_classname()
+    query_result   = None
+    if request.is_json:
+        # JSON request
+        request_json = request.get_json()
+        title        = request_json.get('title')
+        contest_id   = request_json.get('contest_id')
+        contest_ids  = request_json.get('contest_ids')
+        election_id  = request_json.get('election_id')
+    elif request.method == 'POST':
+        # form request
+        title       = request.form.get('title', None)
+        contest_id  = request.form.get('contest_id', None)
+        contest_ids = request.form.get('contest_ids', [])
+        election_id = request.form.get('election_id', None)
+    else:
+        # GET request
+        title       = request.values.get('title', None)
+        contest_id  = request.values.get('contest_id', None)
+        contest_ids = request.values.get('contest_ids', [])
+        election_id = request.values.get('election_id', None)
+
+    # if the contest_ids value is provided on the url, it'll be a string and we need to make it a list
+    if isinstance(contest_ids, str):
+        contest_ids = contest_ids.split(',')
+
+    # set cache key
+    if contest_id is not None:
+        cache_key_name  = "contest_id"
+    elif title is not None:
+        cache_key_name  = "title"
+        search = "%{}%".format(title)
+    elif len(contest_ids):
+        cache_key_name  = "contest_ids"
+    else:
+        cache_key_name = "all_contests"
+
+    # add election to cache key, even if it's None
+    election = contest_model.set_election(election_id)
+    if election is None:
+        return
+    cache_key_name = cache_key_name + "-election-" + election.id
+    
+    # check for cached data and set the output, if it exists
+    #cached_output = storage.get(cache_key_name)
+    #if cached_output is not None:
+    #    output = cached_output
+    #else:
+    # run the queries
+    if contest_id is not None:
+        try:
+            query_result = Contest.query.filter(Contest.id == contest_id, Contest.election_id == election.id, Contest.boundary.isnot(None))
+        except exc.SQLAlchemyError:
+            pass
+    elif title is not None:
+        try:
+            query_result = Contest.query.filter(Contest.title.ilike(search), Contest.election_id == election.id, Contest.boundary.isnot(None)).all()
+        except exc.SQLAlchemyError:
+            pass
+    elif len(contest_ids):
+        try:
+            query_result = Contest.query.filter(Contest.id.ilike(any_(contest_ids)), Contest.election_id == election.id, Contest.boundary.isnot(None)).all()
+        except exc.SQLAlchemyError:
+            pass
+    else:
+        try:
+            query_result = Contest.query.filter(Contest.election_id == election.id, Contest.boundary.isnot(None)).all()
+        except exc.SQLAlchemyError:
+            pass
+    
+    # set the cache and the output from the query result
+    #output = contest_model.output_for_cache(query_result, request.args)
+    #output = storage.save(cache_key_name, output, class_name)
+    output = contest_model.check_boundary(query_result)
+
+    # set up the response and return it
+    mime = 'application/json'
+    ctype = 'application/json; charset=UTF-8'
+
+    res = Response(response = output, status = 200, mimetype = mime)
+    res.headers['Content-Type'] = ctype
+    res.headers['Connection'] = 'keep-alive'
+    res.headers.add("Access-Control-Allow-Origin", "*")
+    return res
+
+
 @bp.route('/contests/', methods=['GET', 'POST'])
 def contests():
     request.args = request.args.to_dict()
