@@ -107,7 +107,7 @@ class ScraperModel(object):
         if election_key not in sources:
             return None
 
-        current_app.log.debug('Set election to: %s' % election)
+        #current_app.log.debug('Set election to: %s' % election)
         return election
 
 
@@ -139,7 +139,7 @@ class ScraperModel(object):
         
         # make the query case insensitive
         sql = expression_tree.sql().replace(" LIKE ", " ILIKE ")
-        current_app.log.info('sql is %s' % sql)
+        #current_app.log.debug('sql is %s' % sql)
         return sql
 
 
@@ -192,7 +192,7 @@ class ScraperModel(object):
         spreadsheet_result = self.supplement_connect('supplemental_' + type, election_id)
         spreadsheet_rows   = None
         if "rows" in spreadsheet_result:
-            current_app.log.debug('Valid spreadsheet rows result. Spreadsheet result is %s ' % spreadsheet_result)
+            #current_app.log.debug('Valid spreadsheet rows result. Spreadsheet result is %s ' % spreadsheet_result)
             spreadsheet_rows = spreadsheet_result['rows']
         supplemented_rows = []
         insert_rows = {'action': 'insert', 'rows': []}
@@ -564,7 +564,7 @@ class Election(ScraperModel, db.Model):
                 row["value"] = election[key]
             row["type"] = type(election[key]).__name__
             data.append(row)
-        current_app.log.info(data)
+        #current_app.log.debug(data)
         return data
 
 
@@ -1051,9 +1051,9 @@ class Contest(ScraperModel, db.Model):
         if isinstance(spreadsheet_row, (bytes, bytearray)):
             try:
                 spreadsheet_row = json.loads(spreadsheet_row)
-                current_app.log.info('Spreadsheet row: %s ' % spreadsheet_row)
+                #current_app.log.debug('Spreadsheet row: %s ' % spreadsheet_row)
             except Exception:
-                current_app.log.debug('Failed to load contest json into a dict. The json data is %s ' % spreadsheet_row)
+                #current_app.log.debug('Failed to load contest json into a dict. The json data is %s ' % spreadsheet_row)
                 supplemented_row = {}
                 return supplemented_row
 
@@ -1318,8 +1318,9 @@ class Result(ScraperModel, db.Model):
         if isinstance(spreadsheet_row, (bytes, bytearray)):
             try:
                 spreadsheet_row = json.loads(spreadsheet_row)
+                #current_app.log.debug('Spreadsheet row: %s ' % spreadsheet_row)
             except Exception:
-                current_app.log.debug('Failed to load result json into a dict. The json data is %s ' % spreadsheet_row)
+                #current_app.log.debug('Failed to load result json into a dict. The json data is %s ' % spreadsheet_row)
                 supplemented_row = {}
                 return supplemented_row
 
