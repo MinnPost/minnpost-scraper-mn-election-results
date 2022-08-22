@@ -139,16 +139,19 @@ def areas():
     # set cache key
     if area_id is not None:
         cache_key_name  = "area_id"
+        cache_key_value = area_id
     elif areas_group is not None:
         cache_key_name  = "areas_group"
+        cache_key_value = areas_group
     else:
         cache_key_name = "all_areas"
+        cache_key_value = ""
 
     # add election to cache key, even if it's None
     election = area_model.set_election(election_id)
     if election is None:
         return
-    cache_key_name = cache_key_name + "-election-" + election.id
+    cache_key_name = cache_key_name + "-" + cache_key_value + "-election-" + election.id
 
     # check for cached data and set the output, if it exists
     cached_output = storage.get(cache_key_name)
@@ -314,18 +317,23 @@ def contests():
     # set cache key
     if contest_id is not None:
         cache_key_name  = "contest_id"
+        cache_key_value = contest_id
     elif title is not None:
         cache_key_name  = "title"
         search = "%{}%".format(title)
+        cache_key_value = title
     elif len(contest_ids):
         cache_key_name  = "contest_ids"
+        cache_key_value = contest_ids
     else:
         cache_key_name = "all_contests"
+        cache_key_value = ""
 
     # add election to cache key, even if it's None
     election = contest_model.set_election(election_id)
     if election is None:
         return
+    cache_key_name = cache_key_name + "-" + cache_key_value + "-election-" + election.id
     cache_key_name = cache_key_name + "-election-" + election.id
     
     # check for cached data and set the output, if it exists
@@ -354,7 +362,7 @@ def contests():
                 query_result = Contest.query.filter_by(election_id=election.id).all()
             except exc.SQLAlchemyError:
                 pass
-        
+        current_app.log.info(query_result)
         # set the cache and the output from the query result
         output = contest_model.output_for_cache(query_result, request.args)
         output = storage.save(cache_key_name, output, class_name)
@@ -396,10 +404,15 @@ def elections():
     # set cache key
     if election_id is not None:
         cache_key_name  = "election_id"
+        cache_key_value = election_id
     elif election_date is not None:
         cache_key_name  = "election_date"
+        cache_key_value = election_date
     else:
         cache_key_name = "all_elections"
+        cache_key_value = ""
+
+    cache_key_name = cache_key_name + "-" + cache_key_value
 
     # check for cached data and set the output, if it exists
     cached_output = storage.get(cache_key_name)
@@ -427,91 +440,6 @@ def elections():
         output = election_model.output_for_cache(query_result, request.args, returning_single_row)
         output = storage.save(cache_key_name, output, class_name)
 
-    # set up the response and return it
-    mime = 'application/json'
-    ctype = 'application/json; charset=UTF-8'
-
-    res = Response(response = output, status = 200, mimetype = mime)
-    res.headers['Content-Type'] = ctype
-    res.headers['Connection'] = 'keep-alive'
-    res.headers.add("Access-Control-Allow-Origin", "*")
-    return res
-
-
-@bp.route('/meta/', methods=['GET'])
-def meta():
-    request.args = request.args.to_dict()
-    request.args["display_cache_data"] = "true"
-    election_model        = Election()
-    storage              = Storage(request.args)
-    class_name           = Election.get_classname()
-    query_result         = None
-    returning_single_row = False
-    if request.is_json:
-        # JSON request
-        request_json  = request.get_json()
-        election_id   = request_json.get('election_id')
-        election_date = request_json.get('election_date')
-        key           = request_json.get('key', None)
-    elif request.method == 'POST':
-        # form request
-        election_id = request.form.get('election_id', None)
-        election_date = request.form.get('election_date', None)
-        key           = request.form.get('key', None)
-    else:
-        # GET request
-        election_id   = request.values.get('election_id', None)
-        election_date = request.values.get('election_date', None)
-        key           = request.values.get('key', None)
-
-    # set cache key
-    if election_id is not None:
-        cache_key_name  = "election_id"
-    elif election_date is not None:
-        cache_key_name  = "election_date"
-    elif key is not None:
-        cache_key_name  = "election_meta_key"
-    else:
-        cache_key_name = "all_elections"
-
-    # add election to cache key, even if it's None
-    election = election_model.set_election(election_id)
-    if election is None:
-        return
-    cache_key_name = cache_key_name + "-election-" + election.id
-
-    # check for cached data and set the output, if it exists
-    cached_output = storage.get(cache_key_name)
-    if cached_output is not None:
-        output = cached_output
-    else:
-        # run the queries
-        if election.id is not None:
-            try:
-                query_result = Election.query.filter_by(id=election.id).all()
-            except exc.SQLAlchemyError:
-                pass
-        elif election_date is not None:
-            try:
-                query_result = Election.query.filter_by(election_date=election_date).all()
-            except exc.SQLAlchemyError:
-                pass
-        elif key is not None:
-            try:
-                query_result = Election.query.order_by(Election.election_datetime.desc()).first()
-                returning_single_row = True
-            except exc.SQLAlchemyError:
-                pass
-        else:
-            try:
-                query_result = Election.query.order_by(Election.election_datetime.desc()).all()
-            except exc.SQLAlchemyError:
-                pass
-
-        # set the cache and the output from the query result
-        output = election_model.output_for_cache(query_result, request.args, returning_single_row)
-        output = storage.save(cache_key_name, output, class_name)
-    
     # set up the response and return it
     mime = 'application/json'
     ctype = 'application/json; charset=UTF-8'
@@ -551,15 +479,19 @@ def questions():
     # set cache key
     if question_id is not None:
         cache_key_name  = "question_id"
+        cache_key_value = question_id
     elif contest_id is not None:
         cache_key_name  = "contest_id"
+        cache_key_value = contest_id
     else:
         cache_key_name = "all_questions"
+        cache_key_value = ""
 
     # add election to cache key, even if it's None
     election = question_model.set_election(election_id)
     if election is None:
         return
+    cache_key_name = cache_key_name + "-" + cache_key_value + "-election-" + election.id
     cache_key_name = cache_key_name + "-election-" + election.id
 
     # check for cached data and set the output, if it exists
@@ -627,15 +559,19 @@ def results():
     # set cache key
     if result_id is not None:
         cache_key_name  = "result_id"
+        cache_key_value = result_id
     elif contest_id is not None:
         cache_key_name  = "contest_id"
+        cache_key_value = contest_id
     else:
         cache_key_name = "all_results"
+        cache_key_value = ""
 
     # add election to cache key, even if it's None
     election = result_model.set_election(election_id)
     if election is None:
         return
+    cache_key_name = cache_key_name + "-" + cache_key_value + "-election-" + election.id
     cache_key_name = cache_key_name + "-election-" + election.id
 
     # check for cached data and set the output, if it exists
