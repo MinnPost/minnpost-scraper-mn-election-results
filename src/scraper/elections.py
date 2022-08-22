@@ -9,7 +9,7 @@ from src.models import Election
 from src.scraper import bp
 
 @celery.task(bind=True)
-def scrape_elections(self, args=[]):
+def scrape_elections(self, args={}):
     storage    = Storage()
     election   = Election()
     class_name = Election.get_classname()

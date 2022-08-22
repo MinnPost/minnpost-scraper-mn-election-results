@@ -1,11 +1,10 @@
-import json
 from datetime import datetime
 from datetime import timedelta
 import pytz
 from datetimerange import DateTimeRange
 from redbeat import RedBeatSchedulerEntry as Entry
 from celery.schedules import schedule
-from flask import jsonify, current_app, request, Response
+from flask import current_app, request, Response
 from src.extensions import db
 from src.extensions import celery
 from src.storage import Storage
@@ -13,9 +12,6 @@ from src.models import Result
 from src.scraper import bp
 from src.scraper import elections
 from celery import chain
-
-newest_election = None
-election = None
 
 @celery.task(bind=True)
 def scrape_results(self, election_id = None):

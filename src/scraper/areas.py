@@ -8,9 +8,6 @@ from src.storage import Storage
 from src.models import Area
 from src.scraper import bp
 
-newest_election = None
-election = None
-
 @celery.task(bind=True)
 def scrape_areas(self, election_id = None):
     storage      = Storage()
