@@ -18,10 +18,11 @@ class Config(object):
     else:
         SQLALCHEMY_ECHO = False
 
-    # by default, use the REDIS_URL for all the redis urls.
-    # but they could also each have distinct values in the environment settings.
+    # by default, use redis as the backend and rabbitmq (via cloudamqp) as the broker.
+    # but these can also each have distinct values in the environment settings.
     REDIS_URL = os.environ.get("REDIS_URL", "redis://127.0.0.1:6379/0")
-    CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", REDIS_URL)
+    CLOUDAMQP_URL = os.environ.get("CLOUDAMQP_URL", "amqp://guest:guest@127.0.0.1:5672")
+    CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", CLOUDAMQP_URL)
     RESULT_BACKEND = os.environ.get("RESULT_BACKEND", REDIS_URL)
     #CELERY_RESULT_BACKEND = RESULT_BACKEND # this is deprecated but heroku still seems to like it.
     REDBEAT_REDIS_URL = os.environ.get("REDBEAT_REDIS_URL", REDIS_URL)
