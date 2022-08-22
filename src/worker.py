@@ -7,7 +7,7 @@ from . import create_worker_app
 from src.celery import configure_celery
 from src.scraper.areas import scrape_areas
 from src.scraper.contests import scrape_contests
-from src.scraper.meta import scrape_meta
+from src.scraper.elections import scrape_elections
 from src.scraper.questions import scrape_questions
 from src.scraper.results import scrape_results
 
@@ -25,8 +25,8 @@ areas_entry.save()
 contests_entry = Entry('scrape_contests_task', 'src.scraper.contests.scrape_contests', default_interval, app=celery)
 contests_entry.save()
 
-meta_entry = Entry('scrape_meta_task', 'src.scraper.meta.scrape_meta', default_interval, app=celery)
-meta_entry.save()
+elections_entry = Entry('scrape_elections_task', 'src.scraper.elections.scrape_elections', default_interval, app=celery)
+elections_entry.save()
 
 questions_entry = Entry('scrape_questions_task', 'src.scraper.questions.scrape_questions', default_interval, app=celery)
 questions_entry.save()

@@ -14,10 +14,10 @@ redis = "==4.3.4"
 requests = "==2.28.1"
 werkzeug = "==2.2.2"
 flask-caching = "==2.0.1"
-sqlparse = "==0.4.2"
 ciso8601 = "==2.2.0"
 datetimerange = "==1.2.0"
 celery-redbeat = "==2.0.0"
+sqlglot = "==4.7.0"
 
 [dev-packages]
 "flower =" = "==1.0.0"
