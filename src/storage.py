@@ -105,7 +105,7 @@ class CacheStorage(object):
                 cache_group_list[key] = True
                 cache_group_output = json.dumps(cache_group_list, default=str)
                 cache.set(cache_group_key, cache_group_output, timeout=self.cache_timeout)
-                current_app.log.info(f"Store model data list in the cache. The key is {cache_group_key} and the value is {cache_group_output}.")
+                current_app.log.info(f"Store model data list in the cache. The key is {cache_group_key} and the timeout is {self.cache_timeout}.")
             
         return output
 
