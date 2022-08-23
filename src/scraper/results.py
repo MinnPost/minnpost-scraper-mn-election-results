@@ -95,7 +95,7 @@ def scrape_results(self, election_id = None):
     now = datetime.now(pytz.timezone('America/Chicago'))
     #offset = now.strftime('%z')
 
-    entry_key = 'scrape_results_task'
+    entry_key = 'scrape_results_chain_task'
     prefixed_entry_key = 'redbeat:' + entry_key
     interval = schedule(run_every=current_app.config["DEFAULT_SCRAPE_FREQUENCY"])
     datetime_overridden = current_app.config["ELECTION_RESULT_DATETIME_OVERRIDDEN"]
@@ -124,7 +124,8 @@ def scrape_results(self, election_id = None):
         if e.schedule != interval:
             debug_message += f" The current schedule is {e.schedule}. Change to {interval}."
             current_app.log.debug(debug_message)
-            e = Entry(entry_key, 'src.scraper.results.scrape_results', interval, app=celery)
+            #e = Entry(entry_key, 'src.scraper.results.scrape_results', interval, app=celery)
+            e = Entry(entry_key, 'src.scraper.results.scrape_results_chain', interval, app=celery)
             e.save()
         else:
             debug_message += f" The current schedule is already {interval}."
@@ -132,10 +133,18 @@ def scrape_results(self, election_id = None):
     except Exception as err:
         debug_message += f" The configured election result task does not exist; create it."
         current_app.log.debug(debug_message)
-        e = Entry(entry_key, 'src.scraper.results.scrape_results', interval, app=celery)
+        #e = Entry(entry_key, 'src.scraper.results.scrape_results', interval, app=celery)
+        e = Entry(entry_key, 'src.scraper.results.scrape_results_chain', interval, app=celery)
         e.save()
 
     return result
+
+
+@celery.task(bind=True)
+def scrape_results_chain(self, election_id = None):
+    eta = datetime.utcnow() + timedelta(seconds=10)
+    res = chain(scrape_results.s() | elections.scrape_elections.s()).apply_async(args=[election_id], eta=eta)
+    return res
 
 
 @bp.route("/results/")
