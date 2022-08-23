@@ -338,7 +338,7 @@ class Area(ScraperModel, db.Model):
     mcd_id = db.Column(db.String(255))
     precincts = db.Column(db.String(255))
     name = db.Column(db.String(255))
-    updated = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+    updated = db.Column(db.DateTime(timezone=True), default=db.func.current_timestamp())
 
 
     def __init__(self, **kwargs):
@@ -440,7 +440,7 @@ class Election(ScraperModel, db.Model):
     base_url = db.Column(db.String(255))
     date = db.Column(db.String(255))
     primary = db.Column(db.Boolean())
-    updated = db.Column(db.DateTime)
+    updated = db.Column(db.DateTime(timezone=True), default=db.func.current_timestamp())
     scraped = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
 
     areas = db.relationship('Area', backref=__tablename__, lazy=True)
@@ -543,10 +543,13 @@ class Election(ScraperModel, db.Model):
         # try to set the updated value based on the most recently updated result
         try:
             query_result = Result.query.filter_by(election_id=election_id).order_by(Result.updated.desc()).first()
-            updated = query_result.updated
         except Exception as e:
-            updated = db.func.current_timestamp()
+            query_result = {}
             pass
+        
+        updated = db.func.current_timestamp()
+        if query_result is not None and query_result.updated:
+            updated = query_result.updated
 
         parsed = {
             'id': election_id,
@@ -610,7 +613,7 @@ class Contest(ScraperModel, db.Model):
     sub_title = db.Column(db.String(255))
     incumbent_party = db.Column(db.String(255))
     called = db.Column(db.Boolean())
-    updated = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+    updated = db.Column(db.DateTime, default=db.func.current_timestamp())
 
     results = db.relationship('Result', backref=__tablename__, lazy=True)
 
@@ -1174,7 +1177,7 @@ class Question(ScraperModel, db.Model):
     title = db.Column(db.String(255))
     sub_title = db.Column(db.String(255))
     question_body = db.Column(db.Text)
-    updated = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+    updated = db.Column(db.DateTime(timezone=True), default=db.func.current_timestamp())
 
 
     def __init__(self, **kwargs):
@@ -1265,7 +1268,7 @@ class Result(ScraperModel, db.Model):
     votes_candidate = db.Column(db.BigInteger())
     percentage = db.Column(db.Float())
     ranked_choice_place = db.Column(db.BigInteger())
-    updated = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+    updated = db.Column(db.DateTime(timezone=True), default=db.func.current_timestamp())
 
 
     def __init__(self, **kwargs):
