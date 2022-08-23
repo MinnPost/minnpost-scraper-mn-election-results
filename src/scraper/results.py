@@ -58,7 +58,6 @@ def scrape_results(self, election_id = None):
 
     # Handle post processing actions. this only needs to happen once, not for every group.
     supplemental = result.post_processing('results', election.id)
-    #meta = Meta()
     for supplemental_result in supplemental:
         rows = supplemental_result['rows']
         action = supplemental_result['action']
@@ -75,11 +74,6 @@ def scrape_results(self, election_id = None):
                     elif action == 'delete':
                         db.session.delete(row)
                         deleted_count = deleted_count + 1
-                    #elif action == 'meta':
-                    #    parsed = row # it's already in the format we need to save it
-                    #    meta = Meta()
-                    #    meta.from_dict(parsed, new=True)
-                    #    db.session.merge(meta)
     # commit supplemental rows
     db.session.commit()
 
@@ -103,39 +97,42 @@ def scrape_results(self, election_id = None):
     entry_key = 'scrape_results_task'
     prefixed_entry_key = 'redbeat:' + entry_key
     interval = schedule(run_every=current_app.config["DEFAULT_SCRAPE_FREQUENCY"])
+    datetime_overridden = current_app.config["ELECTION_RESULT_DATETIME_OVERRIDDEN"]
+    debug_message = ""
 
-    if current_app.config["ELECTION_DAY_RESULT_HOURS_START"] != "" and current_app.config["ELECTION_DAY_RESULT_HOURS_END"] != "":
-        time_range = DateTimeRange(current_app.config["ELECTION_DAY_RESULT_HOURS_START"], current_app.config["ELECTION_DAY_RESULT_HOURS_END"])
-        now_formatted = now.isoformat()
-        if now_formatted in time_range:
-            current_app.log.info("this is during election result hours")
-            interval = schedule(run_every=current_app.config["ELECTION_DAY_RESULT_SCRAPE_FREQUENCY"])
-            try:
-                e = Entry.from_key(prefixed_entry_key)
-                if e.schedule != interval:
-                    current_app.log.info(f"the current schedule is {e.schedule}. change to {interval}.")
-                    e = Entry(entry_key, 'src.scraper.results.scrape_results', interval, app=celery)
-                    e.save()
-                else:
-                    current_app.log.info(f"the current schedule is already {interval}")
-            except Exception as err:
-                current_app.log.info("create the election result hours task")
-                e = Entry(entry_key, 'src.scraper.results.scrape_results', interval, app=celery)
-                e.save()
+    # set up the task interval based on the configuration values and/or the current datetime.
+    if datetime_overridden == "true":
+        interval      = schedule(run_every=current_app.config["ELECTION_DAY_RESULT_SCRAPE_FREQUENCY"])
+        debug_message = f"The current schedule is overridden and set to {interval} by a true value on the datetime override value."
+    elif datetime_overridden == "false":
+        interval = schedule(run_every=current_app.config["DEFAULT_SCRAPE_FREQUENCY"])
+        debug_message = f"The current schedule is overridden and set to {interval} by a false value on the datetime override value."
+    else:
+        if current_app.config["ELECTION_DAY_RESULT_HOURS_START"] != "" and current_app.config["ELECTION_DAY_RESULT_HOURS_END"] != "":
+            time_range = DateTimeRange(current_app.config["ELECTION_DAY_RESULT_HOURS_START"], current_app.config["ELECTION_DAY_RESULT_HOURS_END"])
+            now_formatted = now.isoformat()
+            if now_formatted in time_range:
+                interval = schedule(run_every=current_app.config["ELECTION_DAY_RESULT_SCRAPE_FREQUENCY"])
+                debug_message = f"This task is being run during election result hours."
+            else:
+                debug_message = f"This task is not being run during election result hours."
+
+    # create and/or run the result task based on the current interval value.
+    try:
+        e = Entry.from_key(prefixed_entry_key)
+        if e.schedule != interval:
+            debug_message += f" The current schedule is {e.schedule}. Change to {interval}."
+            current_app.log.debug(debug_message)
+            e = Entry(entry_key, 'src.scraper.results.scrape_results', interval, app=celery)
+            e.save()
         else:
-            current_app.log.info("this is not during election result hours")
-            try:
-                e = Entry.from_key(prefixed_entry_key)
-                if e.schedule != interval:
-                    current_app.log.info(f"the current schedule is {e.schedule}. reset to {interval}.")
-                    e = Entry(entry_key, 'src.scraper.results.scrape_results', interval, app=celery)
-                    e.save()
-                else:
-                    current_app.log.info(f"the current schedule is already {interval}")
-            except Exception as err:
-                current_app.log.info("this task does not exist. create it.")
-                e = Entry(entry_key, 'src.scraper.results.scrape_results', interval, app=celery)
-                e.save()
+            debug_message += f" The current schedule is already {interval}."
+            current_app.log.debug(debug_message)
+    except Exception as err:
+        debug_message += f" The configured election result task does not exist; create it."
+        current_app.log.debug(debug_message)
+        e = Entry(entry_key, 'src.scraper.results.scrape_results', interval, app=celery)
+        e.save()
 
     return result
 
