@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 from datetime import timedelta
-from flask import jsonify, current_app, request, Response
+from flask import current_app, request, Response
 from src.extensions import db
 from src.extensions import celery
 from src.storage import Storage
