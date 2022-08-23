@@ -1,6 +1,6 @@
 import ciso8601
 from datetime import datetime
-from flask import jsonify, request, Response, current_app
+from flask import request, Response, current_app
 from sqlalchemy import text
 from sqlalchemy import exc
 from sqlalchemy import any_
