@@ -1,5 +1,6 @@
 from celery import Celery
 from celery.schedules import schedule
+from celery.signals import worker_ready
 
 from redbeat import RedBeatSchedulerEntry as Entry
 
@@ -11,12 +12,23 @@ from src.scraper.elections import scrape_elections
 from src.scraper.questions import scrape_questions
 from src.scraper.results import scrape_results
 
-
 flask_app = create_worker_app()
 celery = configure_celery(flask_app)
 
-
 default_interval = schedule(run_every=flask_app.config["DEFAULT_SCRAPE_FREQUENCY"])  # seconds
+
+
+# run tasks on startup
+@worker_ready.connect
+def at_start(sender, **kwargs):
+    """Run tasks at startup"""
+    with sender.app.connection() as conn:
+        sender.app.send_task("src.scraper.areas.scrape_areas", app=celery, connection=conn)
+        sender.app.send_task("src.scraper.elections.scrape_elections", app=celery, connection=conn)
+        sender.app.send_task("src.scraper.contests.scrape_contests", app=celery, connection=conn)
+        sender.app.send_task("src.scraper.questions.scrape_questions", app=celery, connection=conn)
+        sender.app.send_task("src.scraper.results.scrape_results", app=celery, connection=conn)
+
 
 # daily tasks
 areas_entry = Entry('scrape_areas_task', 'src.scraper.areas.scrape_areas', default_interval, app=celery)
