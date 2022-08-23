@@ -56,6 +56,7 @@ def scrape_areas(self, election_id = None):
     
     #result = "sources: %s. Rows inserted: %s. Parsed rows: %s" % (str(group_count), str(inserted_count), str(parsed_count))
     result = {
+        "election_id": election.id,
         "sources": group_count,
         "inserted": inserted_count,
         "parsed": parsed_count,

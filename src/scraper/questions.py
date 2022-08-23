@@ -50,6 +50,7 @@ def scrape_questions(self, election_id = None):
             db.session.commit()
 
     result = {
+        "election_id": election.id,
         "sources": group_count,
         "inserted": inserted_count,
         "parsed": parsed_count,

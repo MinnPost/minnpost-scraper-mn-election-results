@@ -79,6 +79,7 @@ def scrape_results(self, election_id = None):
 
     result = {
         "results" : {
+            "election_id": election.id,
             "sources": group_count,
             "inserted": inserted_count,
             "updated": updated_count,

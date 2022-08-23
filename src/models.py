@@ -437,7 +437,7 @@ class Election(ScraperModel, db.Model):
     base_url = db.Column(db.String(255))
     date = db.Column(db.String(255))
     primary = db.Column(db.Boolean())
-    updated = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+    updated = db.Column(db.DateTime)
     scraped = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
 
     areas = db.relationship('Area', backref=__tablename__, lazy=True)
