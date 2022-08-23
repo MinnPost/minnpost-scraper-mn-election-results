@@ -167,7 +167,12 @@ class ScraperModel(object):
                 rows = csv.reader(lines, delimiter=';')
                 election = {}
                 election["rows"] = rows
-                election["updated"] = dict(response.getheaders())['Last-Modified']
+                headers = dict(response.getheaders())
+                if "Last-Modified" in headers:
+                    election["updated"] = headers['Last-Modified']
+                else:
+                    current_app.log.debug('headers is %s ' % headers)
+                    election["updated"] = db.func.current_timestamp()
                 return election
             except Exception as err:
                 current_app.log.error('[%s] Error when trying to read URL and parse CSV: %s' % (source['type'], source['url']))
