@@ -172,7 +172,7 @@ class ScraperModel(object):
                     election["updated"] = headers['Last-Modified']
                 else:
                     current_app.log.debug('headers is %s ' % headers)
-                    election["updated"] = db.func.current_timestamp()
+                    election["updated"] = None
                 return election
             except Exception as err:
                 current_app.log.error('[%s] Error when trying to read URL and parse CSV: %s' % (source['type'], source['url']))
@@ -199,6 +199,9 @@ class ScraperModel(object):
         if "rows" in spreadsheet_result:
             #current_app.log.debug('Valid spreadsheet rows result. Spreadsheet result is %s ' % spreadsheet_result)
             spreadsheet_rows = spreadsheet_result['rows']
+        updated = None
+        if "updated" in spreadsheet_result:
+            updated = spreadsheet_result["updated"]
         supplemented_rows = []
         insert_rows = {'action': 'insert', 'rows': []}
         update_rows = {'action': 'update', 'rows': []}
@@ -208,7 +211,7 @@ class ScraperModel(object):
 
         # for each row in the spreadsheet
         for spreadsheet_row in spreadsheet_rows:
-            supplement_row = self.supplement_row(spreadsheet_row, election_id, spreadsheet_result["updated"])
+            supplement_row = self.supplement_row(spreadsheet_row, election_id, updated)
             if 'rows' in supplement_row:
                 if supplement_row['action'] == 'insert' and supplement_row['rows'] not in insert_rows['rows']:
                     insert_rows['rows'] = list(set(insert_rows['rows'] + supplement_row['rows']))
@@ -335,7 +338,7 @@ class Area(ScraperModel, db.Model):
     mcd_id = db.Column(db.String(255))
     precincts = db.Column(db.String(255))
     name = db.Column(db.String(255))
-    updated = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+    updated = db.Column(db.DateTime(timezone=True), default=db.func.current_timestamp())
 
 
     def __init__(self, **kwargs):
@@ -437,7 +440,8 @@ class Election(ScraperModel, db.Model):
     base_url = db.Column(db.String(255))
     date = db.Column(db.String(255))
     primary = db.Column(db.Boolean())
-    updated = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+    updated = db.Column(db.DateTime(timezone=True), default=db.func.current_timestamp())
+    scraped = db.Column(db.DateTime(timezone=True), default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
 
     areas = db.relationship('Area', backref=__tablename__, lazy=True)
     contests = db.relationship('Contest', backref=__tablename__, lazy=True)
@@ -450,7 +454,7 @@ class Election(ScraperModel, db.Model):
         self.base_url = kwargs.get('base_url')
         self.date = kwargs.get('date')
         self.primary = kwargs.get('primary')
-        self.updated = kwargs.get('primary')
+        self.updated = kwargs.get('updated')
 
 
     def __repr__(self):
@@ -539,10 +543,13 @@ class Election(ScraperModel, db.Model):
         # try to set the updated value based on the most recently updated result
         try:
             query_result = Result.query.filter_by(election_id=election_id).order_by(Result.updated.desc()).first()
-            updated = query_result.updated
         except Exception as e:
-            updated = db.func.current_timestamp()
+            query_result = {}
             pass
+        
+        updated = db.func.current_timestamp()
+        if query_result is not None and query_result.updated:
+            updated = query_result.updated
 
         parsed = {
             'id': election_id,
@@ -606,7 +613,7 @@ class Contest(ScraperModel, db.Model):
     sub_title = db.Column(db.String(255))
     incumbent_party = db.Column(db.String(255))
     called = db.Column(db.Boolean())
-    updated = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+    updated = db.Column(db.DateTime(timezone=True), default=db.func.current_timestamp())
 
     results = db.relationship('Result', backref=__tablename__, lazy=True)
 
@@ -1106,6 +1113,8 @@ class Contest(ScraperModel, db.Model):
                     for field in spreadsheet_row:
                         if spreadsheet_row[field] is not None and spreadsheet_row[field] != '':
                             matching_result.field = spreadsheet_row[field]
+                    if election_id is not None:
+                        matching_result.election_id = election_id
                     if updated is not None:
                         matching_result.updated = updated
                     if matching_result not in update_results:
@@ -1126,6 +1135,8 @@ class Contest(ScraperModel, db.Model):
                         new_contest['id'] = spreadsheet_row[field]
                     elif spreadsheet_row[field] is not None and spreadsheet_row[field] != '':
                         new_contest[field] = spreadsheet_row[field]
+                if election_id is not None:
+                    new_contest['election_id'] = election_id
                 if updated is not None:
                     new_contest.updated = updated
                 new_contest['results_group'] = 'supplemental_results'
@@ -1166,7 +1177,7 @@ class Question(ScraperModel, db.Model):
     title = db.Column(db.String(255))
     sub_title = db.Column(db.String(255))
     question_body = db.Column(db.Text)
-    updated = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+    updated = db.Column(db.DateTime(timezone=True), default=db.func.current_timestamp())
 
 
     def __init__(self, **kwargs):
@@ -1257,7 +1268,7 @@ class Result(ScraperModel, db.Model):
     votes_candidate = db.Column(db.BigInteger())
     percentage = db.Column(db.Float())
     ranked_choice_place = db.Column(db.BigInteger())
-    updated = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+    updated = db.Column(db.DateTime(timezone=True), default=db.func.current_timestamp())
 
 
     def __init__(self, **kwargs):
@@ -1374,6 +1385,8 @@ class Result(ScraperModel, db.Model):
                         matching_result.percentage = spreadsheet_row['percentage']
                         matching_result.votes_candidate = spreadsheet_row['votes_candidate']
                         matching_result.ranked_choice_place = spreadsheet_row['ranked_choice_place']
+                        if election_id is not None:
+                            matching_result.election_id = election_id
                         if updated is not None:
                             matching_result.updated = updated
                         if matching_result not in update_results:
@@ -1396,6 +1409,8 @@ class Result(ScraperModel, db.Model):
                 # Add new row, make sure to mark the row as supplemental
                 spreadsheet_row['results_group'] = 'supplemental_results'
                 insert_result = spreadsheet_row
+                if election_id is not None:
+                    insert_result['election_id'] = election_id
                 if updated is not None:
                     insert_result['updated'] = updated
                 result_model = Result(**insert_result)

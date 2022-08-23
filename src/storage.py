@@ -159,7 +159,7 @@ class CacheStorage(object):
             if query_cache_keys != None:
                 cache_group_list = {**cache_group_list, **json.loads(query_cache_keys)}
             for cache_key in cache_group_list:
-                current_app.log.info(f"key to check is {cache_key}")
+                #current_app.log.debug(f"key to check is {cache_key}")
                 deleted = self.delete(cache_key)
                 if deleted == True:
                     data["deleted"][cache_key] = True

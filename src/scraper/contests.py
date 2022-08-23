@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 from datetime import timedelta
-from flask import jsonify, current_app, request, Response
+from flask import current_app, request, Response
 from src.extensions import db
 from src.extensions import celery
 from src.storage import Storage
@@ -76,6 +76,7 @@ def scrape_contests(self, election_id = None):
 
     result = {
         "contests" : {
+            "election_id": election.id,
             "sources": group_count,
             "inserted": inserted_count,
             "updated": updated_count,

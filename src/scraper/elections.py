@@ -10,16 +10,33 @@ from src.scraper import bp
 
 @celery.task(bind=True)
 def scrape_elections(self, args={}):
-    storage    = Storage()
-    election   = Election()
-    class_name = Election.get_classname()
-    sources    = election.read_sources()
+    storage     = Storage()
+    election    = Election()
+    class_name  = Election.get_classname()
+    sources     = election.read_sources()
+    contests    = args.get('contests', None)
+    results     = args.get('results', None)
+    election_id = None
 
     inserted_count = 0
     parsed_count = 0
 
-    #if election_id == None:
-    for key in sources:
+    if contests is not None:
+        election_id = contests['election_id']
+    elif results is not None:
+        election_id = results['election_id']
+
+    if election_id == None:
+        for key in sources:
+            row = sources[key]
+            parsed = election.parser(row, key)
+            election.from_dict(parsed, new=True)
+
+            db.session.merge(election)
+            inserted_count = inserted_count + 1
+            parsed_count = parsed_count + 1
+    else:
+        key = election.set_election_key(election_id)
         row = sources[key]
         parsed = election.parser(row, key)
         election.from_dict(parsed, new=True)
@@ -27,21 +44,9 @@ def scrape_elections(self, args={}):
         db.session.merge(election)
         inserted_count = inserted_count + 1
         parsed_count = parsed_count + 1
-    #else:
-    #    key = election.set_election_key(election_id)
-    #    row = sources[key]
-    #    parsed = election.parser(row, key)
-    #    election.from_dict(parsed, new=True)
-
-    #    db.session.merge(election)
-    #    inserted_count = inserted_count + 1
-    #    parsed_count = parsed_count + 1
 
     # commit parsed rows
     db.session.commit()
-
-    contests = args.get('contests', None)
-    results = args.get('results', None)
 
     if args == []:
         result = {
