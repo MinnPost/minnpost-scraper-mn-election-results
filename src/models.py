@@ -468,7 +468,7 @@ class Election(ScraperModel, db.Model):
 
     @election_datetime.expression
     def election_datetime(self):
-        return func.to_date(self.date, "%Y-%m-%d")
+        return func.to_date(self.date, "YYYY-MM-DD")
 
 
     @hybrid_property
