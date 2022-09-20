@@ -1,5 +1,6 @@
 from datetime import datetime
 from datetime import timedelta
+from dateutil import parser
 import pytz
 from datetimerange import DateTimeRange
 from redbeat import RedBeatSchedulerEntry as Entry
@@ -98,8 +99,9 @@ def scrape_results(self, election_id = None):
     entry_key = 'scrape_results_chain_task'
     prefixed_entry_key = 'redbeat:' + entry_key
     interval = schedule(run_every=current_app.config["DEFAULT_SCRAPE_FREQUENCY"])
-    datetime_overridden = current_app.config["ELECTION_RESULT_DATETIME_OVERRIDDEN"]
     debug_message = ""
+
+    datetime_overridden = current_app.config["ELECTION_RESULT_DATETIME_OVERRIDDEN"]
 
     # set up the task interval based on the configuration values and/or the current datetime.
     if datetime_overridden == "true":
@@ -111,12 +113,26 @@ def scrape_results(self, election_id = None):
     else:
         if current_app.config["ELECTION_DAY_RESULT_HOURS_START"] != "" and current_app.config["ELECTION_DAY_RESULT_HOURS_END"] != "":
             time_range = DateTimeRange(current_app.config["ELECTION_DAY_RESULT_HOURS_START"], current_app.config["ELECTION_DAY_RESULT_HOURS_END"])
+            debug_message = f"This task is controlled by the start and end configuration values. "
+        elif election.date:
+            start_after_hours = current_app.config["ELECTION_DAY_RESULT_DEFAULT_START_TIME"]
+            end_after_hours   = current_app.config["ELECTION_DAY_RESULT_DEFAULT_DURATION_HOURS"]
+            start_date_string = f"{election.date}T{start_after_hours}:00:00-0600"
+            start_datetime    = parser.parse(start_date_string)
+            end_datetime      = start_datetime + timedelta(hours=end_after_hours)
+
+            time_range = DateTimeRange(start_datetime, end_datetime)
+            debug_message = f"This task is controlled by the default timeframe with the {election.date} election. It will start {start_after_hours} hours into {election.date} and end after {end_after_hours} hours. "
+        
+        if time_range:
             now_formatted = now.isoformat()
             if now_formatted in time_range:
                 interval = schedule(run_every=current_app.config["ELECTION_DAY_RESULT_SCRAPE_FREQUENCY"])
-                debug_message = f"This task is being run during election result hours."
+                debug_message += f"This task is being run during election result hours."
             else:
-                debug_message = f"This task is not being run during election result hours."
+                debug_message += f"This task is not being run during election result hours."
+        else:
+            debug_message += f"This task has no time range, so it is not being run during election result hours."
 
     # create and/or run the result task based on the current interval value.
     try:
