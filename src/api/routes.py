@@ -75,7 +75,7 @@ def query():
                 d = dict(row)
                 if 'updated' in d:
                     if not isinstance(d['updated'], int):
-                        d['updated'] = datetime.timestamp(d['updated'], pytz.timezone(current_app.config["TIMEZONE"]))
+                        d['updated'] = datetime.timestamp(d['updated'])
                 if 'key' in d and d['key'] == 'updated' and d['type'] == 'int':
                     if not isinstance(d['value'], int):
                         date_object = ciso8601.parse_datetime(d['value'])
