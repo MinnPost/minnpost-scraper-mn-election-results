@@ -14,6 +14,8 @@ def scrape_elections(self, args={}):
     election    = Election()
     class_name  = Election.get_classname()
     sources     = election.read_sources()
+    if type(args) == str:
+        args = json.loads(args)
     contests    = args.get('contests', None)
     results     = args.get('results', None)
     election_id = None
@@ -46,7 +48,10 @@ def scrape_elections(self, args={}):
         parsed_count = parsed_count + 1
 
     # commit parsed rows
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception as e:
+        current_app.log.error(e)
 
     if args == []:
         result = {

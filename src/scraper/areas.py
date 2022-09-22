@@ -7,6 +7,8 @@ from src.extensions import celery
 from src.storage import Storage
 from src.models import Area
 from src.scraper import bp
+from src.scraper import elections
+from celery import chain
 
 @celery.task(bind=True)
 def scrape_areas(self, election_id = None):
@@ -72,6 +74,13 @@ def scrape_areas(self, election_id = None):
 
 #def on_raw_message(body):
 #    print(body)
+
+
+@celery.task(bind=True)
+def scrape_areas_chain(self, election_id = None):
+    eta = datetime.utcnow() + timedelta(seconds=10)
+    res = chain(scrape_areas.s() | elections.scrape_elections.s()).apply_async(args=[election_id], eta=eta)
+    return res
 
 
 @bp.route("/areas/")

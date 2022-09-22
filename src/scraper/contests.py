@@ -91,6 +91,13 @@ def scrape_contests(self, election_id = None):
     return result
 
 
+@celery.task(bind=True)
+def scrape_contests_chain(self, election_id = None):
+    eta = datetime.utcnow() + timedelta(seconds=10)
+    res = chain(scrape_contests.s() | elections.scrape_elections.s()).apply_async(args=[election_id], eta=eta)
+    return res
+
+
 @bp.route("/contests/")
 def contests_index():
     """Add a new contest scrape task and start running it after 10 seconds."""

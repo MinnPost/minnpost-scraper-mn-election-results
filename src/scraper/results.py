@@ -93,7 +93,7 @@ def scrape_results(self, election_id = None):
     }
     #current_app.log.debug(result)
 
-    now = datetime.now(pytz.timezone('America/Chicago'))
+    now = datetime.now(pytz.timezone(current_app.config["TIMEZONE"]))
     #offset = now.strftime('%z')
 
     entry_key = 'scrape_results_chain_task'
