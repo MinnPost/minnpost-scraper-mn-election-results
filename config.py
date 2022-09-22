@@ -21,6 +21,7 @@ class Config(object):
         SQLALCHEMY_ECHO = True
     else:
         SQLALCHEMY_ECHO = False
+    TIMEZONE = os.environ.get("TIMEZONE", "America/Chicago")
 
 
     # Redis and RabbitMQ settings.

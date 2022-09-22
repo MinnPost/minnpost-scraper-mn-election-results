@@ -83,12 +83,19 @@ def scrape_contests(self, election_id = None):
             "deleted": deleted_count,
             "parsed": parsed_count,
             "supplemented": supplemented_count,
-            "cache": storage.clear_group(class_name),
+            "cache": storage.clear_group(class_name, election.id),
             "status": "completed"
         }
     }
     #current_app.log.debug(result)
     return result
+
+
+@celery.task(bind=True)
+def scrape_contests_chain(self, election_id = None):
+    eta = datetime.utcnow() + timedelta(seconds=10)
+    res = chain(scrape_contests.s() | elections.scrape_elections.s()).apply_async(args=[election_id], eta=eta)
+    return res
 
 
 @bp.route("/contests/")

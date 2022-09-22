@@ -87,13 +87,13 @@ def scrape_results(self, election_id = None):
             "deleted": deleted_count,
             "parsed": parsed_count,
             "supplemented": supplemented_count,
-            "cache": storage.clear_group(class_name),
+            "cache": storage.clear_group(class_name, election.id),
             "status": "completed"
         }
     }
     #current_app.log.debug(result)
 
-    now = datetime.now(pytz.timezone('America/Chicago'))
+    now = datetime.now(pytz.timezone(current_app.config["TIMEZONE"]))
     #offset = now.strftime('%z')
 
     entry_key = 'scrape_results_chain_task'
