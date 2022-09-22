@@ -5,7 +5,8 @@ import csv
 import urllib.request
 import requests
 #import unicodecsv
-import calendar
+import pytz
+import time
 import datetime
 from datetime import timedelta
 from flask import current_app
@@ -63,7 +64,7 @@ class ScraperModel(object):
             data = self.row2dict(query_result)
         if "display_cache_data" in args and args["display_cache_data"] == "true":
             output["data"] = data
-            output["generated"] = datetime.datetime.now()
+            output["generated"] = datetime.datetime.now(pytz.timezone(current_app.config["TIMEZONE"]))
         else:
             output = data
         return output
@@ -281,7 +282,7 @@ class ScraperModel(object):
             # set metadata and send the customized json output to the api
             if "generated" in result_json:
                 data["generated"] = result_json["generated"]
-            data["customized"] = datetime.datetime.now()
+            data["customized"] = datetime.datetime.now(pytz.timezone(current_app.config["TIMEZONE"]))
             if cache_timeout != 0:
                 data["cache_timeout"] = data["customized"] + timedelta(seconds=int(cache_timeout))
             else:
@@ -513,7 +514,7 @@ class Election(ScraperModel, db.Model):
                 data["contest_count"] = len(query_result.contests)
         if "display_cache_data" in args and args["display_cache_data"] == "true":
             output["data"] = data
-            output["generated"] = datetime.datetime.now()
+            output["generated"] = datetime.datetime.now(pytz.timezone(current_app.config["TIMEZONE"]))
         else:
             output = data
         return output
@@ -571,7 +572,7 @@ class Election(ScraperModel, db.Model):
             row = {}
             row["key"] = key
             if key == "updated":
-                row["value"] = calendar.timegm(election[key].timetuple())
+                row["value"] = time.mktime(election[key].timetuple())
             else:
                 row["value"] = election[key]
             row["type"] = type(election[key]).__name__

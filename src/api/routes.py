@@ -1,4 +1,5 @@
 import ciso8601
+import pytz
 from datetime import datetime
 from flask import request, Response, current_app
 from sqlalchemy import text
@@ -74,7 +75,7 @@ def query():
                 d = dict(row)
                 if 'updated' in d:
                     if not isinstance(d['updated'], int):
-                        d['updated'] = datetime.timestamp(d['updated'])
+                        d['updated'] = datetime.timestamp(d['updated'], pytz.timezone(current_app.config["TIMEZONE"]))
                 if 'key' in d and d['key'] == 'updated' and d['type'] == 'int':
                     if not isinstance(d['value'], int):
                         date_object = ciso8601.parse_datetime(d['value'])
@@ -89,7 +90,7 @@ def query():
                 else:
                     output[count] = d
             if display_cache_data == "true":
-                output["generated"] = datetime.now()
+                output["generated"] = datetime.now(pytz.timezone(current_app.config["TIMEZONE"]))
 
             output = storage.save(cache_key, output, cache_list_key)
     
