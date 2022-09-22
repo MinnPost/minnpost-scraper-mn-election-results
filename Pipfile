@@ -17,7 +17,7 @@ flask-caching = "==2.0.1"
 ciso8601 = "==2.2.0"
 datetimerange = "==1.2.0"
 celery-redbeat = "==2.0.0"
-sqlglot = "==4.7.0"
+sqlglot = "==6.1.0"
 
 [dev-packages]
 "flower =" = "==1.0.0"

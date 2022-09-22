@@ -14,6 +14,8 @@ def scrape_elections(self, args={}):
     election    = Election()
     class_name  = Election.get_classname()
     sources     = election.read_sources()
+    if type(args) == str:
+        args = json.loads(args)
     contests    = args.get('contests', None)
     results     = args.get('results', None)
     election_id = None
@@ -26,6 +28,7 @@ def scrape_elections(self, args={}):
     elif results is not None:
         election_id = results['election_id']
 
+    cache_group_election = None
     if election_id == None:
         for key in sources:
             row = sources[key]
@@ -36,6 +39,7 @@ def scrape_elections(self, args={}):
             inserted_count = inserted_count + 1
             parsed_count = parsed_count + 1
     else:
+        cache_group_election = election_id
         key = election.set_election_key(election_id)
         row = sources[key]
         parsed = election.parser(row, key)
@@ -46,13 +50,16 @@ def scrape_elections(self, args={}):
         parsed_count = parsed_count + 1
 
     # commit parsed rows
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception as e:
+        current_app.log.error(e)
 
     if args == []:
         result = {
             "inserted": inserted_count,
             "parsed": parsed_count,
-            "cache": storage.clear_group(class_name),
+            "cache": storage.clear_group(class_name, cache_group_election),
             "status": "completed"
         }
     else:
@@ -60,7 +67,7 @@ def scrape_elections(self, args={}):
             "elections": {
                 "inserted": inserted_count,
                 "parsed": parsed_count,
-                "cache": storage.clear_group(class_name),
+                "cache": storage.clear_group(class_name, cache_group_election),
                 "status": "completed"
             }
         }

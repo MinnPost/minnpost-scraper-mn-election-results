@@ -7,6 +7,8 @@ from src.extensions import celery
 from src.storage import Storage
 from src.models import Question
 from src.scraper import bp
+from src.scraper import elections
+from celery import chain
 
 @celery.task(bind=True)
 def scrape_questions(self, election_id = None):
@@ -54,11 +56,18 @@ def scrape_questions(self, election_id = None):
         "sources": group_count,
         "inserted": inserted_count,
         "parsed": parsed_count,
-        "cache": storage.clear_group(class_name),
+        "cache": storage.clear_group(class_name, election.id),
         "status": "completed"
     }
     #current_app.log.debug(result)
     return json.dumps(result)
+
+
+@celery.task(bind=True)
+def scrape_questions_chain(self, election_id = None):
+    eta = datetime.utcnow() + timedelta(seconds=10)
+    res = chain(scrape_questions.s() | elections.scrape_elections.s()).apply_async(args=[election_id], eta=eta)
+    return res
 
 
 @bp.route("/questions/")

@@ -1,4 +1,5 @@
 import ciso8601
+import pytz
 from datetime import datetime
 from flask import request, Response, current_app
 from sqlalchemy import text
@@ -44,7 +45,7 @@ def query():
         else:
             #current_app.log.debug('did not find cached result for legacy meta key: %s' % cache_list_key)
             output = election_model.legacy_meta_output(election.id)
-            output = storage.save(cache_key, output, cache_list_key)
+            output = storage.save(cache_key, output, cache_list_key, election.id)
 
     # verify/format the sql
     sql = scraper_model.format_sql(sql, election.id)
@@ -89,9 +90,9 @@ def query():
                 else:
                     output[count] = d
             if display_cache_data == "true":
-                output["generated"] = datetime.now()
+                output["generated"] = datetime.now(pytz.timezone(current_app.config["TIMEZONE"]))
 
-            output = storage.save(cache_key, output, cache_list_key)
+            output = storage.save(cache_key, output, cache_list_key, election.id)
     
     # set up the response and return it
     mime = 'application/json'
@@ -177,7 +178,7 @@ def areas():
 
         # set the cache and the output from the query result
         output = area_model.output_for_cache(query_result, request.args)
-        output = storage.save(cache_key_name, output, class_name)
+        output = storage.save(cache_key_name, output, class_name, election.id)
     
     # set up the response and return it
     mime = 'application/json'
@@ -272,7 +273,7 @@ def boundaries():
     
     # set the cache and the output from the query result
     #output = contest_model.output_for_cache(query_result, request.args)
-    #output = storage.save(cache_key_name, output, class_name)
+    #output = storage.save(cache_key_name, output, class_name, election.id)
     output = contest_model.check_boundary(query_result)
 
     # set up the response and return it
@@ -369,7 +370,7 @@ def contests():
         current_app.log.info(query_result)
         # set the cache and the output from the query result
         output = contest_model.output_for_cache(query_result, request.args)
-        output = storage.save(cache_key_name, output, class_name)
+        output = storage.save(cache_key_name, output, class_name, election.id)
 
     # set up the response and return it
     mime = 'application/json'
@@ -442,7 +443,7 @@ def elections():
 
         # set the cache and the output from the query result
         output = election_model.output_for_cache(query_result, request.args, returning_single_row)
-        output = storage.save(cache_key_name, output, class_name)
+        output = storage.save(cache_key_name, output, class_name, cache_key_value)
 
     # set up the response and return it
     mime = 'application/json'
@@ -522,7 +523,7 @@ def questions():
 
         # set the cache and the output from the query result
         output = question_model.output_for_cache(query_result, request.args)
-        output = storage.save(cache_key_name, output, class_name)
+        output = storage.save(cache_key_name, output, class_name, election.id)
 
     # set up the response and return it
     mime = 'application/json'
@@ -602,7 +603,7 @@ def results():
         
         # set the cache and the output from the query result
         output = result_model.output_for_cache(query_result, request.args)
-        output = storage.save(cache_key_name, output, class_name)
+        output = storage.save(cache_key_name, output, class_name, election.id)
 
     # set up the response and return it
     mime = 'application/json'
