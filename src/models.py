@@ -1139,7 +1139,7 @@ class Contest(ScraperModel, db.Model):
                 if election_id is not None:
                     new_contest['election_id'] = election_id
                 if updated is not None:
-                    new_contest.updated = updated
+                    new_contest['updated'] = updated
                 new_contest['results_group'] = 'supplemental_results'
                 contest_model = Contest(**new_contest)
                 if contest_model not in insert_rows:

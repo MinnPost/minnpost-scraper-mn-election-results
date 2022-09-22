@@ -20,13 +20,13 @@ class Storage(object):
         return class_to_use
 
 
-    def save(self, key, data, group = None):
+    def save(self, key, data, group = None, election = None):
         try:
             data = json.loads(data)
         except:
             data = data
         class_to_use = self.class_to_use
-        output = class_to_use.save(key, data, group)
+        output = class_to_use.save(key, data, group, election)
         return output
 
 
@@ -42,9 +42,9 @@ class Storage(object):
         return output
 
     
-    def clear_group(self, group_name):
+    def clear_group(self, group_name, election = None):
         class_to_use = self.class_to_use
-        output = class_to_use.clear_group(group_name)
+        output = class_to_use.clear_group(group_name, election)
         return output
 
 
@@ -74,9 +74,11 @@ class CacheStorage(object):
             self.bypass_cache = "true"
 
 
-    def save(self, key, data, group = None):
+    def save(self, key, data, group = None, election = None):
         if group != None:
             cache_group_key = '{}-cache-keys'.format(group).lower()
+            if election != None:
+                cache_group_key = cache_group_key + "-election-" + election
             if self.display_cache_data == "true":
                 data["cache_group"] = cache_group_key
         if self.cache_data == "true":
@@ -143,12 +145,15 @@ class CacheStorage(object):
         return output
 
 
-    def clear_group(self, group_name):
+    def clear_group(self, group_name, election):
         data = {
             "deleted": {}
         }
         if group_name != None:
             cache_group_key = '{}-cache-keys'.format(group_name).lower()
+            if election != None:
+                cache_group_key = cache_group_key + "-election-" + election
+            #current_app.log.debug(f"group key is {cache_group_key}")
             cache_group = cache.get(cache_group_key)
             cache_group_list = {}
             if cache_group != None:

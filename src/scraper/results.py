@@ -87,7 +87,7 @@ def scrape_results(self, election_id = None):
             "deleted": deleted_count,
             "parsed": parsed_count,
             "supplemented": supplemented_count,
-            "cache": storage.clear_group(class_name),
+            "cache": storage.clear_group(class_name, election.id),
             "status": "completed"
         }
     }

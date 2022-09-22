@@ -28,6 +28,7 @@ def scrape_elections(self, args={}):
     elif results is not None:
         election_id = results['election_id']
 
+    cache_group_election = None
     if election_id == None:
         for key in sources:
             row = sources[key]
@@ -38,6 +39,7 @@ def scrape_elections(self, args={}):
             inserted_count = inserted_count + 1
             parsed_count = parsed_count + 1
     else:
+        cache_group_election = election_id
         key = election.set_election_key(election_id)
         row = sources[key]
         parsed = election.parser(row, key)
@@ -57,7 +59,7 @@ def scrape_elections(self, args={}):
         result = {
             "inserted": inserted_count,
             "parsed": parsed_count,
-            "cache": storage.clear_group(class_name),
+            "cache": storage.clear_group(class_name, cache_group_election),
             "status": "completed"
         }
     else:
@@ -65,7 +67,7 @@ def scrape_elections(self, args={}):
             "elections": {
                 "inserted": inserted_count,
                 "parsed": parsed_count,
-                "cache": storage.clear_group(class_name),
+                "cache": storage.clear_group(class_name, cache_group_election),
                 "status": "completed"
             }
         }

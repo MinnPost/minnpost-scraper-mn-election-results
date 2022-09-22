@@ -56,7 +56,7 @@ def scrape_questions(self, election_id = None):
         "sources": group_count,
         "inserted": inserted_count,
         "parsed": parsed_count,
-        "cache": storage.clear_group(class_name),
+        "cache": storage.clear_group(class_name, election.id),
         "status": "completed"
     }
     #current_app.log.debug(result)
