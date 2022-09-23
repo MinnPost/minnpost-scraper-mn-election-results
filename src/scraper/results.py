@@ -9,7 +9,7 @@ from flask import current_app, request, Response
 from src.extensions import db
 from src.extensions import celery
 from src.storage import Storage
-from src.models import Result
+from src.models import Result, Contest
 from src.scraper import bp
 from src.scraper import elections
 from celery import chain
@@ -18,6 +18,7 @@ from celery import chain
 def scrape_results(self, election_id = None):
     storage      = Storage()
     result       = Result()
+    contest      = Contest()
     class_name   = Result.get_classname()
     election     = result.set_election(election_id)
     if election is None:
@@ -47,11 +48,18 @@ def scrape_results(self, election_id = None):
             updated = parsed_election['updated']
             for row in rows:
                 parsed = result.parser(row, group, election.id, updated)
+                parsed_contest_result = contest.parser_results(parsed, row, group, election, source, updated)
+
+                contest_result = Contest()
+                contest_result.from_dict(parsed_contest_result, new=True)
+
+                db.session.merge(contest_result)
 
                 result = Result()
                 result.from_dict(parsed, new=True)
 
                 db.session.merge(result)
+                
                 inserted_count = inserted_count + 1
                 parsed_count = parsed_count + 1
             # commit parsed rows
