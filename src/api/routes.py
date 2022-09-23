@@ -5,6 +5,7 @@ from flask import request, Response, current_app
 from sqlalchemy import text
 from sqlalchemy import exc
 from sqlalchemy import any_
+from natsort import natsorted
 from src.extensions import db
 from src.storage import Storage
 from src.models import Area, Contest, Election, Question, Result, ScraperModel
@@ -67,6 +68,7 @@ def query():
                 query_result = {}
                 pass
             
+            query_result = natsorted(query_result)
             # set the cache and the output from the query result
             output = {}
             if display_cache_data == "true":
@@ -176,6 +178,7 @@ def areas():
             except exc.SQLAlchemyError:
                 pass
 
+        query_result = natsorted(query_result)
         # set the cache and the output from the query result
         output = area_model.output_for_cache(query_result, request.args)
         output = storage.save(cache_key_name, output, class_name, election.id)
@@ -270,7 +273,8 @@ def boundaries():
             query_result = Contest.query.filter(Contest.election_id == election.id, Contest.boundary.isnot(None)).all()
         except exc.SQLAlchemyError:
             pass
-    
+
+    query_result = natsorted(query_result)
     # set the cache and the output from the query result
     #output = contest_model.output_for_cache(query_result, request.args)
     #output = storage.save(cache_key_name, output, class_name, election.id)
@@ -367,7 +371,8 @@ def contests():
                 query_result = Contest.query.filter_by(election_id=election.id).all()
             except exc.SQLAlchemyError:
                 pass
-        current_app.log.info(query_result)
+        
+        query_result = natsorted(query_result)
         # set the cache and the output from the query result
         output = contest_model.output_for_cache(query_result, request.args)
         output = storage.save(cache_key_name, output, class_name, election.id)
@@ -441,6 +446,7 @@ def elections():
             except exc.SQLAlchemyError:
                 pass
 
+        query_result = natsorted(query_result)
         # set the cache and the output from the query result
         output = election_model.output_for_cache(query_result, request.args, returning_single_row)
         output = storage.save(cache_key_name, output, class_name, cache_key_value)
@@ -521,6 +527,7 @@ def questions():
             except exc.SQLAlchemyError:
                 pass
 
+        query_result = natsorted(query_result)
         # set the cache and the output from the query result
         output = question_model.output_for_cache(query_result, request.args)
         output = storage.save(cache_key_name, output, class_name, election.id)
@@ -601,6 +608,7 @@ def results():
             except exc.SQLAlchemyError:
                 pass
         
+        query_result = natsorted(query_result)
         # set the cache and the output from the query result
         output = result_model.output_for_cache(query_result, request.args)
         output = storage.save(cache_key_name, output, class_name, election.id)
