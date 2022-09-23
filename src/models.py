@@ -733,6 +733,31 @@ class Contest(ScraperModel, db.Model):
         return parsed
 
 
+    def parser_results(self, result, row, group, election, source, updated):
+        """
+        Parser for limited contest scraping during results.
+        """
+
+        parsed = {}
+        # Check for existing contest rows
+        if result['contest_id']:
+            contest = Contest.query.filter_by(id=result['contest_id']).first()
+            if contest != None:
+                parsed = self.row2dict(contest)
+                parsed['precincts_reporting'] = int(row[11])
+                parsed['total_effected_precincts'] = int(row[12])
+                parsed['total_votes_for_office'] = int(row[15])
+            else:
+                current_app.log.info('Could not find matching contest for contest ID %s. Trying to create one, which is unexpected.' % result['contest_id'])
+                parsed = Contest.parser(row, group, election, source, updated)
+
+            if updated is not None:
+                parsed['updated'] = updated
+
+        # Return parsed contest record
+        return parsed
+
+
     def generate_title(self, office_name, county_id, row, scope = None, district_code = None):
         # Title and search term
         title = office_name
