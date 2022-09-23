@@ -119,24 +119,36 @@ class ScraperModel(object):
             return ""
 
         alias = ""
+        aliases = []
         if "areas AS a" in sql:
             alias = "a"
-        elif "contests AS c" in sql:
+            aliases.append("a")
+        if "contests AS c" in sql:
             alias = "c"
-        elif "elections AS e" in sql:
+            aliases.append("c")
+        if "elections AS e" in sql:
             alias = "e"
-        elif "questions AS q" in sql:
+            aliases.append("e")
+        if "questions AS q" in sql:
             alias = "q"
-        elif "results AS r" in sql:
+            aliases.append("q")
+        if "results AS r" in sql:
             alias = "r"
+            aliases.append("r")
 
         election_id_field = "election_id"
         if " from elections" in sql.lower():
             election_id_field = "id"
-        if alias != "":
-            alias = alias + '.'
-        if election_id is not None:
-            expression_tree = expression_tree.where(f"{alias}{election_id_field}='{election_id}'")
+        #if alias != "":
+        #    alias = alias + '.'
+        #if election_id is not None:
+        #    expression_tree = expression_tree.where(f"{alias}{election_id_field}='{election_id}'")
+        if aliases:
+            for alias in aliases:
+                if alias != "":
+                    alias = alias + '.'
+                if election_id is not None:
+                    expression_tree = expression_tree.where(f"{alias}{election_id_field}='{election_id}'")
         
         # make the query case insensitive
         sql = expression_tree.sql().replace(" LIKE ", " ILIKE ")
