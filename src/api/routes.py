@@ -31,7 +31,7 @@ def query():
     if election is None:
         return 'Welcome to the election scraper server. Use a URL like: <a href="/query/?q=%s">/query/?q=%s</a>' % (example_query, example_query);
 
-    # set up sql query as cache key
+    # set up sql query as cache list key
     cache_list_key = current_app.config['QUERY_LIST_CACHE_KEY']
     cache_key = sql
 
@@ -48,8 +48,9 @@ def query():
             output = election_model.legacy_meta_output(election.id)
             output = storage.save(cache_key, output, cache_list_key, election.id)
 
-    # verify/format the sql
+    # verify/format the sql. use it for the cache key value.
     sql = scraper_model.format_sql(sql, election.id)
+    cache_key = sql
     if sql == "":
         return 'Welcome to the election scraper server. Use a URL like: <a href="/query/?q=%s">/query/?q=%s</a>' % (example_query, example_query);
 

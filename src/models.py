@@ -119,24 +119,36 @@ class ScraperModel(object):
             return ""
 
         alias = ""
+        aliases = []
         if "areas AS a" in sql:
             alias = "a"
-        elif "contests AS c" in sql:
+            aliases.append("a")
+        if "contests AS c" in sql:
             alias = "c"
-        elif "elections AS e" in sql:
+            aliases.append("c")
+        if "elections AS e" in sql:
             alias = "e"
-        elif "questions AS q" in sql:
+            aliases.append("e")
+        if "questions AS q" in sql:
             alias = "q"
-        elif "results AS r" in sql:
+            aliases.append("q")
+        if "results AS r" in sql:
             alias = "r"
+            aliases.append("r")
 
         election_id_field = "election_id"
         if " from elections" in sql.lower():
             election_id_field = "id"
-        if alias != "":
-            alias = alias + '.'
-        if election_id is not None:
-            expression_tree = expression_tree.where(f"{alias}{election_id_field}='{election_id}'")
+        #if alias != "":
+        #    alias = alias + '.'
+        #if election_id is not None:
+        #    expression_tree = expression_tree.where(f"{alias}{election_id_field}='{election_id}'")
+        if aliases:
+            for alias in aliases:
+                if alias != "":
+                    alias = alias + '.'
+                if election_id is not None:
+                    expression_tree = expression_tree.where(f"{alias}{election_id_field}='{election_id}'")
         
         # make the query case insensitive
         sql = expression_tree.sql().replace(" LIKE ", " ILIKE ")
@@ -197,6 +209,10 @@ class ScraperModel(object):
         # Handle any supplemental data
         spreadsheet_result = self.supplement_connect('supplemental_' + type, election_id)
         spreadsheet_rows   = None
+        election = self.set_election(election_id)
+        if election is None:
+            current_app.log.debug('Election missing in the %s post processing: %s' % type)
+            return spreadsheet_rows
         if "rows" in spreadsheet_result:
             #current_app.log.debug('Valid spreadsheet rows result. Spreadsheet result is %s ' % spreadsheet_result)
             spreadsheet_rows = spreadsheet_result['rows']
@@ -212,7 +228,7 @@ class ScraperModel(object):
 
         # for each row in the spreadsheet
         for spreadsheet_row in spreadsheet_rows:
-            supplement_row = self.supplement_row(spreadsheet_row, election_id, updated)
+            supplement_row = self.supplement_row(spreadsheet_row, election.id, updated)
             if 'rows' in supplement_row:
                 if supplement_row['action'] == 'insert' and supplement_row['rows'] not in insert_rows['rows']:
                     insert_rows['rows'] = list(set(insert_rows['rows'] + supplement_row['rows']))
@@ -321,8 +337,8 @@ class Area(ScraperModel, db.Model):
 
     __tablename__ = "areas"
 
-    id = db.Column(db.String(255), primary_key=True, autoincrement=False, nullable=False)
-    election_id = db.Column(db.String(255), db.ForeignKey('elections.id'), nullable=True)
+    id = db.Column(db.String(255), autoincrement=False, nullable=False)
+    election_id = db.Column(db.String(255), db.ForeignKey('elections.id'), autoincrement=False, nullable=False, server_default='')
     areas_group = db.Column(db.String(255))
     county_id = db.Column(db.String(255))
     county_name = db.Column(db.String(255))
@@ -341,9 +357,16 @@ class Area(ScraperModel, db.Model):
     name = db.Column(db.String(255))
     updated = db.Column(db.DateTime(timezone=True), default=db.func.current_timestamp())
 
+    __table_args__ = (
+        db.PrimaryKeyConstraint(
+            'id', 'election_id', name='election_area_id'
+        ),
+    )
+
 
     def __init__(self, **kwargs):
         self.id = kwargs.get('id')
+        self.election_id = kwargs.get('election_id')
         self.areas_group = kwargs.get('areas_group')
         self.county_id = kwargs.get('county_id')
         self.county_name = kwargs.get('county_name')
@@ -591,8 +614,8 @@ class Contest(ScraperModel, db.Model):
     # Track which boundary sets we use
     found_boundary_types = []
 
-    id = db.Column(db.String(255), primary_key=True, autoincrement=False, nullable=False)
-    election_id = db.Column(db.String(255), db.ForeignKey('elections.id'), nullable=True)
+    id = db.Column(db.String(255), autoincrement=False, nullable=False)
+    election_id = db.Column(db.String(255), db.ForeignKey('elections.id'), autoincrement=False, nullable=False, server_default='')
     office_id = db.Column(db.String(255))
     results_group = db.Column(db.String(255))
     office_name = db.Column(db.String(255))
@@ -608,7 +631,7 @@ class Contest(ScraperModel, db.Model):
     primary = db.Column(db.Boolean())
     scope = db.Column(db.String(255))
     title = db.Column(db.String(255))
-    boundary = db.Column(db.String(255))
+    boundary = db.Column(db.String(510))
     partisan = db.Column(db.Boolean())
     question_body = db.Column(db.Text)
     sub_title = db.Column(db.String(255))
@@ -618,9 +641,16 @@ class Contest(ScraperModel, db.Model):
 
     results = db.relationship('Result', backref=__tablename__, lazy=True)
 
+    __table_args__ = (
+        db.PrimaryKeyConstraint(
+            'id', 'election_id', name='election_contest_id'
+        ),
+    )
+
 
     def __init__(self, **kwargs):
         self.id = kwargs.get('id')
+        self.election_id = kwargs.get('election_id')
         self.office_id = kwargs.get('office_id')
         self.results_group = kwargs.get('results_group')
         self.office_name = kwargs.get('office_name')
@@ -730,6 +760,31 @@ class Contest(ScraperModel, db.Model):
             parsed['updated'] = updated
 
         # Return contest record
+        return parsed
+
+
+    def parser_results(self, result, row, group, election, source, updated):
+        """
+        Parser for limited contest scraping during results.
+        """
+
+        parsed = {}
+        # Check for existing contest rows
+        if result['contest_id']:
+            contest = Contest.query.filter_by(id=result['contest_id'], election_id=election.id).first()
+            if contest != None:
+                parsed = self.row2dict(contest)
+                parsed['precincts_reporting'] = int(row[11])
+                parsed['total_effected_precincts'] = int(row[12])
+                parsed['total_votes_for_office'] = int(row[15])
+            else:
+                current_app.log.info('Could not find matching contest for contest ID %s. Trying to create one, which is unexpected.' % result['contest_id'])
+                parsed = Contest.parser(row, group, election, source, updated)
+
+            if updated is not None:
+                parsed['updated'] = updated
+
+        # Return parsed contest record
         return parsed
 
 
@@ -1102,7 +1157,7 @@ class Contest(ScraperModel, db.Model):
         supplemented_row = {}
 
         # Check for existing contest rows
-        results = Contest.query.filter_by(id=spreadsheet_row['id']).all()
+        results = Contest.query.filter_by(id=spreadsheet_row['id'], election_id=election_id).all()
 
         # If valid data
         if spreadsheet_row['id'] is not None:
@@ -1172,13 +1227,19 @@ class Question(ScraperModel, db.Model):
 
     __tablename__ = "questions"
 
-    id = db.Column(db.String(255), primary_key=True, autoincrement=False, nullable=False)
+    id = db.Column(db.String(255), nullable=False)
     contest_id = db.Column(db.String(255))
-    election_id = db.Column(db.String(255), db.ForeignKey('elections.id'), nullable=True)
+    election_id = db.Column(db.String(255), db.ForeignKey('elections.id'), nullable=False, server_default='')
     title = db.Column(db.String(255))
     sub_title = db.Column(db.String(255))
     question_body = db.Column(db.Text)
     updated = db.Column(db.DateTime(timezone=True), default=db.func.current_timestamp())
+
+    __table_args__ = (
+        db.PrimaryKeyConstraint(
+            'id', 'election_id', name='election_question_id'
+        ),
+    )
 
 
     def __init__(self, **kwargs):
@@ -1256,9 +1317,9 @@ class Result(ScraperModel, db.Model):
 
     __tablename__ = "results"
 
-    id = db.Column(db.String(255), primary_key=True, autoincrement=False, nullable=False)
+    id = db.Column(db.String(255), nullable=False, autoincrement=False)
     contest_id = db.Column(db.String(255), db.ForeignKey('contests.id'), nullable=False)
-    election_id = db.Column(db.String(255), db.ForeignKey('elections.id'), nullable=True)
+    election_id = db.Column(db.String(255), db.ForeignKey('elections.id'), autoincrement=False, nullable=False, server_default='')
     results_group = db.Column(db.String(255))
     office_name = db.Column(db.String(255))
     candidate_id = db.Column(db.String(255))
@@ -1271,10 +1332,16 @@ class Result(ScraperModel, db.Model):
     ranked_choice_place = db.Column(db.BigInteger())
     updated = db.Column(db.DateTime(timezone=True), default=db.func.current_timestamp())
 
+    __table_args__ = (
+        db.PrimaryKeyConstraint(
+            'id', 'election_id', name='election_result_id'
+        ),
+    )
 
     def __init__(self, **kwargs):
         self.id = kwargs.get('id')
         self.contest_id = kwargs.get('contest_id')
+        self.election_id = kwargs.get('election_id')
         self.results_group = kwargs.get('results_group')
         self.office_name = kwargs.get('office_name')
         self.candidate_id = kwargs.get('candidate_id')
@@ -1372,7 +1439,7 @@ class Result(ScraperModel, db.Model):
         supplemented_row = {}
 
         # Check for existing result rows
-        results = Result.query.filter_by(id=spreadsheet_row['id']).all()
+        results = Result.query.filter_by(id=spreadsheet_row['id'], election_id=election_id).all()
 
         # If valid data
         if spreadsheet_row['id'] is not None and spreadsheet_row['contest_id'] is not None and spreadsheet_row['candidate_id'] is not None:

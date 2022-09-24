@@ -9,7 +9,7 @@ from flask import current_app, request, Response
 from src.extensions import db
 from src.extensions import celery
 from src.storage import Storage
-from src.models import Result
+from src.models import Result, Contest
 from src.scraper import bp
 from src.scraper import elections
 from celery import chain
@@ -18,6 +18,7 @@ from celery import chain
 def scrape_results(self, election_id = None):
     storage      = Storage()
     result       = Result()
+    contest      = Contest()
     class_name   = Result.get_classname()
     election     = result.set_election(election_id)
     if election is None:
@@ -30,7 +31,7 @@ def scrape_results(self, election_id = None):
 
     # set up count for results
     inserted_count = 0
-    updated_count = 0
+    updated_count = 0 # this number is unreliable except for spreadsheet rows
     deleted_count = 0
     parsed_count = 0
     supplemented_count = 0
@@ -47,19 +48,39 @@ def scrape_results(self, election_id = None):
             updated = parsed_election['updated']
             for row in rows:
                 parsed = result.parser(row, group, election.id, updated)
+                parsed_contest_result = contest.parser_results(parsed, row, group, election, source, updated)
+
+                contest_result = Contest()
+                contest_result.from_dict(parsed_contest_result, new=True)
+
+                db.session.merge(contest_result)
 
                 result = Result()
                 result.from_dict(parsed, new=True)
 
                 db.session.merge(result)
+                
                 inserted_count = inserted_count + 1
                 parsed_count = parsed_count + 1
             # commit parsed rows
             db.session.commit()
 
     # Handle post processing actions. this only needs to happen once, not for every group.
-    supplemental = result.post_processing('results', election.id)
-    for supplemental_result in supplemental:
+    supplemental_contests = contest.post_processing('contests', election.id)
+    for supplemental_contest in supplemental_contests:
+        rows = supplemental_contest['rows']
+        action = supplemental_contest['action']
+        if action is not None and rows != []:
+            for row in rows:
+                if row is not []:
+                    if action == 'insert' or action == 'update':
+                        db.session.merge(row)
+                        if action == 'insert':
+                            current_app.log.info('Could not find match for contest from spreadsheet. Trying to create one, which is unexpected. %s' % row)
+                    elif action == 'delete':
+                        db.session.delete(row)
+    supplemental_results = result.post_processing('results', election.id)
+    for supplemental_result in supplemental_results:
         rows = supplemental_result['rows']
         action = supplemental_result['action']
         if action is not None and rows != []:
