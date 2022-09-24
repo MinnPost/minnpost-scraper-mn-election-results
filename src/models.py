@@ -209,6 +209,10 @@ class ScraperModel(object):
         # Handle any supplemental data
         spreadsheet_result = self.supplement_connect('supplemental_' + type, election_id)
         spreadsheet_rows   = None
+        election = self.set_election(election_id)
+        if election is None:
+            current_app.log.debug('Election missing in the %s post processing: %s' % type)
+            return spreadsheet_rows
         if "rows" in spreadsheet_result:
             #current_app.log.debug('Valid spreadsheet rows result. Spreadsheet result is %s ' % spreadsheet_result)
             spreadsheet_rows = spreadsheet_result['rows']
@@ -224,7 +228,7 @@ class ScraperModel(object):
 
         # for each row in the spreadsheet
         for spreadsheet_row in spreadsheet_rows:
-            supplement_row = self.supplement_row(spreadsheet_row, election_id, updated)
+            supplement_row = self.supplement_row(spreadsheet_row, election.id, updated)
             if 'rows' in supplement_row:
                 if supplement_row['action'] == 'insert' and supplement_row['rows'] not in insert_rows['rows']:
                     insert_rows['rows'] = list(set(insert_rows['rows'] + supplement_row['rows']))
@@ -362,6 +366,7 @@ class Area(ScraperModel, db.Model):
 
     def __init__(self, **kwargs):
         self.id = kwargs.get('id')
+        self.election_id = kwargs.get('election_id')
         self.areas_group = kwargs.get('areas_group')
         self.county_id = kwargs.get('county_id')
         self.county_name = kwargs.get('county_name')
@@ -626,7 +631,7 @@ class Contest(ScraperModel, db.Model):
     primary = db.Column(db.Boolean())
     scope = db.Column(db.String(255))
     title = db.Column(db.String(255))
-    boundary = db.Column(db.String(255))
+    boundary = db.Column(db.String(510))
     partisan = db.Column(db.Boolean())
     question_body = db.Column(db.Text)
     sub_title = db.Column(db.String(255))
@@ -645,6 +650,7 @@ class Contest(ScraperModel, db.Model):
 
     def __init__(self, **kwargs):
         self.id = kwargs.get('id')
+        self.election_id = kwargs.get('election_id')
         self.office_id = kwargs.get('office_id')
         self.results_group = kwargs.get('results_group')
         self.office_name = kwargs.get('office_name')
@@ -1335,6 +1341,7 @@ class Result(ScraperModel, db.Model):
     def __init__(self, **kwargs):
         self.id = kwargs.get('id')
         self.contest_id = kwargs.get('contest_id')
+        self.election_id = kwargs.get('election_id')
         self.results_group = kwargs.get('results_group')
         self.office_name = kwargs.get('office_name')
         self.candidate_id = kwargs.get('candidate_id')

@@ -76,7 +76,7 @@ def scrape_results(self, election_id = None):
                     if action == 'insert' or action == 'update':
                         db.session.merge(row)
                         if action == 'insert':
-                            current_app.log.info('Could not find match for contest from spreadsheet. Trying to create one, which is unexpected.' % row)
+                            current_app.log.info('Could not find match for contest from spreadsheet. Trying to create one, which is unexpected. %s' % row)
                     elif action == 'delete':
                         db.session.delete(row)
     supplemental_results = result.post_processing('results', election.id)
