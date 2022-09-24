@@ -33,6 +33,7 @@ def query():
 
     # set up sql query as cache list key
     cache_list_key = current_app.config['QUERY_LIST_CACHE_KEY']
+    cache_key = sql
 
     # the meta query for the old dashboard. ideally we will remove this.
     if sql.lower() == "select * from meta":
