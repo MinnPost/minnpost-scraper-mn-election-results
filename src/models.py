@@ -827,7 +827,7 @@ class Contest(ScraperModel, db.Model):
             else:
                 area_model = Area()
                 try:
-                    query_result = Area.query.filter_by(school_district_id=district_code).all()
+                    query_result = Area.query.filter_by(school_district_id=district_code, election_id=row['election_id']).all()
                     # set the output
                     output = area_model.output_for_cache(query_result, {})
                 except Exception:
@@ -840,6 +840,7 @@ class Contest(ScraperModel, db.Model):
         return title
 
 
+    # todo: fix this so it can be election specific
     def find_boundary(self, parsed_row, row):
         boundary = ''
         boundary_type = False
@@ -1032,7 +1033,7 @@ class Contest(ScraperModel, db.Model):
                         current_app.log.info('[%s] Hospital boundary intersection not found: %s' % ('results', parsed_row['title']))
 
                 else:
-                    current_app.log.info('[%s] Could not find corresponding county for municpality: %s' % ('results', parsed_row['office_name']))
+                    current_app.log.info('[%s] Could not find corresponding county for municipality: %s' % ('results', parsed_row['office_name']))
 
 
         # Add to types
@@ -1065,7 +1066,7 @@ class Contest(ScraperModel, db.Model):
 
 
     def check_mcd(self, parsed_row):
-        mcd = Area.query.filter_by(areas_group='municipalities', mcd_id=parsed_row['district_code']).all()
+        mcd = Area.query.filter_by(areas_group='municipalities', mcd_id=parsed_row['district_code'], election_id=parsed_row['election_id']).all()
         return mcd
 
 
@@ -1098,7 +1099,7 @@ class Contest(ScraperModel, db.Model):
     def set_question_fields(self, parsed_row):
         # Get question data
         try:
-            questions = Question.query.all()
+            questions = Question.query.all(election_id=row['election_id'])
         except:
             questions = []
         
