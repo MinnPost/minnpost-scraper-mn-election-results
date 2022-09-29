@@ -717,8 +717,12 @@ class Contest(ScraperModel, db.Model):
         # Primary is not designated in any way, but we can make some initial
         # guesses. All contests in an election are considered primary, but
         # non-partisan ones only mean there is more than one seat available.
-        election_dict = self.row2dict(election)
-        primary = election_dict["primary"] if election_dict["primary"] else False
+        if type(election) == dict:
+            current_app.log.debug('type of election is %s ' % type(election) )
+            current_app.log.debug(election)
+            primary = election['primary'] if election['primary'] else False
+        else:
+            primary = election.primary if election.primary else False
 
         re_question = re.compile(r'.*question.*', re.IGNORECASE)
         matched_question = re_question.match(row[4])
@@ -1099,7 +1103,7 @@ class Contest(ScraperModel, db.Model):
     def set_question_fields(self, parsed_row):
         # Get question data
         try:
-            questions = Question.query.all(election_id=row['election_id'])
+            questions = Question.query.all(election_id=parsed_row['election_id'])
         except:
             questions = []
         
