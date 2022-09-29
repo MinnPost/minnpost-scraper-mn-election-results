@@ -720,7 +720,10 @@ class Contest(ScraperModel, db.Model):
         if type(election) == dict:
             current_app.log.debug('type of election is %s ' % type(election) )
             current_app.log.debug(election)
-            primary = election['primary'] if election['primary'] else False
+            if election['primary']:
+                primary = election['primary']
+            else:
+                primary = False
         else:
             primary = election.primary if election.primary else False
 
