@@ -159,7 +159,7 @@ class ScraperModel(object):
     def set_election_key(self, election_id):
         key = election_id
         if election_id.startswith('id-'):
-            key = ''.join(election_id.split('id-', 3))
+            key = election_id.replace("id-", "", 1)
         return key
 
 
@@ -178,15 +178,15 @@ class ScraperModel(object):
                 response = urllib.request.urlopen(source['url'])
                 lines = [l.decode('latin-1') for l in response.readlines()]
                 rows = csv.reader(lines, delimiter=';')
-                election = {}
-                election["rows"] = rows
+                election_source_data = {}
+                election_source_data["rows"] = rows
                 headers = dict(response.getheaders())
                 if "Last-Modified" in headers:
-                    election["updated"] = headers['Last-Modified']
+                    election_source_data["updated"] = headers['Last-Modified']
                 else:
                     current_app.log.debug('headers is %s ' % headers)
-                    election["updated"] = None
-                return election
+                    election_source_data["updated"] = None
+                return election_source_data
             except Exception as err:
                 current_app.log.error('[%s] Error when trying to read URL and parse CSV: %s' % (source['type'], source['url']))
                 raise
@@ -717,14 +717,6 @@ class Contest(ScraperModel, db.Model):
         # Primary is not designated in any way, but we can make some initial
         # guesses. All contests in an election are considered primary, but
         # non-partisan ones only mean there is more than one seat available.
-        if type(election) == dict:
-            current_app.log.debug('type of election is %s ' % type(election) )
-            current_app.log.debug(election)
-            if 'primary' in election:
-                primary = election['primary']
-            else:
-                primary = False
-        else:
             primary = election.primary if election.primary else False
 
         re_question = re.compile(r'.*question.*', re.IGNORECASE)
@@ -787,7 +779,7 @@ class Contest(ScraperModel, db.Model):
                 parsed['total_votes_for_office'] = int(row[15])
             else:
                 current_app.log.info('Could not find matching contest for contest ID %s. Trying to create one, which is unexpected.' % result['contest_id'])
-                parsed = Contest.parser(row, group, election, source, updated)
+                parsed = self.parser(row, group, election, source, updated)
 
             if updated is not None:
                 parsed['updated'] = updated
