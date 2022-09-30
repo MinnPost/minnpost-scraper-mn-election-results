@@ -948,23 +948,23 @@ class Contest(ScraperModel, db.Model):
                 boundary = 'counties-2010/%s-1' % int(parsed_row['county_id'])
                 boundary_type = 'counties-2010'
 
-        # This includes both municipal (city) level results, plus sub-municpal, such
+        # This includes both municipal (city) level results, plus sub-municipal, such
         # as city council results.
         #
-        # For municpal results.    The boundary code is SSCCCMMMM where:
+        # For municipal results.    The boundary code is SSCCCMMMM where:
         #     * SS is state ID which is 27
         #     * CCC is the county FIPS code which is the MN County Code * 2 - 1
         #     * MMMM is the municpal code
         # The main issue is getting the county code which is not included in the
         # results but instead in a separate table.
         #
-        # It also turns out that there cities, like White Bear Lake City
+        # It also turns out that there are cities, like White Bear Lake City
         # which is in multiple counties which means they have more than one
         # boundary.
         #
         # For the sub-municipal results, we need wards. Unfortunately the boundary
         # id for wards is the actual name of the city and the ward number due to the
-        # face that the original boundary data did not have mcd codes in it.
+        # fact that the original boundary data did not have mcd codes in it.
         #
         # There are also minneapolis park and recs commissioner which is its own
         # thing.
@@ -975,7 +975,7 @@ class Contest(ScraperModel, db.Model):
             wards_matched = re.compile(r'.*(Council Member Ward|Council Member District) ([0-9]+).*\((((?!elect).)*)\).*', re.IGNORECASE).match(parsed_row['office_name'])
             mpls_parks_matched = re.compile(r'.*Park and Recreation Commissioner District ([0-9]+).*', re.IGNORECASE).match(parsed_row['office_name'])
 
-            # Check for sub municipal parts first
+            # Check for sub municipal parts first. These are not upgraded.
             if wards_matched is not None:
                 boundary = 'wards-2012/' + self.slugify(wards_matched.group(3)) + '-w-' + '{0:02d}'.format(int(wards_matched.group(2))) + '-1'
                 boundary_type = 'wards-2012'
@@ -983,6 +983,7 @@ class Contest(ScraperModel, db.Model):
                 boundary = 'minneapolis-parks-and-recreation-districts-2014/' + mpls_parks_matched.group(1) + '-1'
                 boundary_type = 'minneapolis-parks-and-recreation-districts-2014'
             else:
+                # these should be upgraded to 2020+ version.
                 if parsed_row['county_id']:
                     boundary = self.boundary_make_mcd(parsed_row['county_id'], parsed_row['district_code'])
                     boundary_type = 'minor-civil-divisions-2010'
