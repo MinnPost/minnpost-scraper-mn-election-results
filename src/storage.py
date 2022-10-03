@@ -62,13 +62,19 @@ class CacheStorage(object):
             self.bypass_cache = "false"
             self.delete_cache = "false"
             self.cache_data = "true"
+            self.cache_timeout = self.cache_timeout
+            self.display_cache_data = "false"
             if "bypass_cache" in args:
                 self.bypass_cache = args["bypass_cache"]
             if "delete_cache" in args:
                 self.delete_cache = args["delete_cache"]
             if "cache_data" in args:
                 self.cache_data = args["cache_data"]
-            self.display_cache_data = args["display_cache_data"]
+            if "cache_timeout" in args:
+                self.cache_timeout = args["cache_timeout"]
+            if "display_cache_data" in args:
+                self.display_cache_data = args["display_cache_data"]
+            self.cache_timeout = int(self.cache_timeout)
         # prevent error
         if self.delete_cache == "true" and self.cache_data == "false":
             self.bypass_cache = "true"
