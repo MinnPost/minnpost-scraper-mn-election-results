@@ -50,10 +50,11 @@ def scrape_results(self, election_id = None):
                 parsed = result.parser(row, group, election.id, updated)
                 parsed_contest_result = contest.parser_results(parsed, row, group, election, source, updated)
 
-                contest_result = Contest()
-                contest_result.from_dict(parsed_contest_result, new=True)
+                if parsed_contest_result:
+                    contest_result = Contest()
+                    contest_result.from_dict(parsed_contest_result, new=True)
 
-                db.session.merge(contest_result)
+                    db.session.merge(contest_result)
 
                 result = Result()
                 result.from_dict(parsed, new=True)
