@@ -12,6 +12,7 @@ from datetime import timedelta
 from flask import current_app
 from src.extensions import db
 
+from src.boundaries import Boundaries
 from sqlglot import exp, parse_one, errors
 
 from sqlalchemy import text, inspect, func, select
@@ -195,13 +196,6 @@ class ScraperModel(object):
     def from_dict(self, data, new=False):
         for field in data:
             setattr(self, field, data[field])
-
-
-    def slugify(self, orig):
-        slug = str(orig.encode('ascii', 'ignore').lower())
-        slug = re.sub(r'[^a-z0-9]+', '-', slug).strip('-')
-        slug = re.sub(r'[-]+', '-', slug)
-        return slug
 
 
     def post_processing(self, type, election_id = None):
@@ -611,9 +605,6 @@ class Contest(ScraperModel, db.Model):
     #list of county names
     mn_counties = ["Aitkin", "Anoka", "Becker", "Beltrami", "Benton", "Big Stone", "Blue Earth", "Brown", "Carlton", "Carver", "Cass", "Chippewa", "Chisago", "Clay", "Clearwater", "Cook", "Cottonwood", "Crow Wing", "Dakota", "Dodge", "Douglas", "Faribault", "Fillmore", "Freeborn", "Goodhue", "Grant", "Hennepin", "Houston", "Hubbard", "Isanti", "Itasca", "Jackson", "Kanabec", "Kandiyohi", "Kittson", "Koochiching", "Lac qui Parle", "Lake", "Lake of the Woods", "Le Sueur", "Lincoln", "Lyon", "McLeod", "Mahnomen", "Marshall", "Martin", "Meeker", "Mille Lacs", "Morrison", "Mower", "Murray", "Nicollet", "Nobles", "Norman", "Olmsted", "Otter Tail", "Pennington", "Pine", "Pipestone", "Polk", "Pope", "Ramsey", "Red Lake", "Redwood", "Renville", "Rice", "Rock", "Roseau", "Saint Louis", "Scott", "Sherburne", "Sibley", "Stearns", "Steele", "Stevens", "Swift", "Todd", "Traverse", "Wabasha", "Wadena", "Waseca", "Washington", "Watonwan", "Wilkin", "Winona", "Wright", "Yellow Medicine"]
 
-    # Track which boundary sets we use
-    found_boundary_types = []
-
     id = db.Column(db.String(255), autoincrement=False, nullable=False)
     election_id = db.Column(db.String(255), db.ForeignKey('elections.id'), autoincrement=False, nullable=False, server_default='')
     office_id = db.Column(db.String(255))
@@ -751,7 +742,8 @@ class Contest(ScraperModel, db.Model):
         }
 
         # set fields that aren't directly in the data
-        parsed['boundary'] = self.find_boundary(parsed, row)
+        boundaries         = Boundaries(Area)
+        parsed['boundary'] = boundaries.find_boundary(parsed)
         parsed = self.set_question_fields(parsed)
         parsed['partisan'] = self.set_partisanship(parsed)
         parsed['seats'] = self.set_seats(parsed)
@@ -839,239 +831,7 @@ class Contest(ScraperModel, db.Model):
         return title
 
 
-    # todo: fix this so it can be election specific
-    def find_boundary(self, parsed_row, row):
-        boundary = ''
-        boundary_type = False
-
-        # State level race
-        if parsed_row['scope'] == 'state':
-            boundary = 'minnesota-state-2014/27-1'
-            boundary_type = 'minnesota-state-2014'
-
-        # US House districts
-        if parsed_row['scope'] == 'us_house':
-            us_house_match = re.compile(r'.*U.S. Representative District ([0-9]+).*', re.IGNORECASE).match(parsed_row['office_name'])
-            if us_house_match is not None:
-                boundary = 'congressional-districts-2012/' + us_house_match.group(1)
-                boundary_type = 'congressional-districts-2012'
-            #special presidential primary handling
-            elif parsed_row['office_name'] == "U.S. Presidential Nominee":
-                boundary = 'congressional-districts-2012/' + parsed_row['district_code']
-                boundary_type = 'congressional-districts-2012'
-            else:
-                current_app.log.info('[%s] Could not find US House boundary for: %s' % ('results', parsed_row['office_name']))
-
-        # State Senate districts
-        if parsed_row['scope'] == 'state_senate':
-            state_senate_match = re.compile(r'.*State Senator District (\w+).*', re.IGNORECASE).match(parsed_row['office_name'])
-            if state_senate_match is not None:
-                boundary = 'state-senate-districts-2012/' + "%02d" % (int(state_senate_match.group(1)),)
-                boundary_type = 'state-senate-districts-2012'
-            else:
-                current_app.log.info('[%s] Could not find State Senate boundary for: %s' % ('results', parsed_row['office_name']))
-
-        # State House districts
-        if parsed_row['scope'] == 'state_house':
-            state_house_match = re.compile(r'.*State Representative District (\w+).*', re.IGNORECASE).match(parsed_row['office_name'])
-            if state_house_match is not None:
-                district_number = "%02d" % (int(state_house_match.group(1)[0:-1]),)
-                district_letter = state_house_match.group(1)[-1].lower()
-                boundary = 'state-house-districts-2012/' + district_number + district_letter
-                boundary_type = 'state-house-districts-2012'
-            else:
-                current_app.log.info('[%s] Could not find State House boundary for: %s' % ('results', parsed_row['office_name']))
-
-        # State court districts.    Judge - 7th District Court 27
-        if parsed_row['scope'] == 'district_court':
-            court_match = re.compile(r'.*Judge - ([0-9]+).*', re.IGNORECASE).match(parsed_row['office_name'])
-            if court_match is not None:
-                boundary = 'district-courts-2012/' + court_match.group(1).lower() + '-1'
-                boundary_type = 'district-courts-2012'
-            else:
-                current_app.log.info('[%s] Could not find State District Court boundary for: %s' % ('results', parsed_row['office_name']))
-
-        # School district is in the office name. Special school district for
-        # Minneapolis is "1-1". Unfortunately SSD1 and ISD1 are essentially the
-        # same as far as the incoming data so we have to look at title.
-        #
-        # Minneapolis
-        # sub-school districts are the same at the Minneapolis Park and Rec
-        # districts. There are a number of sub-school districts it looks
-        # like
-
-        if parsed_row['scope'] == 'school':
-            isd_match = re.compile(r'.*\(ISD #([0-9]+)\).*', re.IGNORECASE).match(parsed_row['office_name'])
-            csd_match = re.compile(r'.*\( ?CSD +#([0-9]+)\).*', re.IGNORECASE).match(parsed_row['office_name'])
-            ssd_match = re.compile(r'.*\(SSD #([0-9]+)\).*', re.IGNORECASE).match(parsed_row['office_name'])
-            district_match = re.compile(r'.*district ([0-9]+) \(.*', re.IGNORECASE).match(parsed_row['office_name'])
-
-            if isd_match is not None:
-                isd_match_value = isd_match.group(1)
-
-                boundary =  'school-districts-2018/' + "%04d" % (int(isd_match_value)) + "-1"
-                boundary_type = 'school-districts-2018'
-
-            elif csd_match is not None:
-                csd_match_value = csd_match.group(1)
-
-                boundary = 'school-districts-2018/' + "%04d" % (int(csd_match_value)) + "-1"
-                boundary_type = 'school-districts-2018'
-
-            elif ssd_match is not None:
-                ssd_match_value = '1-3' if ssd_match.group(1) == '1' else ssd_match.group(1)
-
-                if ssd_match_value == '1-3' and district_match is not None:
-                    boundary =  'minneapolis-parks-and-recreation-districts-2014/' + district_match.group(1) + "-1"
-                    boundary_type = 'minneapolis-parks-and-recreation-districts-2014'
-                elif ssd_match_value == '1-3' and district_match is None: #Minneapolis at-large seats
-                    boundary = 'minor-civil-divisions-2010/2705343000'
-                    boundary_type = 'minor-civil-divisions-2010'
-                else:
-                    boundary = 'school-districts-2018/' + "%04d" % (int(ssd_match_value)) + "-1"
-                    boundary_type = 'school-districts-2018'
-            else:
-                current_app.log.info('[%s] Could not find (I|S)SD boundary for: %s' % ('results', parsed_row['office_name']))
-
-        # County should be provided, but the results also have results for county
-        # comissioner which are sub-county boundaries
-        if parsed_row['scope'] == 'county':
-            comissioner_match = re.compile(r'.*County Commissioner District.*', re.IGNORECASE).match(parsed_row['office_name'])
-            park_commissioner_match = re.compile(r'.*Park Commissioner District.*', re.IGNORECASE).match(parsed_row['office_name'])
-            if comissioner_match is not None:
-                boundary = 'county-commissioner-districts-2012/%s-%02d-1' % (int(parsed_row['county_id']),    int(parsed_row['district_code']))
-                boundary_type = 'county-commissioner-districts-2012'
-            elif park_commissioner_match is not None:
-                boundary = "" #We don't currently have shapefiles for county park commissioner districts
-                boundary_type = "county-park-commissioner-district"
-            else:
-                boundary = 'counties-2010/%s-1' % int(parsed_row['county_id'])
-                boundary_type = 'counties-2010'
-
-        # This includes both municipal (city) level results, plus sub-municipal, such
-        # as city council results.
-        #
-        # For municipal results.    The boundary code is SSCCCMMMM where:
-        #     * SS is state ID which is 27
-        #     * CCC is the county FIPS code which is the MN County Code * 2 - 1
-        #     * MMMM is the municpal code
-        # The main issue is getting the county code which is not included in the
-        # results but instead in a separate table.
-        #
-        # It also turns out that there are cities, like White Bear Lake City
-        # which is in multiple counties which means they have more than one
-        # boundary.
-        #
-        # For the sub-municipal results, we need wards. Unfortunately the boundary
-        # id for wards is the actual name of the city and the ward number due to the
-        # fact that the original boundary data did not have mcd codes in it.
-        #
-        # There are also minneapolis park and recs commissioner which is its own
-        # thing.
-        #
-        # And there is also just wrong data occasionally.
-        if parsed_row['scope'] == 'municipal':
-            # Checks
-            wards_matched = re.compile(r'.*(Council Member Ward|Council Member District) ([0-9]+).*\((((?!elect).)*)\).*', re.IGNORECASE).match(parsed_row['office_name'])
-            mpls_parks_matched = re.compile(r'.*Park and Recreation Commissioner District ([0-9]+).*', re.IGNORECASE).match(parsed_row['office_name'])
-
-            # Check for sub municipal parts first. These are not upgraded.
-            if wards_matched is not None:
-                boundary = 'wards-2012/' + self.slugify(wards_matched.group(3)) + '-w-' + '{0:02d}'.format(int(wards_matched.group(2))) + '-1'
-                boundary_type = 'wards-2012'
-            elif mpls_parks_matched is not None:
-                boundary = 'minneapolis-parks-and-recreation-districts-2014/' + mpls_parks_matched.group(1) + '-1'
-                boundary_type = 'minneapolis-parks-and-recreation-districts-2014'
-            else:
-                # these should be upgraded to 2020+ version.
-                if parsed_row['county_id']:
-                    boundary = self.boundary_make_mcd(parsed_row['county_id'], parsed_row['district_code'])
-                    boundary_type = 'minor-civil-divisions-2010'
-                else:
-                    boundary_type = 'minor-civil-divisions-2010'
-                    mcd = self.check_mcd(parsed_row)
-                    if mcd != []:
-                        boundaries = []
-                        for r in mcd:
-                            boundaries.append(self.boundary_make_mcd(r.county_id, parsed_row['district_code']))
-                        boundary = ','.join(boundaries)
-                    else:
-                        current_app.log.info('[%s] Could not find corresponding county for municipality: %s' % ('results', parsed_row['office_name']))
-
-        # Hospital districts.
-        #
-        # Mostly, the district ID provided is for the best municipal
-        # entity.    The only way to really figure out the hospital district ID
-        # (which is kind of arbitrary) is to use the boundary service
-        #
-        # Otherwise, the actual hospital id is given
-        if parsed_row['scope'] == 'hospital':
-            # MCD districts are 5 digits with leading zeros, while hospital districts
-            # are 3 or 4
-            if len(parsed_row['district_code']) < 5:
-                boundary = 'hospital-districts-2012/%s-1' % (int(parsed_row['district_code']))
-                boundary_type = 'hospital-districts-2012'
-            else:
-                # We need the county ID and it is not in results, so we have to look
-                # it up, and there could more than one
-                mcd = self.check_mcd(parsed_row)
-                if mcd != []:
-                    for r in mcd:
-                        # Find intersection
-                        mcd_boundary_id = self.boundary_make_mcd(r.county_id, parsed_row['district_code'])
-                        boundary_url  = 'https://represent-minnesota.herokuapp.com/boundaries/?sets=%s,%s'
-                        request = requests.get(boundary_url % ('hospital-districts-2012', mcd_boundary_id), verify = True)
-
-                        if request.status_code == 200:
-                            r = request.json()
-                            boundary = r['objects'][0]['url']
-                            boundary = boundary.lstrip('/boundaries/') # remove if this is present
-                            boundary = boundary.rstrip('/')
-                            break
-
-                    if boundary == '':
-                        current_app.log.info('[%s] Hospital boundary intersection not found: %s' % ('results', parsed_row['title']))
-
-                else:
-                    current_app.log.info('[%s] Could not find corresponding county for municipality: %s' % ('results', parsed_row['office_name']))
-
-
-        # Add to types
-        if boundary_type != False and boundary_type not in self.found_boundary_types:
-            self.found_boundary_types.append(boundary_type)
-
-        # General notice if not found
-        if boundary == '':
-            current_app.log.info('[%s] Could not find boundary for: %s' % ('results', parsed_row['office_name']))
-
-        return boundary
-
-    
-    def boundary_make_mcd(self, county_id, district):
-        """
-        Makes MCD code from values.
-        """
-        bad_data = {
-            '2713702872': '2713702890', # Aurora City
-            '2703909154': '2710909154', # Bryon
-            '2706109316': '2706103916', # Calumet
-            '2716345952': '2716358900', # Scandia
-            '2702353296': '2706753296'  # Raymond
-        }
-        fips = '{0:03d}'.format((int(county_id) * 2) - 1)
-        mcd_id = '27' + fips + district
-        if mcd_id in bad_data:
-            mcd_id = bad_data[mcd_id]
-        return 'minor-civil-divisions-2010/' + mcd_id
-
-
-    def check_mcd(self, parsed_row):
-        mcd = Area.query.filter_by(areas_group='municipalities', mcd_id=parsed_row['district_code'], election_id=parsed_row['election_id']).all()
-        return mcd
-
-
     def check_boundary(self, query_result):
-        boundary_url = 'https://represent-minnesota.herokuapp.com/boundaries/%s';
         contests_count = 0
         boundaries_found = 0
         boundaries_not_found = []
@@ -1080,12 +840,12 @@ class Contest(ScraperModel, db.Model):
             contests_count = contests_count + 1
             for boundary in contest['boundary'].split(','):
                 boundary_not_found = {}
-                boundary_request = requests.get(boundary_url % boundary, verify = False)
-                if boundary_request.status_code == 200:
+                boundaries   = Boundaries(Area)
+                boundary_url = boundaries.get_boundary_by_query(boundary)
+                if boundary_url != "":
                     boundaries_found = boundaries_found + 1
                 else:
                     boundary_not_found['contest'] = contest['title']
-                    boundary_not_found['status_code'] = boundary_request.status_code
                     boundary_not_found['boundary'] = boundary
                     boundaries_not_found.append(boundary_not_found)
         output = {

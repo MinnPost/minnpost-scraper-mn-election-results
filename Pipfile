@@ -20,6 +20,7 @@ celery-redbeat = "==2.0.0"
 sqlglot = "==6.1.0"
 fastnumbers = "==3.2.1"
 natsort = "==8.2.0"
+awesome-slugify = "==1.6.5"
 
 [dev-packages]
 "flower =" = "==1.0.0"

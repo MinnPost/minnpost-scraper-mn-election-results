@@ -43,6 +43,10 @@ class Config(object):
     QUERY_LIST_CACHE_KEY = os.environ.get("QUERY_LIST_CACHE_KEY", "")
 
 
+    # other apis
+    BOUNDARY_SERVICE_URL = os.environ.get('BOUNDARY_SERVICE_URL', 'https://represent-minnesota.herokuapp.com')
+
+
     # Scraper settings
     DEFAULT_SCRAPE_FREQUENCY = int(os.environ.get("DEFAULT_SCRAPE_FREQUENCY", 86400))
     ELECTION_DATE_OVERRIDE = os.environ.get("ELECTION_DATE_OVERRIDE", None)
