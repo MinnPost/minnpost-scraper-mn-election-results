@@ -421,7 +421,7 @@ class Area(ScraperModel, db.Model):
             parsed['county_id'] = row[0]
             parsed['county_name'] = row[1]
             parsed['mcd_id'] = "{0:05d}".format(int(row[2])) #enforce 5 digit
-            parsed['name'] = row[1]
+            parsed['name'] = row[1] # I'm not sure why this doesn't use row[3]? Keeping the old version for now though.
 
         if group == 'counties':
             parsed['area_id'] = parsed['area_id'] + row[0]
