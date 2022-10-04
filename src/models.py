@@ -1079,9 +1079,9 @@ class Result(ScraperModel, db.Model):
 
     __tablename__ = "results"
 
-    id = db.Column(db.String(255), nullable=False, autoincrement=False)
+    id = db.Column(db.String(255), primary_key=True, nullable=False, autoincrement=False)
     contest_id = db.Column(db.String(255), db.ForeignKey('contests.id'), nullable=False)
-    election_id = db.Column(db.String(255), db.ForeignKey('elections.id'), autoincrement=False, nullable=False, server_default='')
+    election_id = db.Column(db.String(255), db.ForeignKey('elections.id'), primary_key=True, autoincrement=False, nullable=False, server_default='')
     results_group = db.Column(db.String(255))
     office_name = db.Column(db.String(255))
     candidate_id = db.Column(db.String(255))
