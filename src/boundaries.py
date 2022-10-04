@@ -278,7 +278,8 @@ class Boundaries(object):
     
     def get_boundary_by_query(self, slug = None, key = None, value = None, intersect = None, election_id = None):
         storage_args = {
-            'cache_timeout': 604800 # 1 week
+            'cache_timeout': 604800, # 1 week
+            'create_log_entries': "false"
         }
         storage = Storage(json.dumps(storage_args), "POST")
         boundary_domain = current_app.config['BOUNDARY_SERVICE_URL']
@@ -304,7 +305,6 @@ class Boundaries(object):
                     boundary_url = request_url
                 else:
                     r = request.json()
-                    current_app.log.info(r)
                     if len(r['objects']) > 0:
                         if r['objects'][0]['url']:
                             boundary_url   = r['objects'][0]['url']
