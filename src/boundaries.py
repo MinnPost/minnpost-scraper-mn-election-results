@@ -137,7 +137,8 @@ class Boundaries(object):
             if comissioner_match is not None:
                 boundary_slug = 'county-commissioner-districts-2012/%s-%02d-1' % (int(parsed_row['county_id']),    int(parsed_row['district_code']))
                 boundary_type = 'county-commissioner-districts-2012'
-                boundary = self.get_boundary_by_query(boundary_slug)
+                #boundary = self.get_boundary_by_query(boundary_slug)
+                boundary = "" #We don't have updated shapefiles for county commissioner districts
             elif park_commissioner_match is not None:
                 boundary_slug = "" #We don't currently have shapefiles for county park commissioner districts
                 boundary_type = "county-park-commissioner-district"
@@ -178,7 +179,8 @@ class Boundaries(object):
             if wards_matched is not None:
                 boundary_slug = 'wards-2012/' + slugify(wards_matched.group(3), to_lower=True) + '-w-' + '{0:02d}'.format(int(wards_matched.group(2))) + '-1'
                 boundary_type = 'wards-2012'
-                boundary = self.get_boundary_by_query(boundary_slug)
+                #boundary = self.get_boundary_by_query(boundary_slug)
+                boundary = ""
             elif mpls_parks_matched is not None:
                 boundary_slug = 'minneapolis-park-and-recreation-board-districts-2022/' + mpls_parks_matched.group(1)
                 boundary_type = 'minneapolis-park-and-recreation-board-districts-2022'
@@ -199,10 +201,11 @@ class Boundaries(object):
                                 boundary = self.boundary_make_mcd(area.county_id, parsed_row['district_code'], election_id)
                                 if boundary != "":
                                     boundaries.append(boundary)
-                        if len(boundaries) > 1:
-                            boundary = ','.join(boundaries)
-                        else:
-                            boundary = boundaries[0]
+                        if len(boundaries):
+                            if len(boundaries) > 1:
+                                boundary = ','.join(boundaries)
+                            else:
+                                boundary = boundaries[0]
                     else:
                         current_app.log.debug('[%s] Could not find corresponding county for municipality: %s. County id was %s and district code was %s' % ('results', parsed_row['office_name'], parsed_row['county_id'], parsed_row['district_code']))
 
@@ -219,7 +222,8 @@ class Boundaries(object):
             if len(parsed_row['district_code']) < 5:
                 boundary_slug = 'hospital-districts-2012/%s-1' % (int(parsed_row['district_code']))
                 boundary_type = 'hospital-districts-2012'
-                boundary = self.get_boundary_by_query(boundary_slug)
+                #boundary = self.get_boundary_by_query(boundary_slug)
+                boundary = ""
             else:
                 # We need the county ID and it is not in results, so we have to look
                 # it up, and there could more than one
@@ -300,10 +304,17 @@ class Boundaries(object):
                     boundary_url = request_url
                 else:
                     r = request.json()
-                    boundary_url   = r['objects'][0]['url']
-                    boundary_url   = boundary_domain + boundary_url
-                    verify_request = requests.get(boundary_url, verify = False)
-                    if verify_request.status_code != 200:
+                    current_app.log.info(r)
+                    if len(r['objects']) > 0:
+                        if r['objects'][0]['url']:
+                            boundary_url   = r['objects'][0]['url']
+                            boundary_url   = boundary_domain + boundary_url
+                            verify_request = requests.get(boundary_url, verify = False)
+                            if verify_request.status_code != 200:
+                                boundary_url = ""
+                        else:
+                            boundary_url = ""
+                    else:
                         boundary_url = ""
             if boundary_url != "":
                 boundary_value = boundary_url.replace(boundary_domain + '/boundaries/', "")
