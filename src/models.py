@@ -708,7 +708,7 @@ class Contest(ScraperModel, db.Model):
         # Primary is not designated in any way, but we can make some initial
         # guesses. All contests in an election are considered primary, but
         # non-partisan ones only mean there is more than one seat available.
-            primary = election.primary if election.primary else False
+        primary = election.primary if election.primary else False
 
         re_question = re.compile(r'.*question.*', re.IGNORECASE)
         matched_question = re_question.match(row[4])
@@ -769,11 +769,11 @@ class Contest(ScraperModel, db.Model):
                 parsed['precincts_reporting'] = int(row[11])
                 parsed['total_effected_precincts'] = int(row[12])
                 parsed['total_votes_for_office'] = int(row[15])
-            else:
-                current_app.log.info('Could not find matching contest for contest ID %s. Trying to create one, which is unexpected.' % result['contest_id'])
-                parsed = self.parser(row, group, election, source, updated)
+            #else:
+                #current_app.log.info('Could not find matching contest for contest ID %s. Trying to create one, which is unexpected.' % result['contest_id'])
+                #parsed = self.parser(row, group, election, source, updated)
 
-            if updated is not None:
+            if parsed and updated is not None:
                 parsed['updated'] = updated
 
         # Return parsed contest record
@@ -855,7 +855,7 @@ class Contest(ScraperModel, db.Model):
         }
         return json.dumps(output)
 
-    
+
     def set_question_fields(self, parsed_row):
         # Get question data
         try:
