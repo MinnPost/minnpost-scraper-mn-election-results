@@ -268,14 +268,13 @@ class Boundaries(object):
 
 
     def check_mcd(self, parsed_row):
-        #current_app.log.debug('Try to load municipal area. District code/mcd ID: %s. Election ID: %s.' % (parsed_row['district_code'], parsed_row['election_id']))
         mcd = self.area.query.filter_by(areas_group='municipalities', mcd_id=parsed_row['district_code'], election_id=parsed_row['election_id']).all()
         return mcd
 
     
     def get_boundary_by_query(self, slug = None, key = None, value = None, intersect = None, election_id = None):
         storage_args = {
-
+            'cache_timeout': 604800 # 1 week
         }
         storage = Storage(json.dumps(storage_args), "POST")
         boundary_domain = current_app.config['BOUNDARY_SERVICE_URL']
