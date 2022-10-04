@@ -96,13 +96,13 @@ class CacheStorage(object):
             elif self.cache_timeout == 0:
                 data["cache_timeout"] = 0
         else:
-            current_app.log.info(f"Do not cache data for the {key} key.")
+            current_app.log.debug(f"Do not cache data for the {key} key.")
         if self.display_cache_data == "true":
             data["cache_key"] = key
             data["loaded_from_cache"] = False
         output = json.dumps(data, default=str)
         if self.cache_data == "true":
-            current_app.log.info(f"Store data in the cache. The key is {key} and the timeout is {self.cache_timeout}.")
+            current_app.log.debug(f"Store data in the cache. The key is {key} and the timeout is {self.cache_timeout}.")
             hash_cache_key = hashlib.md5((key).encode('utf-8')).hexdigest()
             cache.set(hash_cache_key, output, timeout=self.cache_timeout)
             if group != None:
@@ -113,7 +113,7 @@ class CacheStorage(object):
                 cache_group_list[key] = True
                 cache_group_output = json.dumps(cache_group_list, default=str)
                 cache.set(cache_group_key, cache_group_output, timeout=self.cache_timeout)
-                current_app.log.info(f"Store model data list in the cache. The key is {cache_group_key} and the timeout is {self.cache_timeout}.")
+                current_app.log.debug(f"Store model data list in the cache. The key is {cache_group_key} and the timeout is {self.cache_timeout}.")
             
         return output
 
@@ -123,7 +123,7 @@ class CacheStorage(object):
         hash_cache_key = hashlib.md5((key).encode('utf-8')).hexdigest()
         output = cache.get(hash_cache_key)
         if output != None:
-            current_app.log.info(f"Delete data from the cache. The key is {key}.")
+            current_app.log.debug(f"Delete data from the cache. The key is {key}.")
             cache.delete(hash_cache_key)
             deleted = True
         return deleted
@@ -135,14 +135,14 @@ class CacheStorage(object):
         output = cache.get(hash_cache_key)
         if output != None:
             loaded_from_cache = True
-            current_app.log.info(f"Get data from the cache. The key is {key}.")
+            current_app.log.debug(f"Get data from the cache. The key is {key}.")
         if self.delete_cache == "true":
-            current_app.log.info(f"Delete data from the cache. The key is {key}.")
+            current_app.log.debug(f"Delete data from the cache. The key is {key}.")
             cache.delete(key)
         if self.bypass_cache == "true":
             output = None
             loaded_from_cache = False
-            current_app.log.info(f"Cached data for {key} is not available.")
+            current_app.log.debug(f"Cached data for {key} is not available.")
         if output != None:
             output = json.loads(output)
             if self.display_cache_data == "true":
