@@ -185,7 +185,7 @@ class ScraperModel(object):
                 if "Last-Modified" in headers:
                     election_source_data["updated"] = headers['Last-Modified']
                 else:
-                    current_app.log.debug('headers is %s ' % headers)
+                    #current_app.log.debug('headers is %s ' % headers)
                     election_source_data["updated"] = None
                 return election_source_data
             except Exception as err:
@@ -205,7 +205,7 @@ class ScraperModel(object):
         spreadsheet_rows   = None
         election = self.set_election(election_id)
         if election is None:
-            current_app.log.debug('Election missing in the %s post processing: %s' % type)
+            #current_app.log.debug('Election missing in the %s post processing: %s' % type)
             return spreadsheet_rows
         if "rows" in spreadsheet_result:
             #current_app.log.debug('Valid spreadsheet rows result. Spreadsheet result is %s ' % spreadsheet_result)
@@ -258,7 +258,7 @@ class ScraperModel(object):
 
         if source not in sources[election_key]:
             # this just means there isn't a supplemental spreadsheet for that source
-            current_app.log.debug('Source missing in the %s election: %s' % (election_key, source))
+            #current_app.log.debug('Source missing in the %s election: %s' % (election_key, source))
             return supplemental_output
 
         s = sources[election_key][source]
