@@ -13,6 +13,7 @@ from src.models import Result, Contest
 from src.scraper import bp
 from src.scraper import elections
 from celery import chain
+from sqlalchemy import exc
 
 @celery.task(bind=True)
 def scrape_results(self, election_id = None):
@@ -64,7 +65,15 @@ def scrape_results(self, election_id = None):
                 inserted_count = inserted_count + 1
                 parsed_count = parsed_count + 1
             # commit parsed rows
-            db.session.commit()
+            try:
+                db.session.commit()
+            except exc.IntegrityError as e:
+                reason = e.message
+                current_app.log.debug(reason)
+
+                if "Duplicate entry" in reason:
+                    current_app.log.debug("%s already in results table." % e.params[0])
+                    db.session.rollback()
 
     # Handle post processing actions. this only needs to happen once, not for every group.
     supplemental_contests = contest.post_processing('contests', election.id)
