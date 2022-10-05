@@ -168,14 +168,15 @@ class CacheStorage(object):
         }
         if group_name != None:
             cache_group_key = '{}-cache-keys'.format(group_name).lower()
+            query_list_cache = current_app.config['QUERY_LIST_CACHE_KEY']
+            cache_query_key = '{}-cache-keys'.format(query_list_cache).lower()
             if election != None:
                 cache_group_key = cache_group_key + "-election-" + election
+                cache_query_key = cache_query_key + "-election-" + election
             cache_group = cache.get(cache_group_key)
             cache_group_list = {}
             if cache_group != None:
                 cache_group_list = json.loads(cache_group)
-            query_list_cache = current_app.config['QUERY_LIST_CACHE_KEY']
-            cache_query_key = '{}-cache-keys'.format(query_list_cache).lower()
             query_cache_keys = cache.get(cache_query_key)
             if query_cache_keys != None:
                 cache_group_list = {**cache_group_list, **json.loads(query_cache_keys)}
