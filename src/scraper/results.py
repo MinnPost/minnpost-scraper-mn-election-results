@@ -14,6 +14,7 @@ from src.scraper import bp
 from src.scraper import elections
 from celery import chain
 from sqlalchemy import exc
+from src.electionresultwindow import ElectionResultWindow
 
 @celery.task(bind=True)
 def scrape_results(self, election_id = None):
@@ -124,46 +125,13 @@ def scrape_results(self, election_id = None):
     }
     #current_app.log.debug(result)
 
-    now = datetime.now(pytz.timezone(current_app.config["TIMEZONE"]))
-    #offset = now.strftime('%z')
-
-    entry_key = 'scrape_results_chain_task'
-    prefixed_entry_key = 'redbeat:' + entry_key
-    interval = schedule(run_every=current_app.config["DEFAULT_SCRAPE_FREQUENCY"])
-    debug_message = ""
-
-    datetime_overridden = current_app.config["ELECTION_RESULT_DATETIME_OVERRIDDEN"]
-
-    # set up the task interval based on the configuration values and/or the current datetime.
-    if datetime_overridden == "true":
-        interval      = schedule(run_every=current_app.config["ELECTION_DAY_RESULT_SCRAPE_FREQUENCY"])
-        debug_message = f"The current schedule is overridden and set to {interval} by a true value on the datetime override value."
-    elif datetime_overridden == "false":
-        interval = schedule(run_every=current_app.config["DEFAULT_SCRAPE_FREQUENCY"])
-        debug_message = f"The current schedule is overridden and set to {interval} by a false value on the datetime override value."
-    else:
-        if current_app.config["ELECTION_DAY_RESULT_HOURS_START"] != "" and current_app.config["ELECTION_DAY_RESULT_HOURS_END"] != "":
-            time_range = DateTimeRange(current_app.config["ELECTION_DAY_RESULT_HOURS_START"], current_app.config["ELECTION_DAY_RESULT_HOURS_END"])
-            debug_message = f"This task is controlled by the start and end configuration values. "
-        elif election.date:
-            start_after_hours = current_app.config["ELECTION_DAY_RESULT_DEFAULT_START_TIME"]
-            end_after_hours   = current_app.config["ELECTION_DAY_RESULT_DEFAULT_DURATION_HOURS"]
-            start_date_string = f"{election.date}T{start_after_hours}:00:00-0600"
-            start_datetime    = parser.parse(start_date_string)
-            end_datetime      = start_datetime + timedelta(hours=end_after_hours)
-
-            time_range = DateTimeRange(start_datetime, end_datetime)
-            debug_message = f"This task is controlled by the default timeframe with the {election.date} election. It will start {start_after_hours} hours into {election.date} and end after {end_after_hours} hours. "
-        
-        if time_range:
-            now_formatted = now.isoformat()
-            if now_formatted in time_range:
-                interval = schedule(run_every=current_app.config["ELECTION_DAY_RESULT_SCRAPE_FREQUENCY"])
-                debug_message += f"This task is being run during election result hours."
-            else:
-                debug_message += f"This task is not being run during election result hours."
-        else:
-            debug_message += f"This task has no time range, so it is not being run during election result hours."
+    entry_key              = 'scrape_results_chain_task'
+    prefixed_entry_key     = 'redbeat:' + entry_key
+    election_result_window = ElectionResultWindow(election)
+    election_result_window = election_result_window.check_election_result_window()
+    interval_value         = election_result_window["interval"]
+    debug_message          = election_result_window["debug_message"]
+    interval               = schedule(run_every=interval_value)
 
     # create and/or run the result task based on the current interval value.
     try:

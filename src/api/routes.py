@@ -46,7 +46,7 @@ def query():
         else:
             #current_app.log.debug('did not find cached result for legacy meta key: %s' % cache_list_key)
             output = election_model.legacy_meta_output(election.id)
-            output = storage.save(cache_key, output, cache_list_key, election.id)
+            output = storage.save(cache_key, output, cache_list_key, election)
 
     # verify/format the sql. use it for the cache key value.
     sql = scraper_model.format_sql(sql, election.id)
@@ -95,7 +95,7 @@ def query():
             if display_cache_data == "true":
                 output["generated"] = datetime.now(pytz.timezone(current_app.config["TIMEZONE"]))
 
-            output = storage.save(cache_key, output, cache_list_key, election.id)
+            output = storage.save(cache_key, output, cache_list_key, election)
     
     # set up the response and return it
     mime = 'application/json'
@@ -179,10 +179,10 @@ def areas():
             except exc.SQLAlchemyError:
                 pass
 
-        query_result = natsorted(query_result)
+        query_result = natsorted(query_result, key=str)
         # set the cache and the output from the query result
         output = area_model.output_for_cache(query_result, request.args)
-        output = storage.save(cache_key_name, output, class_name, election.id)
+        output = storage.save(cache_key_name, output, class_name, election)
     
     # set up the response and return it
     mime = 'application/json'
@@ -275,10 +275,10 @@ def boundaries():
         except exc.SQLAlchemyError:
             pass
 
-    query_result = natsorted(query_result)
+    query_result = natsorted(query_result, key=str)
     # set the cache and the output from the query result
     #output = contest_model.output_for_cache(query_result, request.args)
-    #output = storage.save(cache_key_name, output, class_name, election.id)
+    #output = storage.save(cache_key_name, output, class_name, election)
     output = contest_model.check_boundary(query_result)
 
     # set up the response and return it
@@ -373,10 +373,10 @@ def contests():
             except exc.SQLAlchemyError:
                 pass
         
-        query_result = natsorted(query_result)
+        query_result = natsorted(query_result, key=str)
         # set the cache and the output from the query result
         output = contest_model.output_for_cache(query_result, request.args)
-        output = storage.save(cache_key_name, output, class_name, election.id)
+        output = storage.save(cache_key_name, output, class_name, election)
 
     # set up the response and return it
     mime = 'application/json'
@@ -447,7 +447,7 @@ def elections():
             except exc.SQLAlchemyError:
                 pass
 
-        query_result = natsorted(query_result)
+        query_result = natsorted(query_result, key=str)
         # set the cache and the output from the query result
         output = election_model.output_for_cache(query_result, request.args, returning_single_row)
         output = storage.save(cache_key_name, output, class_name, cache_key_value)
@@ -508,6 +508,7 @@ def questions():
 
     # check for cached data and set the output, if it exists
     cached_output = storage.get(cache_key_name)
+    cached_output = None
     if cached_output is not None:
         output = cached_output
     else:
@@ -528,10 +529,10 @@ def questions():
             except exc.SQLAlchemyError:
                 pass
 
-        query_result = natsorted(query_result)
+        query_result = natsorted(query_result, key=str)
         # set the cache and the output from the query result
         output = question_model.output_for_cache(query_result, request.args)
-        output = storage.save(cache_key_name, output, class_name, election.id)
+        output = storage.save(cache_key_name, output, class_name, election)
 
     # set up the response and return it
     mime = 'application/json'
@@ -609,10 +610,10 @@ def results():
             except exc.SQLAlchemyError:
                 pass
         
-        query_result = natsorted(query_result)
+        query_result = natsorted(query_result, key=str)
         # set the cache and the output from the query result
         output = result_model.output_for_cache(query_result, request.args)
-        output = storage.save(cache_key_name, output, class_name, election.id)
+        output = storage.save(cache_key_name, output, class_name, election)
 
     # set up the response and return it
     mime = 'application/json'

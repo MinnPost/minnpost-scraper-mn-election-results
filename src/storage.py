@@ -3,6 +3,7 @@ import json
 import datetime
 from datetime import timedelta
 from src.extensions import cache
+from src.electionresultwindow import ElectionResultWindow
 from flask import current_app
 
 class Storage(object):
@@ -85,6 +86,14 @@ class CacheStorage(object):
 
 
     def save(self, key, data, group = None, election = None):
+        if election is not None and type(election) != str:
+            election_object           = election
+            election_result_window    = ElectionResultWindow(election_object)
+            election_result_window    = election_result_window.check_election_result_window()
+            election                  = election.id
+            is_election_result_window = election_result_window["is_election_result_window"]
+            if is_election_result_window is True:
+                self.cache_timeout = current_app.config['ELECTION_DAY_CACHE_TIMEOUT']
         if group != None:
             cache_group_key = '{}-cache-keys'.format(group).lower()
             if election != None:
