@@ -41,6 +41,7 @@ class Config(object):
     CACHE_TYPE = os.environ.get("CACHE_TYPE", "RedisCache")
     CACHE_DEFAULT_TIMEOUT = os.environ.get("CACHE_DEFAULT_TIMEOUT", 500)
     QUERY_LIST_CACHE_KEY = os.environ.get("QUERY_LIST_CACHE_KEY", "")
+    ELECTION_DAY_CACHE_TIMEOUT = os.environ.get("ELECTION_DAY_CACHE_TIMEOUT", os.environ.get("CACHE_DEFAULT_TIMEOUT", 500))
 
 
     # other apis
