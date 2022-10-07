@@ -1343,12 +1343,6 @@
       "type": "results",
       "contest_scope": "us_house"
     },
-    "us_senate_results": {
-      "url": "ussenate.txt",
-      "table": "results",
-      "type": "results",
-      "contest_scope": "state"
-    },
     "attorney_general_results": {
       "url": "attorneygen.txt",
       "table": "results",
