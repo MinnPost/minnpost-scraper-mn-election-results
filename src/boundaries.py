@@ -278,7 +278,7 @@ class Boundaries(object):
     
     def get_boundary_by_query(self, slug = None, key = None, value = None, intersect = None, election_id = None):
         storage_args = {
-            'cache_timeout': 604800, # 1 week
+            'cache_timeout': 2592000, # 1 month
             'create_log_entries': "false"
         }
         storage = Storage(json.dumps(storage_args), "POST")
