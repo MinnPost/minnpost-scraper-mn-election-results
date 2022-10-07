@@ -1331,5 +1331,137 @@
       "table": "areas",
       "type": "areas"
     }
+  "20221108": {
+    "meta": {
+      "base_url": "https://electionresultsfiles.sos.state.mn.us/20221108/",
+      "date": "2022-11-08",
+      "primary": false
+    },
+    "us_house_results": {
+      "url": "ushouse.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "us_house"
+    },
+    "us_senate_results": {
+      "url": "ussenate.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "state"
+    },
+    "attorney_general_results": {
+      "url": "attorneygen.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "state"
+    },
+    "auditor_results": {
+      "url": "auditor.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "state"
+    },
+    "governor_results": {
+      "url": "Governor.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "state"
+    },
+    "secretary_results": {
+      "url": "secofstate.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "state"
+    },
+    "state_senate_results": {
+      "url": "stsenate.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "state_senate"
+    },
+    "state_house_results": {
+      "url": "LegislativeByDistrict.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "state_house"
+    },
+    "judicial_results": {
+      "url": "judicial.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "state"
+    },
+    "judicial_district_results": {
+      "url": "judicialdst.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "district_court"
+    },
+    "county_results": {
+      "url": "cntyRaceQuestions.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "county"
+    },
+    "municipal_results": {
+      "url": "local.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "municipal",
+      "notes": "Includes both municpal questions (cityquestions.txt) and candidate results."
+    },
+    "school_district_results": {
+      "url": "SDRaceQuestions.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "school",
+      "notes": "Includes both school questions (SchoolQuestions.txt) and candidate results."
+    },
+    "hospital_results": {
+      "url": "hospital.txt",
+      "table": "results",
+      "type": "results",
+      "contest_scope": "hospital"
+    },
+    "parties": {
+      "url": "PartyTbl.txt",
+      "table": "parties",
+      "type": "parties"
+    },
+    "candidates": {
+      "url": "cand.txt",
+      "table": "candidates",
+      "type": "candidates"
+    },
+    "local_candidates": {
+      "url": "LocalCandTbl.txt",
+      "table": "candidates",
+      "type": "local_candidates"
+    },
+    "counties": {
+      "url": "Cntytbl.txt",
+      "table": "areas",
+      "type": "areas"
+    },
+    "municipalities": {
+      "url": "mcdtbl.txt",
+      "table": "areas",
+      "type": "areas"
+    },
+    "precincts": {
+      "url": "PrctTbl.txt",
+      "table": "areas",
+      "type": "areas"
+    },
+    "school_districts": {
+      "url": "SchoolDistTbl.txt",
+      "table": "areas",
+      "type": "areas"
+    },
+    "ballot_questions": {
+      "url": "BallotQuestions.txt",
+      "table": "questions",
+      "type": "questions"
+    }
   }
 }
