@@ -41,12 +41,17 @@ class Config(object):
     CACHE_TYPE = os.environ.get("CACHE_TYPE", "RedisCache")
     CACHE_DEFAULT_TIMEOUT = os.environ.get("CACHE_DEFAULT_TIMEOUT", 500)
     QUERY_LIST_CACHE_KEY = os.environ.get("QUERY_LIST_CACHE_KEY", "")
+    ELECTION_DAY_CACHE_TIMEOUT = os.environ.get("ELECTION_DAY_CACHE_TIMEOUT", os.environ.get("CACHE_DEFAULT_TIMEOUT", 500))
+
+
+    # other apis
+    BOUNDARY_SERVICE_URL = os.environ.get('BOUNDARY_SERVICE_URL', 'https://represent-minnesota.herokuapp.com')
 
 
     # Scraper settings
     DEFAULT_SCRAPE_FREQUENCY = int(os.environ.get("DEFAULT_SCRAPE_FREQUENCY", 86400))
     ELECTION_DATE_OVERRIDE = os.environ.get("ELECTION_DATE_OVERRIDE", None)
-    ELECTION_DAY_RESULT_SCRAPE_FREQUENCY = int(os.environ.get("ELECTION_DAY_RESULT_SCRAPE_FREQUENCY", 180))
+    ELECTION_DAY_RESULT_SCRAPE_FREQUENCY = int(os.environ.get("ELECTION_DAY_RESULT_SCRAPE_FREQUENCY", 60))
     ELECTION_DAY_RESULT_HOURS_START = os.environ.get("ELECTION_DAY_RESULT_HOURS_START", "")
     ELECTION_DAY_RESULT_HOURS_END = os.environ.get("ELECTION_DAY_RESULT_HOURS_END", "")
     ELECTION_DAY_RESULT_DEFAULT_START_TIME = int(os.environ.get("ELECTION_DAY_RESULT_DEFAULT_START_TIME", 00))
