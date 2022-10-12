@@ -377,27 +377,27 @@ def contests():
         # run the queries
         if contest_id is not None:
             try:
-                query_result = Contest.query.join(Result.contests).filter_by(id=contest_id, election_id=election.id).all()
+                query_result = Contest.query.filter_by(id=contest_id, election_id=election.id).all()
             except exc.SQLAlchemyError:
                 pass
         elif title is not None:
             try:
-                query_result = Contest.query.join(Result.contests).filter(Contest.title.ilike(search), Contest.election_id == election.id).all()
+                query_result = Contest.query.filter(Contest.title.ilike(search), Contest.election_id == election.id).all()
             except exc.SQLAlchemyError:
                 pass
         elif scope is not None:
             try:
-                query_result = Contest.query.join(Result.contests).filter_by(scope=scope, election_id= election.id).all()
+                query_result = Contest.query.filter_by(scope=scope, election_id= election.id).all()
             except exc.SQLAlchemyError:
                 pass
         elif results_group is not None:
             try:
-                query_result = Contest.query.join(Result.contests).filter_by(results_group=results_group, election_id= election.id).all()
+                query_result = Contest.query.filter_by(results_group=results_group, election_id= election.id).all()
             except exc.SQLAlchemyError:
                 pass
         elif len(contest_ids):
             try:
-                query_result = Contest.query.join(Result.contests).filter(Contest.id.ilike(any_(contest_ids)), Contest.election_id == election.id).all()
+                query_result = Contest.query.filter(Contest.id.ilike(any_(contest_ids)), Contest.election_id == election.id).all()
             except exc.SQLAlchemyError:
                 pass
         else:
@@ -405,10 +405,10 @@ def contests():
                 query_result = Contest.query.filter_by(election_id=election.id).all()
             except exc.SQLAlchemyError:
                 pass
-        
+
         query_result = natsorted(query_result, key=str)
         # set the cache and the output from the query result
-        output = contest_model.output_for_cache(query_result, request.args)
+        output = contest_model.output_for_cache(query_result, request.args, False, 'results')
         output = storage.save(cache_key_name, output, class_name, election)
 
     # set up the response and return it

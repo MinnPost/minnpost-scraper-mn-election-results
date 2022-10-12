@@ -44,25 +44,28 @@ class ScraperModel(object):
         return cls.__name__
 
 
-    def row2dict(self, row):
+    def row2dict(self, row, child_name=''):
         #return {
         #    c.name: str(getattr(row, c.name))
         #    for c in row.__table__.columns
         #}
-        return {
+        dictfromrow = {
             c.key: getattr(row, c.key)
             for c in inspect(row).mapper.column_attrs
         }
+        if hasattr(row, child_name):
+            dictfromrow[child_name] = [self.row2dict(item) for item in getattr(row, child_name)]
+        return dictfromrow
 
     
-    def output_for_cache(self, query_result, args = {}, single_row=False):
+    def output_for_cache(self, query_result, args = {}, single_row=False, child_name=''):
         output = {}
         if query_result is None:
             return output
         if single_row == False:
-            data = [self.row2dict(item) for item in query_result]
+            data = [self.row2dict(item, child_name) for item in query_result]
         else:
-            data = self.row2dict(query_result)
+            data = self.row2dict(query_result, child_name)
         if "display_cache_data" in args and args["display_cache_data"] == "true":
             output["data"] = data
             output["generated"] = datetime.datetime.now(pytz.timezone(current_app.config["TIMEZONE"]))
