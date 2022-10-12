@@ -128,16 +128,19 @@ def areas():
         request_json = request.get_json()
         area_id      = request_json.get('area_id')
         areas_group  = request_json.get('areas_group')
+        county_name  = request_json.get('county_name')
         election_id  = request_json.get('election_id')
     elif request.method == 'POST':
         # form request
         area_id     = request.form.get('area_id', None)
         areas_group = request.form.get('areas_group', None)
+        county_name = request.form.get('county_name', None)
         election_id = request.form.get('election_id', None)
     else:
         # GET request
         area_id     = request.values.get('area_id', None)
         areas_group = request.values.get('areas_group', None)
+        county_name = request.values.get('county_name', None)
         election_id = request.values.get('election_id', None)
 
     # set cache key
@@ -147,6 +150,9 @@ def areas():
     elif areas_group is not None:
         cache_key_name  = "areas_group"
         cache_key_value = areas_group
+    elif county_name is not None:
+        cache_key_name  = "county_name"
+        cache_key_value = county_name
     else:
         cache_key_name = "all_areas"
         cache_key_value = ""
@@ -171,6 +177,11 @@ def areas():
         elif areas_group is not None:
             try:
                 query_result = Area.query.filter_by(areas_group=areas_group, election_id=election.id).all()
+            except exc.SQLAlchemyError:
+                pass
+        elif county_name is not None:
+            try:
+                query_result = Area.query.filter_by(county_name=county_name, election_id=election.id).all()
             except exc.SQLAlchemyError:
                 pass
         else:
@@ -302,23 +313,29 @@ def contests():
     query_result   = None
     if request.is_json:
         # JSON request
-        request_json = request.get_json()
-        title        = request_json.get('title')
-        contest_id   = request_json.get('contest_id')
-        contest_ids  = request_json.get('contest_ids')
-        election_id  = request_json.get('election_id')
+        request_json  = request.get_json()
+        title         = request_json.get('title')
+        scope         = request_json.get('scope')
+        results_group = request_json.get('results_group')
+        contest_id    = request_json.get('contest_id')
+        contest_ids   = request_json.get('contest_ids')
+        election_id   = request_json.get('election_id')
     elif request.method == 'POST':
         # form request
-        title       = request.form.get('title', None)
-        contest_id  = request.form.get('contest_id', None)
-        contest_ids = request.form.get('contest_ids', [])
-        election_id = request.form.get('election_id', None)
+        title         = request.form.get('title', None)
+        scope         = request.form.get('scope', None)
+        results_group = request.form.get('results_group', None)
+        contest_id    = request.form.get('contest_id', None)
+        contest_ids   = request.form.get('contest_ids', [])
+        election_id   = request.form.get('election_id', None)
     else:
         # GET request
-        title       = request.values.get('title', None)
-        contest_id  = request.values.get('contest_id', None)
-        contest_ids = request.values.get('contest_ids', [])
-        election_id = request.values.get('election_id', None)
+        title         = request.values.get('title', None)
+        scope         = request.values.get('scope', None)
+        results_group = request.values.get('results_group', None)
+        contest_id    = request.values.get('contest_id', None)
+        contest_ids   = request.values.get('contest_ids', [])
+        election_id   = request.values.get('election_id', None)
 
     # if the contest_ids value is provided on the url, it'll be a string and we need to make it a list
     if isinstance(contest_ids, str):
@@ -332,6 +349,12 @@ def contests():
         cache_key_name  = "title"
         search = "%{}%".format(title)
         cache_key_value = title
+    elif scope is not None:
+        cache_key_name  = "scope"
+        cache_key_value = scope
+    elif results_group is not None:
+        cache_key_name  = "results_group"
+        cache_key_value = results_group
     elif len(contest_ids):
         cache_key_name  = "contest_ids"
         cache_key_value = ','.join(contest_ids)
@@ -360,6 +383,16 @@ def contests():
         elif title is not None:
             try:
                 query_result = Contest.query.join(Result.contests).filter(Contest.title.ilike(search), Contest.election_id == election.id).all()
+            except exc.SQLAlchemyError:
+                pass
+        elif scope is not None:
+            try:
+                query_result = Contest.query.join(Result.contests).filter_by(scope=scope, election_id= election.id).all()
+            except exc.SQLAlchemyError:
+                pass
+        elif results_group is not None:
+            try:
+                query_result = Contest.query.join(Result.contests).filter_by(results_group=results_group, election_id= election.id).all()
             except exc.SQLAlchemyError:
                 pass
         elif len(contest_ids):
