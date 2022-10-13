@@ -55,6 +55,13 @@ class ScraperModel(object):
         }
         if hasattr(row, child_name):
             dictfromrow[child_name] = [self.row2dict(item) for item in getattr(row, child_name)]
+
+            try:
+                dictfromrow[child_name] = self.sort_children(child_name, dictfromrow[child_name])
+            except AttributeError:
+                # Method does not exist; What now?
+                pass         
+
         return dictfromrow
 
     
@@ -987,6 +994,15 @@ class Contest(ScraperModel, db.Model):
         if "precincts_reporting" not in spreadsheet_row:
             spreadsheet_row['precincts_reporting'] = spreadsheet_row.get('precincts.reporting', 0)
         return spreadsheet_row
+
+
+    def sort_children(self, child_name, item):
+        if child_name == "results":
+            item = sorted(
+                item,
+                key=lambda x: (-x['votes_candidate'], x['candidate'])
+            )
+        return item
 
 
 class Question(ScraperModel, db.Model):
