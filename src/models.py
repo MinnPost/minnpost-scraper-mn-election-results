@@ -637,6 +637,7 @@ class Contest(ScraperModel, db.Model):
     question_body = db.Column(db.Text)
     sub_title = db.Column(db.String(255))
     incumbent_party = db.Column(db.String(255))
+    percent_needed = db.Column(db.Float())
     called = db.Column(db.Boolean())
     updated = db.Column(db.DateTime(timezone=True), default=db.func.current_timestamp())
 
@@ -672,6 +673,7 @@ class Contest(ScraperModel, db.Model):
         self.question_body = kwargs.get('question_body')
         self.sub_title = kwargs.get('sub_title')
         self.incumbent_party = kwargs.get('incumbent_party')
+        self.percent_needed = kwargs.get('percent_needed') # this is a null default because currently it only gets populated by the spreadsheet data
         self.called = kwargs.get('called')
 
 
@@ -869,15 +871,14 @@ class Contest(ScraperModel, db.Model):
     def set_question_fields(self, parsed_row):
         # Get question data
         try:
-            questions = Question.query.all(election_id=parsed_row['election_id'])
+            questions = Question.query.all(contest_id=parsed_row['contest_id'], election_id=parsed_row['election_id'])
         except:
             questions = []
         
-        # Check if there is a question match for the contest
+        # Assign the fields
         for q in questions:
-            if q.contest_id == parsed_row['contest_id']:
-                parsed_row['question_body'] = q.question_body
-                parsed_row['sub_title'] = q.sub_title
+            parsed_row['question_body'] = q.question_body
+            parsed_row['sub_title'] = q.sub_title
 
         return parsed_row
     
@@ -992,6 +993,8 @@ class Contest(ScraperModel, db.Model):
             spreadsheet_row['question_body'] = spreadsheet_row.get('question.body', "")
         if "precincts_reporting" not in spreadsheet_row:
             spreadsheet_row['precincts_reporting'] = spreadsheet_row.get('precincts.reporting', 0)
+        if "percent_needed" not in spreadsheet_row:
+            spreadsheet_row['percent_needed'] = spreadsheet_row.get('percent.needed', 0)
         return spreadsheet_row
 
 
