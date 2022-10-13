@@ -57,9 +57,8 @@ class ScraperModel(object):
             dictfromrow[child_name] = [self.row2dict(item) for item in getattr(row, child_name)]
 
             try:
-                dictfromrow[child_name] = self.sort_children(child_name, dictfromrow[child_name])
+                dictfromrow[child_name] = self.sort_children(child_name, dictfromrow[child_name], row)
             except AttributeError:
-                # Method does not exist; What now?
                 pass         
 
         return dictfromrow
@@ -287,14 +286,18 @@ class ScraperModel(object):
                 }
                 token_headers = {'Content-Type': 'application/json'}
                 token_result = requests.post(authorize_url, data=json.dumps(token_params), headers=token_headers)
-                token_json = token_result.json()
+                try:
+                    token_json = token_result.json()
+                except Exception as e:
+                    current_app.log.error('Error in token request for spreadsheet ID %s. Error is: %s' % (spreadsheet_id, e))
+                    return supplemental_output
                 if "token" in token_json:
                     token = token_json["token"]
                     authorized_headers = {"Authorization": f"Bearer {token}"}
                     result = requests.get(f"{url}?spreadsheet_id={spreadsheet_id}&worksheet_keys={worksheet_id}&external_use_s3={parser_store_in_s3}&bypass_cache={parser_bypass_cache}", headers=authorized_headers)
                     result_json = result.json()
                 else:
-                    current_app.log.error('Error in authorize. Token result is: %s' % token_json)
+                    current_app.log.error('Error in token authorize. Token result is: %s' % token_json)
                     result_json = None
         if result_json is not None and worksheet_id in result_json:
             data["rows"] = result_json[worksheet_id]
@@ -637,6 +640,7 @@ class Contest(ScraperModel, db.Model):
     question_body = db.Column(db.Text)
     sub_title = db.Column(db.String(255))
     incumbent_party = db.Column(db.String(255))
+    percent_needed = db.Column(db.Float())
     called = db.Column(db.Boolean())
     updated = db.Column(db.DateTime(timezone=True), default=db.func.current_timestamp())
 
@@ -672,6 +676,7 @@ class Contest(ScraperModel, db.Model):
         self.question_body = kwargs.get('question_body')
         self.sub_title = kwargs.get('sub_title')
         self.incumbent_party = kwargs.get('incumbent_party')
+        self.percent_needed = kwargs.get('percent_needed') # this is a null default because currently it only gets populated by the spreadsheet data
         self.called = kwargs.get('called')
 
 
@@ -870,15 +875,14 @@ class Contest(ScraperModel, db.Model):
     def set_question_fields(self, parsed_row):
         # Get question data
         try:
-            questions = Question.query.all(election_id=parsed_row['election_id'])
+            questions = Question.query.all(contest_id=parsed_row['contest_id'], election_id=parsed_row['election_id'])
         except:
             questions = []
         
-        # Check if there is a question match for the contest
+        # Assign the fields
         for q in questions:
-            if q.contest_id == parsed_row['contest_id']:
-                parsed_row['question_body'] = q.question_body
-                parsed_row['sub_title'] = q.sub_title
+            parsed_row['question_body'] = q.question_body
+            parsed_row['sub_title'] = q.sub_title
 
         return parsed_row
     
@@ -993,16 +997,18 @@ class Contest(ScraperModel, db.Model):
             spreadsheet_row['question_body'] = spreadsheet_row.get('question.body', "")
         if "precincts_reporting" not in spreadsheet_row:
             spreadsheet_row['precincts_reporting'] = spreadsheet_row.get('precincts.reporting', 0)
+        if "percent_needed" not in spreadsheet_row:
+            spreadsheet_row['percent_needed'] = spreadsheet_row.get('percent.needed', 0)
         return spreadsheet_row
 
 
-    def sort_children(self, child_name, item):
+    def sort_children(self, child_name, item, parent):
         if child_name == "results":
             item = sorted(
                 item,
                 key=lambda x: (-x['votes_candidate'], x['candidate'])
             )
-            if item['primary'] == True:
+            if parent.primary == True:
                 item = sorted(
                     item,
                     key=lambda x: x['party_id']
