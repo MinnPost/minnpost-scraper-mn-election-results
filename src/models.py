@@ -1001,6 +1001,11 @@ class Contest(ScraperModel, db.Model):
                 item,
                 key=lambda x: (-x['votes_candidate'], x['candidate'])
             )
+            if item['primary'] == True:
+                item = sorted(
+                    item,
+                    key=lambda x: x['party_id']
+                )
         return item
 
 
