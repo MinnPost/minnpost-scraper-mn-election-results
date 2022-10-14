@@ -299,6 +299,7 @@ class ScraperModel(object):
                 else:
                     current_app.log.error('Error in token authorize. Token result is: %s' % token_json)
                     result_json = None
+                    return supplemental_output
         if result_json is not None and worksheet_id in result_json:
             data["rows"] = result_json[worksheet_id]
 
