@@ -247,8 +247,8 @@ class Boundaries(object):
             self.found_boundary_types.append(boundary_type)
 
         # General notice if not found
-        if boundary == '':
-            current_app.log.info('[%s] Could not find boundary for: %s' % ('results', parsed_row['office_name']))
+        #if boundary == '':
+        #    current_app.log.info('[%s] Could not find boundary for: %s' % ('results', parsed_row['office_name']))
 
         return boundary
 
