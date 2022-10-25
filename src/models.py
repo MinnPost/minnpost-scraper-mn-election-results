@@ -616,9 +616,6 @@ class Contest(ScraperModel, db.Model):
 
     __tablename__ = "contests"
 
-    #list of county names
-    mn_counties = ["Aitkin", "Anoka", "Becker", "Beltrami", "Benton", "Big Stone", "Blue Earth", "Brown", "Carlton", "Carver", "Cass", "Chippewa", "Chisago", "Clay", "Clearwater", "Cook", "Cottonwood", "Crow Wing", "Dakota", "Dodge", "Douglas", "Faribault", "Fillmore", "Freeborn", "Goodhue", "Grant", "Hennepin", "Houston", "Hubbard", "Isanti", "Itasca", "Jackson", "Kanabec", "Kandiyohi", "Kittson", "Koochiching", "Lac qui Parle", "Lake", "Lake of the Woods", "Le Sueur", "Lincoln", "Lyon", "McLeod", "Mahnomen", "Marshall", "Martin", "Meeker", "Mille Lacs", "Morrison", "Mower", "Murray", "Nicollet", "Nobles", "Norman", "Olmsted", "Otter Tail", "Pennington", "Pine", "Pipestone", "Polk", "Pope", "Ramsey", "Red Lake", "Redwood", "Renville", "Rice", "Rock", "Roseau", "Saint Louis", "Scott", "Sherburne", "Sibley", "Stearns", "Steele", "Stevens", "Swift", "Todd", "Traverse", "Wabasha", "Wadena", "Waseca", "Washington", "Watonwan", "Wilkin", "Winona", "Wright", "Yellow Medicine"]
-
     id = db.Column(db.String(255), autoincrement=False, nullable=False)
     election_id = db.Column(db.String(255), db.ForeignKey('elections.id'), autoincrement=False, nullable=False, server_default='')
     office_id = db.Column(db.String(255))
@@ -683,6 +680,16 @@ class Contest(ScraperModel, db.Model):
 
     def __repr__(self):
         return '<Contest {}>'.format(self.id)
+
+
+    def get_mn_county(self, index = None, county = None):
+        # just a list of county names
+        #current_app.log.debug('looking for index: %s ' % index)
+        mn_counties = ["Aitkin", "Anoka", "Becker", "Beltrami", "Benton", "Big Stone", "Blue Earth", "Brown", "Carlton", "Carver", "Cass", "Chippewa", "Chisago", "Clay", "Clearwater", "Cook", "Cottonwood", "Crow Wing", "Dakota", "Dodge", "Douglas", "Faribault", "Fillmore", "Freeborn", "Goodhue", "Grant", "Hennepin", "Houston", "Hubbard", "Isanti", "Itasca", "Jackson", "Kanabec", "Kandiyohi", "Kittson", "Koochiching", "Lac qui Parle", "Lake", "Lake of the Woods", "Le Sueur", "Lincoln", "Lyon", "McLeod", "Mahnomen", "Marshall", "Martin", "Meeker", "Mille Lacs", "Morrison", "Mower", "Murray", "Nicollet", "Nobles", "Norman", "Olmsted", "Otter Tail", "Pennington", "Pine", "Pipestone", "Polk", "Pope", "Ramsey", "Red Lake", "Redwood", "Renville", "Rice", "Rock", "Roseau", "Saint Louis", "Scott", "Sherburne", "Sibley", "Stearns", "Steele", "Stevens", "Swift", "Todd", "Traverse", "Wabasha", "Wadena", "Waseca", "Washington", "Watonwan", "Wilkin", "Winona", "Wright", "Yellow Medicine"]
+        if index is not None:
+            #current_app.log.debug('return county name: %s ' % mn_counties[index])
+            return mn_counties[index]
+        return mn_counties
 
 
     def parser(self, row, group, election, source, updated = None):
@@ -810,20 +817,37 @@ class Contest(ScraperModel, db.Model):
             title = re_place.group(1) + ' ' + title
         title = title.rstrip()
 
-        # Add county name to county commissioner contest titles
+        # Add county name to various county titles
+        if 'County Attorney' in title and county_id:
+            county_index = int(county_id) - 1
+            title = self.get_mn_county(county_index) + " " + title
+        if 'County Auditor' in title and county_id:
+            county_index = int(county_id) - 1
+            title = self.get_mn_county(county_index) + " " + title
         if 'County Commissioner' in title and county_id:
             county_index = int(county_id) - 1
-            title = self.mn_counties[county_index] + " " + title
-
-        # Add county name to county sheriff contest titles
+            title = self.get_mn_county(county_index) + " " + title
+        if 'County Coroner' in title and county_id:
+            county_index = int(county_id) - 1
+            title = self.get_mn_county(county_index) + " " + title
+        if 'County Park Commissioner' in title and county_id:
+            county_index = int(county_id) - 1
+            title = self.get_mn_county(county_index) + " " + title
+        if 'County Recorder' in title and county_id:
+            county_index = int(county_id) - 1
+            title = self.get_mn_county(county_index) + " " + title
         if 'County Sheriff' in title and county_id:
             county_index = int(county_id) - 1
-            title = self.mn_counties[county_index] + " " + title
-
-        #Add county name to county questions
+            title = self.get_mn_county(county_index) + " " + title
+        if 'County Surveyor' in title and county_id:
+            county_index = int(county_id) - 1
+            title = self.get_mn_county(county_index) + " " + title
+        if 'County Treasurer' in title and county_id:
+            county_index = int(county_id) - 1
+            title = self.get_mn_county(county_index) + " " + title
         if 'COUNTY QUESTION' in title and county_id:
             county_index = int(county_id) - 1
-            title = self.mn_counties[county_index].upper() + " " + title
+            title = self.get_mn_county(county_index).upper() + " " + title
         
         #Add school district names to school district contests
         #with special handling for the SSD1 vs ISD1 issue
