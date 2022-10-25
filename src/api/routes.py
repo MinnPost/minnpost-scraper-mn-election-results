@@ -374,8 +374,10 @@ def contests():
     if cached_output is not None:
         output = cached_output
     else:
+        order_naturally = True
         # run the queries
         if contest_id is not None:
+            order_naturally = False
             try:
                 query_result = Contest.query.join(Result.contests).filter_by(id=contest_id, election_id=election.id).all()
             except exc.SQLAlchemyError:
@@ -396,17 +398,21 @@ def contests():
             except exc.SQLAlchemyError:
                 pass
         elif len(contest_ids):
+            order_naturally = False
             try:
                 query_result = Contest.query.join(Result.contests).filter(Contest.id.ilike(any_(contest_ids)), Contest.election_id == election.id).all()
             except exc.SQLAlchemyError:
                 pass
+            if query_result is not None:
+                contest_map = {t.id: t for t in query_result}
+                query_result = [contest_map[n] for n in contest_ids]
         else:
             try:
                 query_result = Contest.query.filter_by(election_id=election.id).all()
             except exc.SQLAlchemyError:
                 pass
-        
-        query_result = natsorted(query_result, key=str)
+        if query_result is not None and order_naturally is True:
+            query_result = natsorted(query_result, key=str)
         # set the cache and the output from the query result
         output = contest_model.output_for_cache(query_result, request.args)
         output = storage.save(cache_key_name, output, class_name, election)
@@ -521,6 +527,9 @@ def contests_with_results():
                 query_result = Contest.query.join(Result, Contest.results).filter(Contest.id.ilike(any_(contest_ids)), Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).all()
             except exc.SQLAlchemyError:
                 pass
+            if query_result is not None:
+                contest_map = {t.id: t for t in query_result}
+                query_result = [contest_map[n] for n in contest_ids]
         else:
             try:
                 query_result = Contest.query.join(Result, Contest.results).filter(Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).all()
