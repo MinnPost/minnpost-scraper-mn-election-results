@@ -492,9 +492,11 @@ def contests_with_results():
     if cached_output is not None:
         output = cached_output
     else:
+        order_naturally = True
         # run the queries
         if contest_id is not None:
             try:
+                order_naturally = False
                 query_result = Contest.query.join(Result, Contest.results).filter(Contest.id == contest_id, Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).all()
             except exc.SQLAlchemyError:
                 pass
@@ -514,6 +516,7 @@ def contests_with_results():
             except exc.SQLAlchemyError:
                 pass
         elif len(contest_ids):
+            order_naturally = False
             try:
                 query_result = Contest.query.join(Result, Contest.results).filter(Contest.id.ilike(any_(contest_ids)), Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).all()
             except exc.SQLAlchemyError:
@@ -523,7 +526,7 @@ def contests_with_results():
                 query_result = Contest.query.join(Result, Contest.results).filter(Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).all()
             except exc.SQLAlchemyError:
                 pass
-        if query_result is not None:
+        if query_result is not None and order_naturally is True:
             query_result = natsorted(query_result, key=str)
         # set the cache and the output from the query result
         output = contest_model.output_for_cache(query_result, request.args, False, 'results')
