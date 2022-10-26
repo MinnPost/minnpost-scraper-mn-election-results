@@ -285,8 +285,8 @@ class ScraperModel(object):
                     "api_key": parser_api_key
                 }
                 token_headers = {'Content-Type': 'application/json'}
-                token_result = requests.post(authorize_url, data=json.dumps(token_params), headers=token_headers)
                 try:
+                    token_result = requests.post(authorize_url, data=json.dumps(token_params), headers=token_headers)
                     token_json = token_result.json()
                 except Exception as e:
                     current_app.log.error('Error in token request for spreadsheet ID %s. Error is: %s' % (spreadsheet_id, e))
