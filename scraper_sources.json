@@ -1357,7 +1357,7 @@
       "contest_scope": "state"
     },
     "governor_results": {
-      "url": "Governor.txt",
+      "url": "governor.txt",
       "table": "results",
       "type": "results",
       "contest_scope": "state"
