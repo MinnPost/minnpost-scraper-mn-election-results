@@ -14,10 +14,13 @@ def scrape_elections(self, args={}):
     election    = Election()
     class_name  = Election.get_classname()
     sources     = election.read_sources()
+    contests    = None
+    results     = None
     if type(args) == str:
         args = json.loads(args)
-    contests    = args.get('contests', None)
-    results     = args.get('results', None)
+    if args is not None:
+        contests    = args.get('contests', None)
+        results     = args.get('results', None)
     election_id = None
 
     inserted_count = 0

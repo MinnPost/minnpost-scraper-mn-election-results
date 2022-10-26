@@ -137,17 +137,17 @@ def scrape_results(self, election_id = None):
     try:
         e = Entry.from_key(prefixed_entry_key)
         if e.schedule != interval:
-            debug_message += f" The current schedule is {e.schedule}. Change to {interval}."
-            current_app.log.debug(debug_message)
+            #debug_message += f" The current schedule is {e.schedule}. Change to {interval}."
+            #current_app.log.debug(debug_message)
             #e = Entry(entry_key, 'src.scraper.results.scrape_results', interval, app=celery)
             e = Entry(entry_key, 'src.scraper.results.scrape_results_chain', interval, app=celery)
             e.save()
-        else:
-            debug_message += f" The current schedule is already {interval}."
-            current_app.log.debug(debug_message)
+        #else:
+            #debug_message += f" The current schedule is already {interval}."
+            #current_app.log.debug(debug_message)
     except Exception as err:
-        debug_message += f" The configured election result task does not exist; create it."
-        current_app.log.debug(debug_message)
+        #debug_message += f" The configured election result task does not exist; create it."
+        #current_app.log.debug(debug_message)
         #e = Entry(entry_key, 'src.scraper.results.scrape_results', interval, app=celery)
         e = Entry(entry_key, 'src.scraper.results.scrape_results_chain', interval, app=celery)
         e.save()

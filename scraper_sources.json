@@ -1332,10 +1332,10 @@
       "type": "areas"
     }
   },
-  "20221108": {
+  "20221026": {
     "meta": {
-      "base_url": "https://electionresultsfiles.sos.state.mn.us/20221108/",
-      "date": "2022-11-08",
+      "base_url": "https://s3.amazonaws.com/data.minnpost/projects/minnpost-elections-dashboard/svelte-version/test-data/",
+      "date": "2022-10-26",
       "primary": false
     },
     "us_house_results": {
@@ -1357,7 +1357,7 @@
       "contest_scope": "state"
     },
     "governor_results": {
-      "url": "Governor.txt",
+      "url": "governor.txt",
       "table": "results",
       "type": "results",
       "contest_scope": "state"
@@ -1457,11 +1457,6 @@
       "url": "BallotQuestions.txt",
       "table": "questions",
       "type": "questions"
-    },
-    "supplemental_contests": {
-      "spreadsheet_id": "1d0CmL4RqLynjgD5eViK_oLz4NikfbBgHtKFjZrYghUQ",
-      "worksheet_id": 0,
-      "notes": "Worksheet ID is the zero-based ID from the order of worksheets and is used to find the actual ID."
     }
   }
 }

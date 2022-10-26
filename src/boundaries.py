@@ -301,7 +301,7 @@ class Boundaries(object):
             else:
                 boundary_value = ""
         else:
-            current_app.log.debug("this boundary url %s is not cached" % request_url)
+            #current_app.log.debug("this boundary url %s is not cached" % request_url)
             boundary_url = ""
             request      = requests.get(request_url, verify = False)
             if request.status_code == 200:
@@ -324,10 +324,10 @@ class Boundaries(object):
                 boundary_value = boundary_url.replace(boundary_domain + '/boundaries/', "")
                 boundary_value = boundary_value.rstrip('/')
                 boundary_output = self.output_for_cache(boundary_value)
-                boundary_data   = storage.save(request_url, boundary_output, None, election_id)
+                boundary_data   = storage.save(request_url, boundary_output, None, None)
                 boundary_data   = json.loads(boundary_data)
                 boundary_value  = boundary_data["data"]
             else:
                 boundary_output = self.output_for_cache(boundary_value)
-                boundary_data   = storage.save(request_url, boundary_output, None, election_id)
+                boundary_data   = storage.save(request_url, boundary_output, None, None)
         return boundary_value
