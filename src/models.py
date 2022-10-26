@@ -116,6 +116,13 @@ class ScraperModel(object):
         sources      = self.read_sources()
         election_key = ''.join(election.id.split('id-', 3))
         if election_key not in sources:
+            elections = Election.query.order_by(Election.election_datetime.desc()).all()
+            # check all the elections until we find a match
+            for election_object in elections:
+                election_key = ''.join(election_object.id.split('id-', 3))
+                if election_key in sources:
+                    return election_object
+
             return None
 
         #current_app.log.debug('Set election to: %s' % election)
