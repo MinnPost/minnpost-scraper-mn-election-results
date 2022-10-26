@@ -287,7 +287,7 @@ def boundaries():
         except exc.SQLAlchemyError:
             pass
 
-    query_result = natsorted(query_result, key=str)
+    query_result = natsorted(query_result, key=lambda x: x.title)
     # set the cache and the output from the query result
     #output = contest_model.output_for_cache(query_result, request.args)
     #output = storage.save(cache_key_name, output, class_name, election)
@@ -412,7 +412,7 @@ def contests():
             except exc.SQLAlchemyError:
                 pass
         if query_result is not None and order_naturally is True:
-            query_result = natsorted(query_result, key=str)
+            query_result = natsorted(query_result, key=lambda x: x.title)
         # set the cache and the output from the query result
         output = contest_model.output_for_cache(query_result, request.args)
         output = storage.save(cache_key_name, output, class_name, election)
@@ -536,7 +536,7 @@ def contests_with_results():
             except exc.SQLAlchemyError:
                 pass
         if query_result is not None and order_naturally is True:
-            query_result = natsorted(query_result, key=str)
+            query_result = natsorted(query_result, key=lambda x: x.title)
         # set the cache and the output from the query result
         output = contest_model.output_for_cache(query_result, request.args, False, 'results')
         output = storage.save(cache_key_name, output, class_name, election)
@@ -692,7 +692,7 @@ def questions():
             except exc.SQLAlchemyError:
                 pass
 
-        query_result = natsorted(query_result, key=str)
+        query_result = natsorted(query_result, key=lambda x: x.title)
         # set the cache and the output from the query result
         output = question_model.output_for_cache(query_result, request.args)
         output = storage.save(cache_key_name, output, class_name, election)
@@ -773,7 +773,7 @@ def results():
             except exc.SQLAlchemyError:
                 pass
         
-        query_result = natsorted(query_result, key=str)
+        query_result = natsorted(query_result, key=lambda x: x.office_name)
         # set the cache and the output from the query result
         output = result_model.output_for_cache(query_result, request.args)
         output = storage.save(cache_key_name, output, class_name, election)
