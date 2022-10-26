@@ -152,7 +152,7 @@ class CacheStorage(object):
         output = cache.get(hash_cache_key)
         if output != None:
             loaded_from_cache = True
-            if self.create_log_entries == "false":
+            if self.create_log_entries == "true":
                 current_app.log.debug(f"Get data from the cache. The key is {key}.")
         if self.delete_cache == "true":
             if self.create_log_entries == "true":
