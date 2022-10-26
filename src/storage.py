@@ -53,7 +53,7 @@ class CacheStorage(object):
 
     def __init__(self, args = {}, http_method = "GET"):
         self.cache_timeout = current_app.config["CACHE_DEFAULT_TIMEOUT"]
-        self.create_log_entries = "true"
+        self.create_log_entries = "false" # default is false
         if http_method == "GET":
             self.bypass_cache = args.get("bypass_cache", "false")
             self.delete_cache = args.get("delete_cache", "false")
