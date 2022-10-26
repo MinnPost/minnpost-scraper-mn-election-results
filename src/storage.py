@@ -196,7 +196,10 @@ class CacheStorage(object):
                     cache_group_list.pop("cache_key", None)
                 else:
                     data["deleted"][cache_key] = False
-            output = json.dumps(cache_group_list, default=str)
-            cache.set(cache_group_key, output, timeout=self.cache_timeout)
+            if len(cache_group_list):
+                output = json.dumps(cache_group_list, default=str)
+                cache.set(cache_group_key, output, timeout=self.cache_timeout)
+            else:
+                self.delete(cache_group_key)
 
         return data
