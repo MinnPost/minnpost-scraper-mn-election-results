@@ -494,6 +494,7 @@ class Election(ScraperModel, db.Model):
         self.date = kwargs.get('date')
         self.primary = kwargs.get('primary')
         self.updated = kwargs.get('updated')
+        self.scraped = kwargs.get('scraped')
 
 
     def __repr__(self):
@@ -590,12 +591,15 @@ class Election(ScraperModel, db.Model):
         if query_result is not None and query_result.updated:
             updated = query_result.updated
 
+        scraped = db.func.current_timestamp()
+
         parsed = {
             'id': election_id,
             'base_url': base_url,
             'date': date,
             'primary': primary,
-            'updated': updated
+            'updated': updated,
+            'scraped': scraped
         }
 
         # Return election record
