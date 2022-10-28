@@ -1335,7 +1335,7 @@
   "20221026": {
     "meta": {
       "base_url": "https://s3.amazonaws.com/data.minnpost/projects/minnpost-elections-dashboard/svelte-version/test-data/",
-      "date": "2022-10-27",
+      "date": "2022-10-28",
       "primary": false
     },
     "us_house_results": {

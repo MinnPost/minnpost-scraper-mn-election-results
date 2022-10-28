@@ -610,10 +610,15 @@ def elections():
             except exc.SQLAlchemyError:
                 pass
 
-        query_result = natsorted(query_result, key=str)
+        if query_result is not None:
+            query_result = natsorted(query_result, key=str)
         # set the cache and the output from the query result
         output = election_model.output_for_cache(query_result, request.args, returning_single_row)
-        output = storage.save(cache_key_name, output, class_name, cache_key_value)
+        if len(query_result):
+            election = query_result[0]
+        else:
+            election = cache_key_value
+        output = storage.save(cache_key_name, output, class_name, election)
 
     # set up the response and return it
     mime = 'application/json'
