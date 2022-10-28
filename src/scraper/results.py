@@ -111,12 +111,6 @@ def scrape_results(self, election_id = None):
     # commit supplemental rows
     db.session.commit()
 
-    # clear both result and contest caches here since we're scraping both
-    deleted_cache = {
-        "results": storage.clear_group(class_name, election.id),
-        "contests": storage.clear_group(class_name, election.id)
-    }
-
     result = {
         "results" : {
             "election_id": election.id,
@@ -126,7 +120,8 @@ def scrape_results(self, election_id = None):
             "deleted": deleted_count,
             "parsed": parsed_count,
             "supplemented": supplemented_count,
-            "cache": deleted_cache,
+            "result_cache": storage.clear_group(class_name, election.id),
+            "contest_cache": storage.clear_group(Contest.get_classname(), election.id),
             "status": "completed"
         }
     }
