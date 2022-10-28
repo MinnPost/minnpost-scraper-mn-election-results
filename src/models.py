@@ -593,6 +593,7 @@ class Election(ScraperModel, db.Model):
 
         scraped = db.func.current_timestamp()
 
+        #current_app.log.info('set the scraped value to %s' % scraped)
         parsed = {
             'id': election_id,
             'base_url': base_url,
