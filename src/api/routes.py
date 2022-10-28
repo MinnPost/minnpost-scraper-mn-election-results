@@ -620,6 +620,7 @@ def elections():
             election = cache_key_value
         output = storage.save(cache_key_name, output, class_name, election)
 
+    current_app.log.info('the scraped value is %s and the generated value is %s.' % (output["data"]["scraped"], output["generated"]))
     # set up the response and return it
     mime = 'application/json'
     ctype = 'application/json; charset=UTF-8'
