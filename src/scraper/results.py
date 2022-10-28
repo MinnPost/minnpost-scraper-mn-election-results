@@ -50,6 +50,7 @@ def scrape_results(self, election_id = None):
             updated = parsed_election['updated']
             for row in rows:
                 parsed = result.parser(row, group, election.id, updated)
+                # handle the contest info related to the results
                 parsed_contest_result = contest.parser_results(parsed, row, group, election, source, updated)
 
                 if parsed_contest_result:
@@ -119,7 +120,8 @@ def scrape_results(self, election_id = None):
             "deleted": deleted_count,
             "parsed": parsed_count,
             "supplemented": supplemented_count,
-            "cache": storage.clear_group(class_name, election.id),
+            "result_cache": storage.clear_group(class_name, election.id),
+            "contest_cache": storage.clear_group(Contest.get_classname(), election.id),
             "status": "completed"
         }
     }
