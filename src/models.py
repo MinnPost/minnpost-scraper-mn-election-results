@@ -895,12 +895,6 @@ class Contest(ScraperModel, db.Model):
                 boundary_string = str(latitude) + ',' + str(longitude)
                 boundaries_model = Boundaries(Area)
                 boundaries = boundaries_model.get_all_boundaries_by_query("contains", boundary_string)
-                if boundaries:
-                    current_app.log.info(boundaries)
-            #else:
-                #boundary_not_found['contest'] = contest['title']
-                #boundary_not_found['boundary'] = boundary
-                #boundaries_not_found.append(boundary_not_found)
         return boundaries
 
 
