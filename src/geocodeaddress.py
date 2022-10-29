@@ -37,14 +37,11 @@ class GeocodeAddress(object):
                 geocode_value = ""
         else:
             geocode_result = self.geocode(address)
-            if geocode_result:
+            if geocode_result != "":
                 geocode_output = self.output_for_cache(geocode_result)
                 geocode_data   = storage.save(address, geocode_output, None, None)
                 geocode_data   = json.loads(geocode_data)
                 geocode_value  = geocode_data["data"]
-            else:
-                geocode_output = self.output_for_cache(geocode_result)
-                geocode_value   = storage.save(address, geocode_output, None, None)
         return geocode_value
 
 
