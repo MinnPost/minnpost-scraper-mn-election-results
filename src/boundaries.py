@@ -331,3 +331,50 @@ class Boundaries(object):
                 boundary_output = self.output_for_cache(boundary_value)
                 boundary_data   = storage.save(request_url, boundary_output, None, None)
         return boundary_value
+
+
+    def get_all_boundaries_by_query(self, key = None, value = None, intersect = None, election_id = None):
+        storage_args = {
+            'cache_timeout': 2592000, # 1 month
+            'create_log_entries': "false"
+        }
+        storage = Storage(json.dumps(storage_args), "POST")
+        boundary_domain = current_app.config['BOUNDARY_SERVICE_URL']
+        request_url = boundary_domain + '/boundaries/%s';
+        boundaries = []
+        if key == 'sets' and intersect is not None:
+            request_url  = request_url % '?%s=%s,%s'
+            request_url  = request_url % (key, value, intersect)
+        else:
+            request_url  = request_url % '?%s=%s'
+            request_url  = request_url % (key, value)
+        cached_output = storage.get(request_url)
+        if cached_output is not None:
+            boundary_data = json.loads(cached_output)
+            if isinstance(boundary_data, dict):
+                boundaries = boundary_data["data"]
+            else:
+                boundaries = []
+        else:
+            boundary_urls = []
+            final_boundary_urls = []
+            request      = requests.get(request_url, verify = False)
+            if request.status_code == 200:
+                r = request.json()
+                for item in r['objects']:
+                    boundary_url   = item['url']
+                    boundary_url   = boundary_domain + boundary_url
+                    verify_request = requests.get(boundary_url, verify = False)
+                    if verify_request.status_code == 200:
+                        boundary_urls.append(boundary_url)
+            if boundary_urls:
+                for boundary_url in boundary_urls:
+                    boundary_value = boundary_url.replace(boundary_domain + '/boundaries/', "")
+                    boundary_value = boundary_value.rstrip('/')
+                    final_boundary_urls.append(boundary_value)
+            
+            boundary_output = self.output_for_cache(final_boundary_urls)
+            boundary_data   = storage.save(request_url, boundary_output, None, None)
+            boundary_data   = json.loads(boundary_data)
+            boundaries  = boundary_data["data"]
+        return boundaries
