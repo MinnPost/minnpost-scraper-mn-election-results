@@ -46,6 +46,7 @@ class Config(object):
 
     # other apis
     BOUNDARY_SERVICE_URL = os.environ.get('BOUNDARY_SERVICE_URL', 'https://represent-minnesota.herokuapp.com')
+    GEOCODER_MAPQUEST_KEY = os.environ.get('GEOCODER_MAPQUEST_KEY', '')
 
 
     # Scraper settings

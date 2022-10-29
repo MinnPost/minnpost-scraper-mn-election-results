@@ -11,6 +11,7 @@ import datetime
 from datetime import timedelta
 from flask import current_app
 from src.extensions import db
+from src.geocodeaddress import GeocodeAddress
 
 from src.boundaries import Boundaries
 from sqlglot import exp, parse_one, errors
@@ -882,6 +883,20 @@ class Contest(ScraperModel, db.Model):
                         title = title[0:-1] + " - " + a['school_district_name'].title() + ")"
 
         return title
+
+
+    def address_to_boundaries(self, address = ""):
+        boundaries = []
+        if address != "":
+            geocoder = GeocodeAddress()
+            geocoded = geocoder.get_geocoded_address(address)
+            if geocoded:
+                latitude = geocoded['lat']
+                longitude = geocoded['lng']
+                boundary_string = str(latitude) + ',' + str(longitude)
+                boundaries_model = Boundaries(Area)
+                boundaries = boundaries_model.get_all_boundaries_by_query("contains", boundary_string)
+        return boundaries
 
 
     def check_boundary(self, query_result):
