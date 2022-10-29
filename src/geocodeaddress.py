@@ -49,5 +49,9 @@ class GeocodeAddress(object):
 
 
     def geocode(self, address):
-        g = geocoder.mapquest(address, key=self.key)
+        try:
+            g = geocoder.mapquest(address, key=self.key)
+        except Exception as e:
+            current_app.log.error('Error geocoding: %s' % e)
+            return ""
         return g.json
