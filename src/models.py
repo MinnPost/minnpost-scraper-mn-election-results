@@ -890,7 +890,7 @@ class Contest(ScraperModel, db.Model):
         if address != "":
             geocoder = GeocodeAddress()
             geocoded = geocoder.get_geocoded_address(address)
-            if geocoded:
+            if geocoded != "":
                 latitude = geocoded['lat']
                 longitude = geocoded['lng']
                 boundary_string = str(latitude) + ',' + str(longitude)
