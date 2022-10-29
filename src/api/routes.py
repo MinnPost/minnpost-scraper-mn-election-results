@@ -321,6 +321,7 @@ def contests():
         contest_id    = request_json.get('contest_id')
         contest_ids   = request_json.get('contest_ids')
         election_id   = request_json.get('election_id')
+        address       = request_json.get('address')
     elif request.method == 'POST':
         # form request
         title         = request.form.get('title', None)
@@ -329,6 +330,7 @@ def contests():
         contest_id    = request.form.get('contest_id', None)
         contest_ids   = request.form.get('contest_ids', [])
         election_id   = request.form.get('election_id', None)
+        address       = request.form.get('address', None)
     else:
         # GET request
         title         = request.values.get('title', None)
@@ -337,6 +339,7 @@ def contests():
         contest_id    = request.values.get('contest_id', None)
         contest_ids   = request.values.get('contest_ids', [])
         election_id   = request.values.get('election_id', None)
+        address       = request.values.get('address', None)
 
     # if the contest_ids value is provided on the url, it'll be a string and we need to make it a list
     if isinstance(contest_ids, str):
@@ -359,6 +362,10 @@ def contests():
     elif len(contest_ids):
         cache_key_name  = "contest_ids"
         cache_key_value = ','.join(contest_ids)
+    elif address is not None:
+        cache_key_name  = "boundary"
+        boundaries = contest_model.address_to_boundaries(address)
+        cache_key_value = ','.join(boundaries)
     else:
         cache_key_name = "all_contests"
         cache_key_value = ""
@@ -379,33 +386,38 @@ def contests():
         if contest_id is not None:
             order_naturally = False
             try:
-                query_result = Contest.query.join(Result.contests).filter_by(id=contest_id, election_id=election.id).all()
+                query_result = Contest.query.filter_by(id=contest_id, election_id=election.id).all()
             except exc.SQLAlchemyError:
                 pass
         elif title is not None:
             try:
-                query_result = Contest.query.join(Result.contests).filter(Contest.title.ilike(search), Contest.election_id == election.id).all()
+                query_result = Contest.query.filter(Contest.title.ilike(search), Contest.election_id == election.id).all()
             except exc.SQLAlchemyError:
                 pass
         elif scope is not None:
             try:
-                query_result = Contest.query.join(Result.contests).filter_by(scope=scope, election_id= election.id).all()
+                query_result = Contest.query.filter_by(scope=scope, election_id= election.id).all()
             except exc.SQLAlchemyError:
                 pass
         elif results_group is not None:
             try:
-                query_result = Contest.query.join(Result.contests).filter_by(results_group=results_group, election_id= election.id).all()
+                query_result = Contest.query.filter_by(results_group=results_group, election_id= election.id).all()
             except exc.SQLAlchemyError:
                 pass
         elif len(contest_ids):
             order_naturally = False
             try:
-                query_result = Contest.query.join(Result.contests).filter(Contest.id.ilike(any_(contest_ids)), Contest.election_id == election.id).all()
+                query_result = Contest.query.filter(Contest.id.ilike(any_(contest_ids)), Contest.election_id == election.id).all()
             except exc.SQLAlchemyError:
                 pass
             if query_result is not None:
                 contest_map = {t.id: t for t in query_result}
                 query_result = [contest_map[n] for n in contest_ids]
+        elif address is not None and len(boundaries):
+            try:
+                query_result = Contest.query.filter(Contest.boundary.ilike(any_(boundaries)), Contest.election_id == election.id).all()
+            except exc.SQLAlchemyError:
+                pass
         else:
             try:
                 query_result = Contest.query.filter_by(election_id=election.id).all()
@@ -445,6 +457,7 @@ def contests_with_results():
         contest_id    = request_json.get('contest_id')
         contest_ids   = request_json.get('contest_ids')
         election_id   = request_json.get('election_id')
+        address       = request_json.get('address')
     elif request.method == 'POST':
         # form request
         title         = request.form.get('title', None)
@@ -453,6 +466,7 @@ def contests_with_results():
         contest_id    = request.form.get('contest_id', None)
         contest_ids   = request.form.get('contest_ids', [])
         election_id   = request.form.get('election_id', None)
+        address       = request.form.get('address', None)
     else:
         # GET request
         title         = request.values.get('title', None)
@@ -461,6 +475,7 @@ def contests_with_results():
         contest_id    = request.values.get('contest_id', None)
         contest_ids   = request.values.get('contest_ids', [])
         election_id   = request.values.get('election_id', None)
+        address       = request.values.get('address', None)
 
     # if the contest_ids value is provided on the url, it'll be a string and we need to make it a list
     if isinstance(contest_ids, str):
@@ -483,6 +498,10 @@ def contests_with_results():
     elif len(contest_ids):
         cache_key_name  = "contest_ids"
         cache_key_value = ','.join(contest_ids)
+    elif address is not None:
+        cache_key_name  = "boundary"
+        boundaries = contest_model.address_to_boundaries(address)
+        cache_key_value = ','.join(boundaries)
     else:
         cache_key_name = "all_contests"
         cache_key_value = ""
@@ -530,6 +549,11 @@ def contests_with_results():
             if query_result is not None:
                 contest_map = {t.id: t for t in query_result}
                 query_result = [contest_map[n] for n in contest_ids]
+        elif address is not None and len(boundaries):
+            try:
+                query_result = Contest.query.join(Result, Contest.results).filter(Contest.boundary.ilike(any_(boundaries)), Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).all()
+            except exc.SQLAlchemyError:
+                pass
         else:
             try:
                 query_result = Contest.query.join(Result, Contest.results).filter(Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).all()
