@@ -29,6 +29,8 @@ class Config(object):
     # by default, we use Redis as the backend and RabbitMQ (via cloudamqp) as the broker.
     # but these can also each have distinct values in the environment settings.
     REDIS_URL = os.environ.get("REDIS_URL", "redis://127.0.0.1:6379/0")
+    if REDIS_URL.startswith("rediss://") is True and REDIS_URL.endswith("?ssl_cert_reqs=none") is False:
+        REDIS_URL = REDIS_URL + "?ssl_cert_reqs=none"
     CLOUDAMQP_URL = os.environ.get("CLOUDAMQP_URL", "amqp://guest:guest@127.0.0.1:5672")
     CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", CLOUDAMQP_URL)
     RESULT_BACKEND = os.environ.get("RESULT_BACKEND", REDIS_URL)
