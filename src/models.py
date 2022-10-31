@@ -892,9 +892,14 @@ class Contest(ScraperModel, db.Model):
             if geocoded != "":
                 latitude = geocoded['lat']
                 longitude = geocoded['lng']
-                boundary_string = str(latitude) + ',' + str(longitude)
-                boundaries_model = Boundaries(Area)
-                boundaries = boundaries_model.get_all_boundaries_by_query("contains", boundary_string)
+                boundaries = self.latitude_longitude_to_boundaries(latitude, longitude)
+        return boundaries
+
+
+    def latitude_longitude_to_boundaries(self, latitude, longitude):
+        boundary_string = str(latitude) + ',' + str(longitude)
+        boundaries_model = Boundaries(Area)
+        boundaries = boundaries_model.get_all_boundaries_by_query("contains", boundary_string)
         return boundaries
 
 

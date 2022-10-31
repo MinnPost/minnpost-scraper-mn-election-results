@@ -322,6 +322,7 @@ def contests():
         contest_ids   = request_json.get('contest_ids')
         election_id   = request_json.get('election_id')
         address       = request_json.get('address')
+        coordinates   = request_json.get('coordinates')
     elif request.method == 'POST':
         # form request
         title         = request.form.get('title', None)
@@ -331,6 +332,7 @@ def contests():
         contest_ids   = request.form.get('contest_ids', [])
         election_id   = request.form.get('election_id', None)
         address       = request.form.get('address', None)
+        coordinates   = request.form.get('coordinates', None)
     else:
         # GET request
         title         = request.values.get('title', None)
@@ -340,6 +342,7 @@ def contests():
         contest_ids   = request.values.get('contest_ids', [])
         election_id   = request.values.get('election_id', None)
         address       = request.values.get('address', None)
+        coordinates   = request.values.get('coordinates', None)
 
     # if the contest_ids value is provided on the url, it'll be a string and we need to make it a list
     if isinstance(contest_ids, str):
@@ -366,6 +369,11 @@ def contests():
         cache_key_name  = "boundary"
         boundaries = contest_model.address_to_boundaries(address)
         cache_key_value = ','.join(boundaries)
+    elif coordinates is not None:
+        cache_key_name    = "coordinates"
+        coordinates_array = coordinates.split(',')
+        boundaries        = contest_model.latitude_longitude_to_boundaries(coordinates_array[0], coordinates_array[1])
+        cache_key_value   = ','.join(boundaries)
     else:
         cache_key_name = "all_contests"
         cache_key_value = ""
@@ -418,6 +426,11 @@ def contests():
                 query_result = Contest.query.filter(Contest.boundary.ilike(any_(boundaries)), Contest.election_id == election.id).all()
             except exc.SQLAlchemyError:
                 pass
+        elif coordinates is not None and len(boundaries):
+            try:
+                query_result = Contest.query.filter(Contest.boundary.ilike(any_(boundaries)), Contest.election_id == election.id).all()
+            except exc.SQLAlchemyError:
+                pass
         else:
             try:
                 query_result = Contest.query.filter_by(election_id=election.id).all()
@@ -458,6 +471,7 @@ def contests_with_results():
         contest_ids   = request_json.get('contest_ids')
         election_id   = request_json.get('election_id')
         address       = request_json.get('address')
+        coordinates   = request_json.get('coordinates')
     elif request.method == 'POST':
         # form request
         title         = request.form.get('title', None)
@@ -467,6 +481,7 @@ def contests_with_results():
         contest_ids   = request.form.get('contest_ids', [])
         election_id   = request.form.get('election_id', None)
         address       = request.form.get('address', None)
+        coordinates   = request.form.get('coordinates', None)
     else:
         # GET request
         title         = request.values.get('title', None)
@@ -476,6 +491,7 @@ def contests_with_results():
         contest_ids   = request.values.get('contest_ids', [])
         election_id   = request.values.get('election_id', None)
         address       = request.values.get('address', None)
+        coordinates   = request.values.get('coordinates', None)
 
     # if the contest_ids value is provided on the url, it'll be a string and we need to make it a list
     if isinstance(contest_ids, str):
@@ -502,6 +518,11 @@ def contests_with_results():
         cache_key_name  = "boundary"
         boundaries = contest_model.address_to_boundaries(address)
         cache_key_value = ','.join(boundaries)
+    elif coordinates is not None:
+        cache_key_name    = "coordinates"
+        coordinates_array = coordinates.split(',')
+        boundaries        = contest_model.latitude_longitude_to_boundaries(coordinates_array[0], coordinates_array[1])
+        cache_key_value   = ','.join(boundaries)
     else:
         cache_key_name = "all_contests"
         cache_key_value = ""
@@ -550,6 +571,11 @@ def contests_with_results():
                 contest_map = {t.id: t for t in query_result}
                 query_result = [contest_map[n] for n in contest_ids]
         elif address is not None and len(boundaries):
+            try:
+                query_result = Contest.query.join(Result, Contest.results).filter(Contest.boundary.ilike(any_(boundaries)), Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).all()
+            except exc.SQLAlchemyError:
+                pass
+        elif coordinates is not None and len(boundaries):
             try:
                 query_result = Contest.query.join(Result, Contest.results).filter(Contest.boundary.ilike(any_(boundaries)), Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).all()
             except exc.SQLAlchemyError:
