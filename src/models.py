@@ -931,7 +931,7 @@ class Contest(ScraperModel, db.Model):
     def set_question_fields(self, parsed_row):
         # Get question data
         try:
-            questions = Question.query.all(contest_id=parsed_row['contest_id'], election_id=parsed_row['election_id'])
+            questions = Question.query.filter_by(contest_id=parsed_row['contest_id'], election_id=parsed_row['election_id']).all()
         except:
             questions = []
         
