@@ -635,6 +635,7 @@ class Contest(ScraperModel, db.Model):
     results_group = db.Column(db.String(255))
     office_name = db.Column(db.String(255))
     district_code = db.Column(db.String(255))
+    place_name = db.Column(db.String(255))
     state = db.Column(db.String(255))
     county_id = db.Column(db.String(255))
     precinct_id = db.Column(db.String(255))
@@ -671,6 +672,7 @@ class Contest(ScraperModel, db.Model):
         self.results_group = kwargs.get('results_group')
         self.office_name = kwargs.get('office_name')
         self.district_code = kwargs.get('district_code')
+        self.place_name = kwargs.get('place_name')
         self.state = kwargs.get('state')
         self.county_id = kwargs.get('county_id')
         self.precinct_id = kwargs.get('precinct_id')
@@ -755,6 +757,7 @@ class Contest(ScraperModel, db.Model):
         scope = source['contest_scope'] if 'contest_scope' in source else None
         district_code = row[5]
         title = self.generate_title(office_name, county_id, row, scope, district_code)
+        place_name = self.generate_place_name(title, county_id, row, scope, district_code)
 
         parsed = {
             'id': contest_id,
@@ -764,6 +767,7 @@ class Contest(ScraperModel, db.Model):
             'results_group': group,
             'office_name': office_name,
             'district_code': district_code,
+            'place_name': place_name,
             'state': row[0],
             'county_id': county_id,
             'precinct_id': row[2],
@@ -821,53 +825,64 @@ class Contest(ScraperModel, db.Model):
         title = office_name
         title = re.compile(r'(\(elect [0-9]+\))', re.IGNORECASE).sub('', title)
         title = re.compile(r'((first|second|third|\w*th) choice)', re.IGNORECASE).sub('', title)
+        title = re.compile(r'(\([^#]*\))', re.IGNORECASE).sub('', title)
+
+        place_name = self.generate_place_name(title, county_id, row, scope, district_code)
+
+        # variations on placement location
+
+        # school districts
+        if scope == "school" and district_code != None:
+            title = title[0:-1] + " - " + place_name + ")"
+            return title
+
+        # everything else. the rest are presumably counties and non-ISD place names with parentheses.
+        if place_name != "":
+            title = place_name + " " + title
+        title = title.rstrip()
+
+        return title
+
+
+    def generate_place_name(self, title, county_id, row, scope = None, district_code = None):
+        place_name = ""
 
         # Look for non-ISD parenthesis which should be place names
         re_place = re.compile(r'.*\(([^#]*)\).*', re.IGNORECASE).match(title)
-        title = re.compile(r'(\([^#]*\))', re.IGNORECASE).sub('', title)
         if re_place is not None:
-            title = re_place.group(1) + ' ' + title
-        title = title.rstrip()
+            place_name = re_place.group(1)
 
         # Add county name to various county titles
-        if 'County Attorney' in title and county_id:
+        if county_id:
             county_index = int(county_id) - 1
-            title = self.get_mn_county(county_index) + " " + title
-        if 'County Auditor' in title and county_id:
-            county_index = int(county_id) - 1
-            title = self.get_mn_county(county_index) + " " + title
-        if 'County Commissioner' in title and county_id:
-            county_index = int(county_id) - 1
-            title = self.get_mn_county(county_index) + " " + title
-        if 'County Coroner' in title and county_id:
-            county_index = int(county_id) - 1
-            title = self.get_mn_county(county_index) + " " + title
-        if 'County Park Commissioner' in title and county_id:
-            county_index = int(county_id) - 1
-            title = self.get_mn_county(county_index) + " " + title
-        if 'County Recorder' in title and county_id:
-            county_index = int(county_id) - 1
-            title = self.get_mn_county(county_index) + " " + title
-        if 'County Sheriff' in title and county_id:
-            county_index = int(county_id) - 1
-            title = self.get_mn_county(county_index) + " " + title
-        if 'County Surveyor' in title and county_id:
-            county_index = int(county_id) - 1
-            title = self.get_mn_county(county_index) + " " + title
-        if 'County Treasurer' in title and county_id:
-            county_index = int(county_id) - 1
-            title = self.get_mn_county(county_index) + " " + title
-        if 'COUNTY QUESTION' in title and county_id:
-            county_index = int(county_id) - 1
-            title = self.get_mn_county(county_index).upper() + " " + title
+            if 'County Attorney' in title:
+                place_name = self.get_mn_county(county_index)
+            if 'County Auditor' in title:
+                place_name = self.get_mn_county(county_index)
+            if 'County Commissioner' in title:
+                place_name = self.get_mn_county(county_index)
+            if 'County Coroner' in title:
+                place_name = self.get_mn_county(county_index)
+            if 'County Park Commissioner' in title:
+                place_name = self.get_mn_county(county_index)
+            if 'County Recorder' in title:
+                place_name = self.get_mn_county(county_index)
+            if 'County Sheriff' in title:
+                place_name = self.get_mn_county(county_index)
+            if 'County Surveyor' in title:
+                place_name = self.get_mn_county(county_index)
+            if 'County Treasurer' in title:
+                place_name = self.get_mn_county(county_index)
+            if 'COUNTY QUESTION' in title:
+                place_name = self.get_mn_county(county_index).upper()
         
         #Add school district names to school district contests
         #with special handling for the SSD1 vs ISD1 issue
         if scope == "school" and district_code != None:
             if district_code == '0001':
-                title = title[0:-1] + " - Aitkin)"
+                place_name = "Aitkin"
             elif district_code == '1-1':
-                title = title[0:-1] + " - Minneapolis)"
+                place_name = "Minneapolis"
             else:
                 area_model = Area()
                 try:
@@ -879,11 +894,10 @@ class Contest(ScraperModel, db.Model):
                     pass
                 for a in output:
                     if a['school_district_id']:
-                        title = title[0:-1] + " - " + a['school_district_name'].title() + ")"
+                        place_name = a['school_district_name'].title()
+        return place_name
 
-        return title
-
-
+    
     def address_to_boundaries(self, address = ""):
         boundaries = []
         if address != "":
