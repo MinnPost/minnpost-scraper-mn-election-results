@@ -635,6 +635,7 @@ class Contest(ScraperModel, db.Model):
     results_group = db.Column(db.String(255))
     office_name = db.Column(db.String(255))
     district_code = db.Column(db.String(255))
+    place_name = db.Column(db.String(255))
     state = db.Column(db.String(255))
     county_id = db.Column(db.String(255))
     precinct_id = db.Column(db.String(255))
@@ -671,6 +672,7 @@ class Contest(ScraperModel, db.Model):
         self.results_group = kwargs.get('results_group')
         self.office_name = kwargs.get('office_name')
         self.district_code = kwargs.get('district_code')
+        self.place_name = kwargs.get('place_name')
         self.state = kwargs.get('state')
         self.county_id = kwargs.get('county_id')
         self.precinct_id = kwargs.get('precinct_id')
@@ -755,6 +757,7 @@ class Contest(ScraperModel, db.Model):
         scope = source['contest_scope'] if 'contest_scope' in source else None
         district_code = row[5]
         title = self.generate_title(office_name, county_id, row, scope, district_code)
+        place_name = self.generate_place_name(title, county_id, row, scope, district_code)
 
         parsed = {
             'id': contest_id,
@@ -764,6 +767,7 @@ class Contest(ScraperModel, db.Model):
             'results_group': group,
             'office_name': office_name,
             'district_code': district_code,
+            'place_name': place_name,
             'state': row[0],
             'county_id': county_id,
             'precinct_id': row[2],
@@ -832,14 +836,8 @@ class Contest(ScraperModel, db.Model):
             title = title[0:-1] + " - " + place_name + ")"
             return title
 
-        # counties
-        if county_id:
-            title = place_name + " " + title
-            return title
-
-        # the rest are presumably non-ISD place names with parentheses
-        if place_name is not None:
-            title = place_name + ' ' + title
+        # everything else. the rest are presumably counties and non-ISD place names with parentheses.
+        title = place_name + " " + title
         title = title.rstrip()
 
         return title
