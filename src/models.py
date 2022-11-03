@@ -827,7 +827,7 @@ class Contest(ScraperModel, db.Model):
         title = re.compile(r'((first|second|third|\w*th) choice)', re.IGNORECASE).sub('', title)
         title = re.compile(r'(\([^#]*\))', re.IGNORECASE).sub('', title)
 
-        place_name = self.generate_place_name(title, office_name, county_id, row, scope, district_code)
+        place_name = self.generate_place_name(title, county_id, row, scope, district_code)
 
         # variations on placement location
 
@@ -837,7 +837,8 @@ class Contest(ScraperModel, db.Model):
             return title
 
         # everything else. the rest are presumably counties and non-ISD place names with parentheses.
-        title = place_name + " " + title
+        if place_name != "":
+            title = place_name + " " + title
         title = title.rstrip()
 
         return title
