@@ -183,7 +183,7 @@ def areas():
         # run the queries
         if area_id is not None:
             try:
-                query_result = Area.query.filter_by(id=area_id, election_id=election.id).offset(offset).limit(limit).all()
+                query_result = Area.query.filter_by(id=area_id, election_id=election.id).all()
             except exc.SQLAlchemyError:
                 pass
         elif areas_group is not None:
@@ -290,7 +290,7 @@ def boundaries():
     # run the queries
     if contest_id is not None:
         try:
-            query_result = Contest.query.filter(Contest.id == contest_id, Contest.election_id == election.id, Contest.boundary.isnot(None)).offset(offset).limit(limit).all()
+            query_result = Contest.query.filter(Contest.id == contest_id, Contest.election_id == election.id, Contest.boundary.isnot(None)).all()
         except exc.SQLAlchemyError:
             pass
     elif title is not None:
@@ -300,7 +300,7 @@ def boundaries():
             pass
     elif len(contest_ids):
         try:
-            query_result = Contest.query.filter(Contest.id.ilike(any_(contest_ids)), Contest.election_id == election.id, Contest.boundary.isnot(None)).offset(offset).limit(limit).all()
+            query_result = Contest.query.filter(Contest.id.ilike(any_(contest_ids)), Contest.election_id == election.id, Contest.boundary.isnot(None)).all()
         except exc.SQLAlchemyError:
             pass
     else:
@@ -427,7 +427,7 @@ def contests():
         if contest_id is not None:
             order_naturally = False
             try:
-                query_result = Contest.query.filter_by(id=contest_id, election_id=election.id).offset(offset).limit(limit).all()
+                query_result = Contest.query.filter_by(id=contest_id, election_id=election.id).all()
             except exc.SQLAlchemyError:
                 pass
         elif title is not None:
@@ -448,7 +448,7 @@ def contests():
         elif len(contest_ids):
             order_naturally = False
             try:
-                query_result = Contest.query.filter(Contest.id.ilike(any_(contest_ids)), Contest.election_id == election.id).offset(offset).limit(limit).all()
+                query_result = Contest.query.filter(Contest.id.ilike(any_(contest_ids)), Contest.election_id == election.id).all()
             except exc.SQLAlchemyError:
                 pass
             if query_result is not None:
@@ -587,7 +587,7 @@ def contests_with_results():
         if contest_id is not None:
             try:
                 order_naturally = False
-                query_result = Contest.query.join(Result, Contest.results).filter(Contest.id == contest_id, Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).offset(offset).limit(limit).all()
+                query_result = Contest.query.join(Result, Contest.results).filter(Contest.id == contest_id, Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).all()
             except exc.SQLAlchemyError:
                 pass
         elif title is not None:
@@ -608,7 +608,7 @@ def contests_with_results():
         elif len(contest_ids):
             order_naturally = False
             try:
-                query_result = Contest.query.join(Result, Contest.results).filter(Contest.id.ilike(any_(contest_ids)), Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).offset(offset).limit(limit).all()
+                query_result = Contest.query.join(Result, Contest.results).filter(Contest.id.ilike(any_(contest_ids)), Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).all()
             except exc.SQLAlchemyError:
                 pass
             if query_result is not None:
@@ -701,12 +701,12 @@ def elections():
         # run the queries
         if election_id is not None:
             try:
-                query_result = Election.query.filter_by(id=election_id).offset(offset).limit(limit).all()
+                query_result = Election.query.filter_by(id=election_id).all()
             except exc.SQLAlchemyError:
                 pass
         elif election_date is not None:
             try:
-                query_result = Election.query.filter_by(date=election_date).offset(offset).limit(limit).all()
+                query_result = Election.query.filter_by(date=election_date).all()
             except exc.SQLAlchemyError:
                 pass
         else:
@@ -799,12 +799,12 @@ def questions():
         # run the queries
         if question_id is not None:
             try:
-                query_result = Question.query.filter_by(id=question_id, election_id=election.id).offset(offset).limit(limit).all()
+                query_result = Question.query.filter_by(id=question_id, election_id=election.id).all()
             except exc.SQLAlchemyError:
                 pass
         elif contest_id is not None:
             try:
-                query_result = Question.query.filter_by(contest_id=contest_id, election_id=election.id).offset(offset).limit(limit).all()
+                query_result = Question.query.filter_by(contest_id=contest_id, election_id=election.id).all()
             except exc.SQLAlchemyError:
                 pass
         else:
@@ -890,12 +890,12 @@ def results():
         # run the queries
         if result_id is not None:
             try:
-                query_result = Result.query.filter_by(id=result_id, election_id=election.id).offset(offset).limit(limit).all()
+                query_result = Result.query.filter_by(id=result_id, election_id=election.id).all()
             except exc.SQLAlchemyError:
                 pass
         elif contest_id is not None:
             try:
-                query_result = Result.query.filter_by(contest_id=contest_id, election_id=election.id).offset(offset).limit(limit).all()
+                query_result = Result.query.filter_by(contest_id=contest_id, election_id=election.id).all()
             except exc.SQLAlchemyError:
                 pass
         else:
