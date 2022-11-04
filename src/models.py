@@ -772,8 +772,10 @@ class Contest(ScraperModel, db.Model):
         county_id = row[1]
         scope = source['contest_scope'] if 'contest_scope' in source else None
         district_code = row[5]
-        title = self.generate_title(office_name, county_id, row, scope, district_code)
-        place_name = self.generate_place_name(title, county_id, row, scope, district_code)
+        
+        title_and_place_name = self.generate_title_and_place_name(office_name, county_id, row, scope, district_code)
+        title = title_and_place_name["title"]
+        place_name = title_and_place_name["place_name"]
 
         parsed = {
             'id': contest_id,
@@ -835,38 +837,27 @@ class Contest(ScraperModel, db.Model):
         # Return parsed contest record
         return parsed
 
+    
+    def generate_title_and_place_name(self, office_name, county_id, row, scope = None, district_code = None):
+        title_and_place_name = {
+            'title': '',
+            'place_name': ''
+        }
 
-    def generate_title(self, office_name, county_id, row, scope = None, district_code = None):
+        title = ""
+        place_name = ""
+        
         # Title and search term
         title = office_name
         title = re.compile(r'(\(elect [0-9]+\))', re.IGNORECASE).sub('', title)
         title = re.compile(r'((first|second|third|\w*th) choice)', re.IGNORECASE).sub('', title)
-        title = re.compile(r'(\([^#]*\))', re.IGNORECASE).sub('', title)
-
-        place_name = self.generate_place_name(title, county_id, row, scope, district_code)
-
-        # variations on placement location
-
-        # school districts
-        if scope == "school" and district_code != None:
-            title = title[0:-1] + " - " + place_name + ")"
-            return title
-
-        # everything else. the rest are presumably counties and non-ISD place names with parentheses.
-        if place_name != "":
-            title = place_name + " " + title
-        title = title.rstrip()
-
-        return title
-
-
-    def generate_place_name(self, title, county_id, row, scope = None, district_code = None):
-        place_name = ""
 
         # Look for non-ISD parenthesis which should be place names
         re_place = re.compile(r'.*\(([^#]*)\).*', re.IGNORECASE).match(title)
+        title = re.compile(r'(\([^#]*\))', re.IGNORECASE).sub('', title)
         if re_place is not None:
-            place_name = re_place.group(1)
+            title = re_place.group(1) + ' ' + title
+        title = title.rstrip()
 
         # Add county name to various county titles
         if county_id:
@@ -891,6 +882,8 @@ class Contest(ScraperModel, db.Model):
                 place_name = self.get_mn_county(county_index)
             if 'COUNTY QUESTION' in title:
                 place_name = self.get_mn_county(county_index).upper()
+            if place_name != "":
+                title = place_name + " " + title
         
         #Add school district names to school district contests
         #with special handling for the SSD1 vs ISD1 issue
@@ -911,7 +904,13 @@ class Contest(ScraperModel, db.Model):
                 for a in output:
                     if a['school_district_id']:
                         place_name = a['school_district_name'].title()
-        return place_name
+            if place_name != "":
+                title = title[0:-1] + " - " + place_name + ")"
+        if title != "":
+            title_and_place_name["title"] = title
+        if place_name != "":
+            title_and_place_name["place_name"] = place_name
+        return title_and_place_name
 
     
     def address_to_boundaries(self, address = ""):
