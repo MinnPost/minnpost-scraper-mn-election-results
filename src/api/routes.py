@@ -5,7 +5,7 @@ from flask import request, Response, current_app
 from sqlalchemy import text
 from sqlalchemy import exc
 from sqlalchemy import any_
-from sqlalchemy.orm import contains_eager
+from sqlalchemy.orm import contains_eager, aliased
 from natsort import natsorted
 from src.extensions import db
 from src.storage import Storage
@@ -587,28 +587,111 @@ def contests_with_results():
         if contest_id is not None:
             try:
                 order_naturally = False
-                query_result = Contest.query.join(Result, Contest.results).filter(Contest.id == contest_id, Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).all()
+                #query_result = Contest.query.join(Result, Contest.results).filter(Contest.id == contest_id, Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).all()
+                subquery = (
+                    db.session.query(Contest)
+                        .join(Result)
+                        .with_entities(Contest)
+                        .filter(Contest.id == contest_id, Contest.election_id == election.id)
+                        .distinct()
+                        .subquery()
+                )
+                aliased_Contest = aliased(Contest, subquery)
+                query_result = (
+                    db.session.query(aliased_Contest)
+                        .join(Result)
+                        .options(contains_eager(aliased_Contest.results))
+                        .filter(Result.contest_id == Contest.id, Result.election_id == election.id)
+                )
             except exc.SQLAlchemyError:
                 pass
         elif title is not None:
             try:
-                query_result = Contest.query.join(Result, Contest.results).filter(Contest.title.ilike(search), Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).offset(offset).limit(limit).all()
+                #query_result = Contest.query.join(Result, Contest.results).filter(Contest.title.ilike(search), Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).offset(offset).limit(limit).all()
+                subquery = (
+                    db.session.query(Contest)
+                        .join(Result)
+                        .with_entities(Contest)
+                        .filter(Contest.title.ilike(search), Contest.election_id == election.id)
+                        .distinct()
+                        .limit(limit)
+                        .offset(offset)
+                        .subquery()
+                )
+                aliased_Contest = aliased(Contest, subquery)
+                query_result = (
+                    db.session.query(aliased_Contest)
+                        .join(Result)
+                        .options(contains_eager(aliased_Contest.results))
+                        .filter(Result.contest_id == Contest.id, Result.election_id == election.id)
+                )
             except exc.SQLAlchemyError:
                 pass
         elif scope is not None:
             try:
-                query_result = Contest.query.join(Result, Contest.results).filter(Contest.scope == scope, Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).offset(offset).limit(limit).all()
+                #query_result = Contest.query.join(Result, Contest.results).filter(Contest.scope == scope, Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).all()
+                subquery = (
+                    db.session.query(Contest)
+                        .join(Result)
+                        .with_entities(Contest)
+                        .filter(Contest.scope == scope, Contest.election_id == election.id)
+                        .distinct()
+                        .limit(limit)
+                        .offset(offset)
+                        .subquery()
+                )
+                aliased_Contest = aliased(Contest, subquery)
+                query_result = (
+                    db.session.query(aliased_Contest)
+                        .join(Result)
+                        .options(contains_eager(aliased_Contest.results))
+                        .filter(Result.contest_id == Contest.id, Result.election_id == election.id)
+                )
             except exc.SQLAlchemyError:
                 pass
         elif results_group is not None:
             try:
-                query_result = Contest.query.join(Result, Contest.results).filter(Contest.results_group == results_group, Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).offset(offset).limit(limit).all()
+                #query_result = Contest.query.join(Result, Contest.results).filter(Contest.results_group == results_group, Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).offset(offset).limit(limit).all()
+                subquery = (
+                    db.session.query(Contest)
+                        .join(Result)
+                        .with_entities(Contest)
+                        .filter(Contest.results_group == results_group, Contest.election_id == election.id)
+                        .distinct()
+                        .limit(limit)
+                        .offset(offset)
+                        .subquery()
+                )
+                aliased_Contest = aliased(Contest, subquery)
+                query_result = (
+                    db.session.query(aliased_Contest)
+                        .join(Result)
+                        .options(contains_eager(aliased_Contest.results))
+                        .filter(Result.contest_id == Contest.id, Result.election_id == election.id)
+                )
             except exc.SQLAlchemyError:
                 pass
         elif len(contest_ids):
             order_naturally = False
             try:
-                query_result = Contest.query.join(Result, Contest.results).filter(Contest.id.ilike(any_(contest_ids)), Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).all()
+                #query_result = Contest.query.join(Result, Contest.results).filter(Contest.id.ilike(any_(contest_ids)), Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).all()
+                subquery = (
+                    db.session.query(Contest)
+                        .join(Result)
+                        .with_entities(Contest)
+                        .filter(Contest.id.ilike(any_(contest_ids)), Contest.election_id == election.id)
+                        .distinct()
+                        .limit(limit)
+                        .offset(offset)
+                        .subquery()
+                )
+                aliased_Contest = aliased(Contest, subquery)
+                query_result = (
+                    db.session.query(aliased_Contest)
+                        .join(Result)
+                        .options(contains_eager(aliased_Contest.results))
+                        .filter(Result.contest_id == Contest.id, Result.election_id == election.id)
+                )
             except exc.SQLAlchemyError:
                 pass
             if query_result is not None:
@@ -616,17 +699,68 @@ def contests_with_results():
                 query_result = [contest_map[n] for n in contest_ids]
         elif address is not None and len(boundaries):
             try:
-                query_result = Contest.query.join(Result, Contest.results).filter(Contest.boundary.ilike(any_(boundaries)), Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).offset(offset).limit(limit).all()
+                #query_result = Contest.query.join(Result, Contest.results).filter(Contest.boundary.ilike(any_(boundaries)), Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).offset(offset).limit(limit).all()
+                subquery = (
+                    db.session.query(Contest)
+                        .join(Result)
+                        .with_entities(Contest)
+                        .filter(Contest.boundary.ilike(any_(boundaries)), Contest.election_id == election.id)
+                        .distinct()
+                        .limit(limit)
+                        .offset(offset)
+                        .subquery()
+                )
+                aliased_Contest = aliased(Contest, subquery)
+                query_result = (
+                    db.session.query(aliased_Contest)
+                        .join(Result)
+                        .options(contains_eager(aliased_Contest.results))
+                        .filter(Result.contest_id == Contest.id, Result.election_id == election.id)
+                )
             except exc.SQLAlchemyError:
                 pass
         elif coordinates is not None and len(boundaries):
             try:
-                query_result = Contest.query.join(Result, Contest.results).filter(Contest.boundary.ilike(any_(boundaries)), Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).offset(offset).limit(limit).all()
+                #query_result = Contest.query.join(Result, Contest.results).filter(Contest.boundary.ilike(any_(boundaries)), Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).offset(offset).limit(limit).all()
+                subquery = (
+                    db.session.query(Contest)
+                        .join(Result)
+                        .with_entities(Contest)
+                        .filter(Contest.boundary.ilike(any_(boundaries)), Contest.election_id == election.id)
+                        .distinct()
+                        .limit(limit)
+                        .offset(offset)
+                        .subquery()
+                )
+                aliased_Contest = aliased(Contest, subquery)
+                query_result = (
+                    db.session.query(aliased_Contest)
+                        .join(Result)
+                        .options(contains_eager(aliased_Contest.results))
+                        .filter(Result.contest_id == Contest.id, Result.election_id == election.id)
+                )
             except exc.SQLAlchemyError:
                 pass
         else:
             try:
-                query_result = Contest.query.join(Result, Contest.results).filter(Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).offset(offset).limit(limit).all()
+                #query_result = Contest.query.join(Result, Contest.results).filter(Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).offset(offset).limit(limit).all()
+                subquery = (
+                    db.session.query(Contest)
+                        .join(Result)
+                        .with_entities(Contest)
+                        .filter(Contest.election_id == election.id)
+                        .distinct()
+                        .limit(limit)
+                        .offset(offset)
+                        .subquery()
+                )
+                aliased_Contest = aliased(Contest, subquery)
+                query_result = (
+                    db.session.query(aliased_Contest)
+                        .join(Result)
+                        .options(contains_eager(aliased_Contest.results))
+                        .filter(Result.contest_id == Contest.id, Result.election_id == election.id)
+                )
             except exc.SQLAlchemyError:
                 pass
         if query_result is not None and order_naturally is True:
