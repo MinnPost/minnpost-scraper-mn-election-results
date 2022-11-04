@@ -131,18 +131,24 @@ def areas():
         areas_group  = request_json.get('areas_group')
         county_name  = request_json.get('county_name')
         election_id  = request_json.get('election_id')
+        limit        = request_json.get('limit')
+        offset       = request_json.get('offset')
     elif request.method == 'POST':
         # form request
         area_id     = request.form.get('area_id', None)
         areas_group = request.form.get('areas_group', None)
         county_name = request.form.get('county_name', None)
         election_id = request.form.get('election_id', None)
+        limit       = request.form.get('limit', None)
+        offset      = request.form.get('offset', None)
     else:
         # GET request
         area_id     = request.values.get('area_id', None)
         areas_group = request.values.get('areas_group', None)
         county_name = request.values.get('county_name', None)
         election_id = request.values.get('election_id', None)
+        limit       = request.values.get('limit', None)
+        offset      = request.values.get('offset', None)
 
     # set cache key
     if area_id is not None:
@@ -164,6 +170,11 @@ def areas():
         return
     cache_key_name = cache_key_name + "-" + cache_key_value + "-election-" + election.id
 
+    if limit is not None:
+        cache_key_name += "limit-" + limit
+    if offset is not None:
+        cache_key_name += "offset-" + offset
+
     # check for cached data and set the output, if it exists
     cached_output = storage.get(cache_key_name)
     if cached_output is not None:
@@ -172,22 +183,22 @@ def areas():
         # run the queries
         if area_id is not None:
             try:
-                query_result = Area.query.filter_by(id=area_id, election_id=election.id).all()
+                query_result = Area.query.filter_by(id=area_id, election_id=election.id).offset(offset).limit(limit).all()
             except exc.SQLAlchemyError:
                 pass
         elif areas_group is not None:
             try:
-                query_result = Area.query.filter_by(areas_group=areas_group, election_id=election.id).all()
+                query_result = Area.query.filter_by(areas_group=areas_group, election_id=election.id).offset(offset).limit(limit).all()
             except exc.SQLAlchemyError:
                 pass
         elif county_name is not None:
             try:
-                query_result = Area.query.filter_by(county_name=county_name, election_id=election.id).all()
+                query_result = Area.query.filter_by(county_name=county_name, election_id=election.id).offset(offset).limit(limit).all()
             except exc.SQLAlchemyError:
                 pass
         else:
             try:
-                query_result = Area.query.filter_by(election_id=election.id).all()
+                query_result = Area.query.filter_by(election_id=election.id).offset(offset).limit(limit).all()
             except exc.SQLAlchemyError:
                 pass
 
@@ -222,18 +233,24 @@ def boundaries():
         contest_id   = request_json.get('contest_id')
         contest_ids  = request_json.get('contest_ids')
         election_id  = request_json.get('election_id')
+        limit        = request_json.get('limit')
+        offset       = request_json.get('offset')
     elif request.method == 'POST':
         # form request
         title       = request.form.get('title', None)
         contest_id  = request.form.get('contest_id', None)
         contest_ids = request.form.get('contest_ids', [])
         election_id = request.form.get('election_id', None)
+        limit       = request.form.get('limit', None)
+        offset      = request.form.get('offset', None)
     else:
         # GET request
         title       = request.values.get('title', None)
         contest_id  = request.values.get('contest_id', None)
         contest_ids = request.values.get('contest_ids', [])
         election_id = request.values.get('election_id', None)
+        limit       = request.values.get('limit', None)
+        offset      = request.values.get('offset', None)
 
     # if the contest_ids value is provided on the url, it'll be a string and we need to make it a list
     if isinstance(contest_ids, str):
@@ -259,6 +276,11 @@ def boundaries():
     if election is None:
         return
     cache_key_name = cache_key_name + "-" + cache_key_value + "-election-" + election.id
+
+    if limit is not None:
+        cache_key_name += "limit-" + limit
+    if offset is not None:
+        cache_key_name += "offset-" + offset
     
     # check for cached data and set the output, if it exists
     #cached_output = storage.get(cache_key_name)
@@ -268,22 +290,22 @@ def boundaries():
     # run the queries
     if contest_id is not None:
         try:
-            query_result = Contest.query.filter(Contest.id == contest_id, Contest.election_id == election.id, Contest.boundary.isnot(None))
+            query_result = Contest.query.filter(Contest.id == contest_id, Contest.election_id == election.id, Contest.boundary.isnot(None)).offset(offset).limit(limit).all()
         except exc.SQLAlchemyError:
             pass
     elif title is not None:
         try:
-            query_result = Contest.query.filter(Contest.title.ilike(search), Contest.election_id == election.id, Contest.boundary.isnot(None)).all()
+            query_result = Contest.query.filter(Contest.title.ilike(search), Contest.election_id == election.id, Contest.boundary.isnot(None)).offset(offset).limit(limit).all()
         except exc.SQLAlchemyError:
             pass
     elif len(contest_ids):
         try:
-            query_result = Contest.query.filter(Contest.id.ilike(any_(contest_ids)), Contest.election_id == election.id, Contest.boundary.isnot(None)).all()
+            query_result = Contest.query.filter(Contest.id.ilike(any_(contest_ids)), Contest.election_id == election.id, Contest.boundary.isnot(None)).offset(offset).limit(limit).all()
         except exc.SQLAlchemyError:
             pass
     else:
         try:
-            query_result = Contest.query.filter(Contest.election_id == election.id, Contest.boundary.isnot(None)).all()
+            query_result = Contest.query.filter(Contest.election_id == election.id, Contest.boundary.isnot(None)).offset(offset).limit(limit).all()
         except exc.SQLAlchemyError:
             pass
 
@@ -323,6 +345,8 @@ def contests():
         election_id   = request_json.get('election_id')
         address       = request_json.get('address')
         coordinates   = request_json.get('coordinates')
+        limit         = request_json.get('limit')
+        offset        = request_json.get('offset')
     elif request.method == 'POST':
         # form request
         title         = request.form.get('title', None)
@@ -333,6 +357,8 @@ def contests():
         election_id   = request.form.get('election_id', None)
         address       = request.form.get('address', None)
         coordinates   = request.form.get('coordinates', None)
+        limit         = request.form.get('limit', None)
+        offset        = request.form.get('offset', None)
     else:
         # GET request
         title         = request.values.get('title', None)
@@ -343,6 +369,8 @@ def contests():
         election_id   = request.values.get('election_id', None)
         address       = request.values.get('address', None)
         coordinates   = request.values.get('coordinates', None)
+        limit         = request.values.get('limit', None)
+        offset        = request.values.get('offset', None)
 
     # if the contest_ids value is provided on the url, it'll be a string and we need to make it a list
     if isinstance(contest_ids, str):
@@ -383,6 +411,11 @@ def contests():
     if election is None:
         return
     cache_key_name = cache_key_name + "-" + cache_key_value + "-election-" + election.id
+
+    if limit is not None:
+        cache_key_name += "limit-" + limit
+    if offset is not None:
+        cache_key_name += "offset-" + offset
     
     # check for cached data and set the output, if it exists
     cached_output = storage.get(cache_key_name)
@@ -394,28 +427,28 @@ def contests():
         if contest_id is not None:
             order_naturally = False
             try:
-                query_result = Contest.query.filter_by(id=contest_id, election_id=election.id).all()
+                query_result = Contest.query.filter_by(id=contest_id, election_id=election.id).offset(offset).limit(limit).all()
             except exc.SQLAlchemyError:
                 pass
         elif title is not None:
             try:
-                query_result = Contest.query.filter(Contest.title.ilike(search), Contest.election_id == election.id).all()
+                query_result = Contest.query.filter(Contest.title.ilike(search), Contest.election_id == election.id).offset(offset).limit(limit).all()
             except exc.SQLAlchemyError:
                 pass
         elif scope is not None:
             try:
-                query_result = Contest.query.filter_by(scope=scope, election_id= election.id).all()
+                query_result = Contest.query.filter_by(scope=scope, election_id= election.id).offset(offset).limit(limit).all()
             except exc.SQLAlchemyError:
                 pass
         elif results_group is not None:
             try:
-                query_result = Contest.query.filter_by(results_group=results_group, election_id= election.id).all()
+                query_result = Contest.query.filter_by(results_group=results_group, election_id= election.id).offset(offset).limit(limit).all()
             except exc.SQLAlchemyError:
                 pass
         elif len(contest_ids):
             order_naturally = False
             try:
-                query_result = Contest.query.filter(Contest.id.ilike(any_(contest_ids)), Contest.election_id == election.id).all()
+                query_result = Contest.query.filter(Contest.id.ilike(any_(contest_ids)), Contest.election_id == election.id).offset(offset).limit(limit).all()
             except exc.SQLAlchemyError:
                 pass
             if query_result is not None:
@@ -423,17 +456,17 @@ def contests():
                 query_result = [contest_map[n] for n in contest_ids]
         elif address is not None and len(boundaries):
             try:
-                query_result = Contest.query.filter(Contest.boundary.ilike(any_(boundaries)), Contest.election_id == election.id).all()
+                query_result = Contest.query.filter(Contest.boundary.ilike(any_(boundaries)), Contest.election_id == election.id).offset(offset).limit(limit).all()
             except exc.SQLAlchemyError:
                 pass
         elif coordinates is not None and len(boundaries):
             try:
-                query_result = Contest.query.filter(Contest.boundary.ilike(any_(boundaries)), Contest.election_id == election.id).all()
+                query_result = Contest.query.filter(Contest.boundary.ilike(any_(boundaries)), Contest.election_id == election.id).offset(offset).limit(limit).all()
             except exc.SQLAlchemyError:
                 pass
         else:
             try:
-                query_result = Contest.query.filter_by(election_id=election.id).all()
+                query_result = Contest.query.filter_by(election_id=election.id).offset(offset).limit(limit).all()
             except exc.SQLAlchemyError:
                 pass
         if query_result is not None and order_naturally is True:
@@ -472,6 +505,8 @@ def contests_with_results():
         election_id   = request_json.get('election_id')
         address       = request_json.get('address')
         coordinates   = request_json.get('coordinates')
+        limit         = request_json.get('limit')
+        offset        = request_json.get('offset')
     elif request.method == 'POST':
         # form request
         title         = request.form.get('title', None)
@@ -482,6 +517,8 @@ def contests_with_results():
         election_id   = request.form.get('election_id', None)
         address       = request.form.get('address', None)
         coordinates   = request.form.get('coordinates', None)
+        limit         = request.form.get('limit', None)
+        offset        = request.form.get('offset', None)
     else:
         # GET request
         title         = request.values.get('title', None)
@@ -492,6 +529,8 @@ def contests_with_results():
         election_id   = request.values.get('election_id', None)
         address       = request.values.get('address', None)
         coordinates   = request.values.get('coordinates', None)
+        limit         = request.values.get('limit', None)
+        offset        = request.values.get('offset', None)
 
     # if the contest_ids value is provided on the url, it'll be a string and we need to make it a list
     if isinstance(contest_ids, str):
@@ -532,6 +571,11 @@ def contests_with_results():
     if election is None:
         return
     cache_key_name = cache_key_name + "-" + cache_key_value + "-with-results-election-" + election.id
+
+    if limit is not None:
+        cache_key_name += "limit-" + limit
+    if offset is not None:
+        cache_key_name += "offset-" + offset
     
     # check for cached data and set the output, if it exists
     cached_output = storage.get(cache_key_name)
@@ -543,28 +587,28 @@ def contests_with_results():
         if contest_id is not None:
             try:
                 order_naturally = False
-                query_result = Contest.query.join(Result, Contest.results).filter(Contest.id == contest_id, Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).all()
+                query_result = Contest.query.join(Result, Contest.results).filter(Contest.id == contest_id, Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).offset(offset).limit(limit).all()
             except exc.SQLAlchemyError:
                 pass
         elif title is not None:
             try:
-                query_result = Contest.query.join(Result, Contest.results).filter(Contest.title.ilike(search), Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).all()
+                query_result = Contest.query.join(Result, Contest.results).filter(Contest.title.ilike(search), Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).offset(offset).limit(limit).all()
             except exc.SQLAlchemyError:
                 pass
         elif scope is not None:
             try:
-                query_result = Contest.query.join(Result, Contest.results).filter(Contest.scope == scope, Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).all()
+                query_result = Contest.query.join(Result, Contest.results).filter(Contest.scope == scope, Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).offset(offset).limit(limit).all()
             except exc.SQLAlchemyError:
                 pass
         elif results_group is not None:
             try:
-                query_result = Contest.query.join(Result, Contest.results).filter(Contest.results_group == results_group, Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).all()
+                query_result = Contest.query.join(Result, Contest.results).filter(Contest.results_group == results_group, Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).offset(offset).limit(limit).all()
             except exc.SQLAlchemyError:
                 pass
         elif len(contest_ids):
             order_naturally = False
             try:
-                query_result = Contest.query.join(Result, Contest.results).filter(Contest.id.ilike(any_(contest_ids)), Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).all()
+                query_result = Contest.query.join(Result, Contest.results).filter(Contest.id.ilike(any_(contest_ids)), Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).offset(offset).limit(limit).all()
             except exc.SQLAlchemyError:
                 pass
             if query_result is not None:
@@ -572,17 +616,17 @@ def contests_with_results():
                 query_result = [contest_map[n] for n in contest_ids]
         elif address is not None and len(boundaries):
             try:
-                query_result = Contest.query.join(Result, Contest.results).filter(Contest.boundary.ilike(any_(boundaries)), Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).all()
+                query_result = Contest.query.join(Result, Contest.results).filter(Contest.boundary.ilike(any_(boundaries)), Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).offset(offset).limit(limit).all()
             except exc.SQLAlchemyError:
                 pass
         elif coordinates is not None and len(boundaries):
             try:
-                query_result = Contest.query.join(Result, Contest.results).filter(Contest.boundary.ilike(any_(boundaries)), Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).all()
+                query_result = Contest.query.join(Result, Contest.results).filter(Contest.boundary.ilike(any_(boundaries)), Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).offset(offset).limit(limit).all()
             except exc.SQLAlchemyError:
                 pass
         else:
             try:
-                query_result = Contest.query.join(Result, Contest.results).filter(Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).all()
+                query_result = Contest.query.join(Result, Contest.results).filter(Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).offset(offset).limit(limit).all()
             except exc.SQLAlchemyError:
                 pass
         if query_result is not None and order_naturally is True:
@@ -616,14 +660,20 @@ def elections():
         request_json  = request.get_json()
         election_id   = request_json.get('election_id')
         election_date = request_json.get('election_date')
+        limit         = request_json.get('limit')
+        offset        = request_json.get('offset')
     elif request.method == 'POST':
         # form request
         election_id   = request.form.get('election_id', None)
         election_date = request.form.get('election_date', None)
+        limit         = request.form.get('limit', None)
+        offset        = request.form.get('offset', None)
     else:
         # GET request
         election_id   = request.values.get('election_id', None)
         election_date = request.values.get('election_date', None)
+        limit         = request.values.get('limit', None)
+        offset        = request.values.get('offset', None)
 
     # set cache key
     if election_id is not None:
@@ -638,6 +688,11 @@ def elections():
 
     cache_key_name = cache_key_name + "-" + cache_key_value
 
+    if limit is not None:
+        cache_key_name += "limit-" + limit
+    if offset is not None:
+        cache_key_name += "offset-" + offset
+
     # check for cached data and set the output, if it exists
     cached_output = storage.get(cache_key_name)
     if cached_output is not None:
@@ -646,17 +701,17 @@ def elections():
         # run the queries
         if election_id is not None:
             try:
-                query_result = Election.query.filter_by(id=election_id).all()
+                query_result = Election.query.filter_by(id=election_id).offset(offset).limit(limit).all()
             except exc.SQLAlchemyError:
                 pass
         elif election_date is not None:
             try:
-                query_result = Election.query.filter_by(date=election_date).all()
+                query_result = Election.query.filter_by(date=election_date).offset(offset).limit(limit).all()
             except exc.SQLAlchemyError:
                 pass
         else:
             try:
-                query_result = Election.query.order_by(Election.election_datetime.desc()).all()
+                query_result = Election.query.order_by(Election.election_datetime.desc()).offset(offset).limit(limit).all()
             except exc.SQLAlchemyError:
                 pass
 
@@ -696,16 +751,22 @@ def questions():
         question_id  = request_json.get('question_id')
         contest_id   = request_json.get('contest_id')
         election_id  = request_json.get('election_id')
+        limit        = request_json.get('limit')
+        offset       = request_json.get('offset')
     elif request.method == 'POST':
         # form request
         question_id = request.form.get('question_id', None)
         contest_id  = request.form.get('contest_id', None)
         election_id = request.form.get('election_id', None)
+        limit       = request.form.get('limit', None)
+        offset      = request.form.get('offset', None)
     else:
         # GET request
         question_id = request.values.get('question_id', None)
         contest_id  = request.values.get('contest_id', None)
         election_id = request.values.get('election_id', None)
+        limit       = request.values.get('limit', None)
+        offset      = request.values.get('offset', None)
 
     # set cache key
     if question_id is not None:
@@ -723,7 +784,11 @@ def questions():
     if election is None:
         return
     cache_key_name = cache_key_name + "-" + cache_key_value + "-election-" + election.id
-    cache_key_name = cache_key_name + "-election-" + election.id
+
+    if limit is not None:
+        cache_key_name += "limit-" + limit
+    if offset is not None:
+        cache_key_name += "offset-" + offset
 
     # check for cached data and set the output, if it exists
     cached_output = storage.get(cache_key_name)
@@ -734,17 +799,17 @@ def questions():
         # run the queries
         if question_id is not None:
             try:
-                query_result = Question.query.filter_by(id=question_id, election_id=election.id).all()
+                query_result = Question.query.filter_by(id=question_id, election_id=election.id).offset(offset).limit(limit).all()
             except exc.SQLAlchemyError:
                 pass
         elif contest_id is not None:
             try:
-                query_result = Question.query.filter_by(contest_id=contest_id, election_id=election.id).all()
+                query_result = Question.query.filter_by(contest_id=contest_id, election_id=election.id).offset(offset).limit(limit).all()
             except exc.SQLAlchemyError:
                 pass
         else:
             try:
-                query_result = Question.query.filter_by(election_id=election.id).all()
+                query_result = Question.query.filter_by(election_id=election.id).offset(offset).limit(limit).all()
             except exc.SQLAlchemyError:
                 pass
 
@@ -778,16 +843,22 @@ def results():
         result_id    = request_json.get('result_id')
         contest_id   = request_json.get('contest_id')
         election_id  = request_json.get('election_id')
+        limit        = request_json.get('limit')
+        offset       = request_json.get('offset')
     elif request.method == 'POST':
         # form request
         result_id   = request.form.get('result_id', None)
         contest_id  = request.form.get('contest_id', None)
         election_id = request.form.get('election_id', None)
+        limit       = request.form.get('limit', None)
+        offset      = request.form.get('offset', None)
     else:
         # GET request
         result_id   = request.values.get('result_id', None)
         contest_id  = request.values.get('contest_id', None)
         election_id = request.values.get('election_id', None)
+        limit       = request.values.get('limit', None)
+        offset      = request.values.get('offset', None)
 
     # set cache key
     if result_id is not None:
@@ -805,7 +876,11 @@ def results():
     if election is None:
         return
     cache_key_name = cache_key_name + "-" + cache_key_value + "-election-" + election.id
-    cache_key_name = cache_key_name + "-election-" + election.id
+    
+    if limit is not None:
+        cache_key_name += "limit-" + limit
+    if offset is not None:
+        cache_key_name += "offset-" + offset
 
     # check for cached data and set the output, if it exists
     cached_output = storage.get(cache_key_name)
@@ -815,17 +890,17 @@ def results():
         # run the queries
         if result_id is not None:
             try:
-                query_result = Result.query.filter_by(id=result_id, election_id=election.id).all()
+                query_result = Result.query.filter_by(id=result_id, election_id=election.id).offset(offset).limit(limit).all()
             except exc.SQLAlchemyError:
                 pass
         elif contest_id is not None:
             try:
-                query_result = Result.query.filter_by(contest_id=contest_id, election_id=election.id).all()
+                query_result = Result.query.filter_by(contest_id=contest_id, election_id=election.id).offset(offset).limit(limit).all()
             except exc.SQLAlchemyError:
                 pass
         else:
             try:
-                query_result = Result.query.filter_by(election_id=election.id).all()
+                query_result = Result.query.filter_by(election_id=election.id).offset(offset).limit(limit).all()
             except exc.SQLAlchemyError:
                 pass
         
