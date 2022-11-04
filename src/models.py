@@ -65,10 +65,11 @@ class ScraperModel(object):
         return dictfromrow
 
     
-    def output_for_cache(self, query_result, args = {}, single_row=False, child_name=''):
+    def output_for_cache(self, query_result, args = {}, single_row=False, child_name='', count=None):
         output = {}
         if query_result is None:
             return output
+        current_app.log.info('single row is %s' % single_row)
         if single_row == False:
             data = [self.row2dict(item, child_name) for item in query_result]
         else:
@@ -78,6 +79,12 @@ class ScraperModel(object):
             output["generated"] = datetime.datetime.now(pytz.timezone(current_app.config["TIMEZONE"]))
         else:
             output = data
+        if "limit" in args:
+            output["limit"] = int(args["limit"])
+        if "offset" in args:
+            output["offset"] = int(args["offset"])
+        if "limit" in args or "offset" in args:
+            output["total_count"] = count
         return output
 
     
@@ -537,7 +544,7 @@ class Election(ScraperModel, db.Model):
                 )
 
 
-    def output_for_cache(self, query_result, args = {}, single_row=False):
+    def output_for_cache(self, query_result, args = {}, single_row=False, count=None):
         output = {}
         if query_result is None:
             return output
@@ -546,7 +553,10 @@ class Election(ScraperModel, db.Model):
             for item in query_result:
                 election = self.row2dict(item)
                 if "contest_count" not in election:
-                    election["contest_count"] = len(item.contests)
+                    if count is None:
+                        election["contest_count"] = len(item.contests)
+                    else:
+                        election["contest_count"] = count
                 data.append(election)
         else:
             data = self.row2dict(query_result)
@@ -555,6 +565,12 @@ class Election(ScraperModel, db.Model):
         if "display_cache_data" in args and args["display_cache_data"] == "true":
             output["data"] = data
             output["generated"] = datetime.datetime.now(pytz.timezone(current_app.config["TIMEZONE"]))
+            if "limit" in args:
+                output["limit"] = int(args["limit"])
+            if "offset" in args:
+                output["offset"] = int(args["offset"])
+            if "limit" in args or "offset" in args:
+                output["total_count"] = count
         else:
             output = data
         return output
