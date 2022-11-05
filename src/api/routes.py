@@ -183,6 +183,8 @@ def areas():
         count = None
         # run the queries
         if area_id is not None:
+            limit  = None
+            offset = None
             try:
                 query_result = Area.query.filter_by(id=area_id, election_id=election.id).all()
             except exc.SQLAlchemyError:
@@ -208,7 +210,7 @@ def areas():
 
         query_result = natsorted(query_result, key=str)
         # set the cache and the output from the query result
-        output = area_model.output_for_cache(query_result, request.args, single_row=False, count=count)
+        output = area_model.output_for_cache(query_result, request.args, single_row=False, count=count, limit=limit, offset=offset)
         output = storage.save(cache_key_name, output, class_name, election)
     
     # set up the response and return it
@@ -293,6 +295,8 @@ def boundaries():
     #else:
     # run the queries
     if contest_id is not None:
+        limit  = None
+        offset = None
         try:
             query_result = Contest.query.filter(Contest.id == contest_id, Contest.election_id == election.id, Contest.boundary.isnot(None)).all()
         except exc.SQLAlchemyError:
@@ -303,6 +307,8 @@ def boundaries():
         except exc.SQLAlchemyError:
             pass
     elif len(contest_ids):
+        limit  = None
+        offset = None
         try:
             query_result = Contest.query.filter(Contest.id.ilike(any_(contest_ids)), Contest.election_id == election.id, Contest.boundary.isnot(None)).all()
         except exc.SQLAlchemyError:
@@ -430,6 +436,8 @@ def contests():
         order_naturally = True
         # run the queries
         if contest_id is not None:
+            limit  = None
+            offset = None
             order_naturally = False
             try:
                 query_result = Contest.query.filter_by(id=contest_id, election_id=election.id).all()
@@ -454,6 +462,8 @@ def contests():
             except exc.SQLAlchemyError:
                 pass
         elif len(contest_ids):
+            limit  = None
+            offset = None
             order_naturally = False
             try:
                 query_result = Contest.query.filter(Contest.id.ilike(any_(contest_ids)), Contest.election_id == election.id).all()
@@ -477,7 +487,7 @@ def contests():
         if query_result is not None and order_naturally is True:
             query_result = natsorted(query_result, key=lambda x: x.title)
         # set the cache and the output from the query result
-        output = contest_model.output_for_cache(query_result, request.args, single_row=False, count=count)
+        output = contest_model.output_for_cache(query_result, request.args, single_row=False, count=count, limit=limit, offset=offset)
         output = storage.save(cache_key_name, output, class_name, election)
 
     # set up the response and return it
@@ -591,6 +601,8 @@ def contests_with_results():
         count = None
         # run the queries
         if contest_id is not None:
+            limit  = None
+            offset = None
             try:
                 order_naturally = False
                 #query_result = Contest.query.join(Result, Contest.results).filter(Contest.id == contest_id, Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).all()
@@ -681,6 +693,8 @@ def contests_with_results():
             except exc.SQLAlchemyError:
                 pass
         elif len(contest_ids):
+            limit  = None
+            offset = None
             order_naturally = False
             try:
                 #query_result = Contest.query.join(Result, Contest.results).filter(Contest.id.ilike(any_(contest_ids)), Contest.election_id == election.id, Result.election_id == election.id).options(contains_eager(Contest.results)).all()
@@ -754,7 +768,7 @@ def contests_with_results():
         if query_result is not None and order_naturally is True:
             query_result = natsorted(query_result, key=lambda x: x.title)
         # set the cache and the output from the query result
-        output = contest_model.output_for_cache(query_result, request.args, False, 'results', count)
+        output = contest_model.output_for_cache(query_result, request.args, False, 'results', count, limit, offset)
         output = storage.save(cache_key_name, output, class_name, election)
 
     # set up the response and return it
@@ -823,11 +837,15 @@ def elections():
         count = None
         # run the queries
         if election_id is not None:
+            limit  = None
+            offset = None
             try:
                 query_result = Election.query.filter_by(id=election_id).all()
             except exc.SQLAlchemyError:
                 pass
         elif election_date is not None:
+            limit  = None
+            offset = None
             try:
                 query_result = Election.query.filter_by(date=election_date).all()
             except exc.SQLAlchemyError:
@@ -842,7 +860,7 @@ def elections():
         if query_result is not None:
             query_result = natsorted(query_result, key=str)
         # set the cache and the output from the query result
-        output = election_model.output_for_cache(query_result, request.args, returning_single_row, count)
+        output = election_model.output_for_cache(query_result, request.args, returning_single_row, count, limit, offset)
         if len(query_result):
             election = query_result[0]
         else:
@@ -923,6 +941,8 @@ def questions():
         count = None
         # run the queries
         if question_id is not None:
+            limit  = None
+            offset = None
             try:
                 query_result = Question.query.filter_by(id=question_id, election_id=election.id).all()
             except exc.SQLAlchemyError:
@@ -942,7 +962,7 @@ def questions():
 
         query_result = natsorted(query_result, key=lambda x: x.title)
         # set the cache and the output from the query result
-        output = question_model.output_for_cache(query_result, request.args, single_row=False, count=count)
+        output = question_model.output_for_cache(query_result, request.args, single_row=False, count=count, limit=limit, offset=offset)
         output = storage.save(cache_key_name, output, class_name, election)
 
     # set up the response and return it
@@ -1017,11 +1037,15 @@ def results():
         count = None
         # run the queries
         if result_id is not None:
+            limit  = None
+            offset = None
             try:
                 query_result = Result.query.filter_by(id=result_id, election_id=election.id).all()
             except exc.SQLAlchemyError:
                 pass
         elif contest_id is not None:
+            limit  = None
+            offset = None
             try:
                 query_result = Result.query.filter_by(contest_id=contest_id, election_id=election.id).all()
             except exc.SQLAlchemyError:
@@ -1035,7 +1059,7 @@ def results():
         
         query_result = natsorted(query_result, key=lambda x: x.office_name)
         # set the cache and the output from the query result
-        output = result_model.output_for_cache(query_result, request.args, single_row=False, count=count)
+        output = result_model.output_for_cache(query_result, request.args, single_row=False, count=count, limit=limit, offset=offset)
         output = storage.save(cache_key_name, output, class_name, election)
 
     # set up the response and return it
