@@ -690,8 +690,6 @@ def contests_with_results():
                         .with_entities(Contest)
                         .filter(Contest.id.ilike(any_(contest_ids)), Contest.election_id == election.id)
                         .distinct()
-                        .limit(limit)
-                        .offset(offset)
                         .subquery()
                 )
                 aliased_Contest = aliased(Contest, subquery)
