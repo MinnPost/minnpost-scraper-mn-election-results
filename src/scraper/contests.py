@@ -9,6 +9,7 @@ from src.models import Contest
 from src.scraper import bp
 from src.scraper import elections
 from celery import chain
+from sqlalchemy import exc
 
 @celery.task(bind=True)
 def scrape_contests(self, election_id = None):
@@ -51,7 +52,11 @@ def scrape_contests(self, election_id = None):
                 inserted_count = inserted_count + 1
                 parsed_count = parsed_count + 1
             # commit parsed rows
-            db.session.commit()
+            try:
+                db.session.commit()
+            except exc.IntegrityError as e:
+                reason = e.message
+                current_app.log.error(reason)
             
     # Handle post processing actions. this only needs to happen once, not for every group.
     supplemental = contest.post_processing('contests', election.id)
@@ -72,7 +77,12 @@ def scrape_contests(self, election_id = None):
                         db.session.delete(row)
                         deleted_count = deleted_count + 1
     # commit supplemental rows
-    db.session.commit()
+    if supplemental:
+        try:
+            db.session.commit()
+        except exc.IntegrityError as e:
+            reason = e.message
+            current_app.log.error(reason)
 
     result = {
         "contests" : {

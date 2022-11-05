@@ -69,7 +69,6 @@ class ScraperModel(object):
         output = {}
         if query_result is None:
             return output
-        current_app.log.info('single row is %s' % single_row)
         if single_row == False:
             data = [self.row2dict(item, child_name) for item in query_result]
         else:
@@ -773,7 +772,7 @@ class Contest(ScraperModel, db.Model):
         scope = source['contest_scope'] if 'contest_scope' in source else None
         district_code = row[5]
         
-        title_and_place_name = self.generate_title_and_place_name(office_name, county_id, row, scope, district_code)
+        title_and_place_name = self.generate_title_and_place_name(office_name, county_id, scope, district_code, election.id)
         title = title_and_place_name["title"]
         place_name = title_and_place_name["place_name"]
 
@@ -838,7 +837,7 @@ class Contest(ScraperModel, db.Model):
         return parsed
 
     
-    def generate_title_and_place_name(self, office_name, county_id, row, scope = None, district_code = None):
+    def generate_title_and_place_name(self, office_name, county_id, scope = None, district_code = None, election_id = None):
         title_and_place_name = {
             'title': '',
             'place_name': ''
@@ -895,7 +894,7 @@ class Contest(ScraperModel, db.Model):
             else:
                 area_model = Area()
                 try:
-                    query_result = Area.query.filter_by(school_district_id=district_code, election_id=row['election_id']).all()
+                    query_result = Area.query.filter_by(school_district_id=district_code, election_id=election_id).all()
                     # set the output
                     output = area_model.output_for_cache(query_result, {})
                 except Exception:
@@ -906,10 +905,12 @@ class Contest(ScraperModel, db.Model):
                         place_name = a['school_district_name'].title()
             if place_name != "":
                 title = title[0:-1] + " - " + place_name + ")"
+
         if title != "":
             title_and_place_name["title"] = title
         if place_name != "":
             title_and_place_name["place_name"] = place_name
+
         return title_and_place_name
 
     

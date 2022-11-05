@@ -109,7 +109,12 @@ def scrape_results(self, election_id = None):
                         db.session.delete(row)
                         deleted_count = deleted_count + 1
     # commit supplemental rows
-    db.session.commit()
+    if supplemental_results:
+        try:
+            db.session.commit()
+        except exc.IntegrityError as e:
+            reason = e.message
+            current_app.log.error(reason)
 
     result = {
         "results" : {
